@@ -31,7 +31,7 @@ setup(
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'XS3D=src0.XookSuut_inputs:input_params'
+            'XS3D=src0.XookSuut3D_inputs:input_params'
         ]
     }
 )

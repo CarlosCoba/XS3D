@@ -28,7 +28,7 @@ from src0.utils import *
 set_threads(nthreads)
 
 import numpy as np
-from src0.initialize_XS_main import XS_out
+from src0.initialize_XS3D_main import XS_out
 from src0.pixel_params import eps_2_inc
 """
 #################################################
@@ -149,8 +149,7 @@ class input_params:
 		vary_VSYS = config_const.getboolean('FIT_VSYS', vary_VSYS)
 		vary_PHIB = config_const.getboolean('FIT_PHI_BAR', vary_PHIB)
 
-		n_it=config_general.getint("n_it", 5)
-		e_centroid = config_general.getfloat("e_centroid", 5)
+		n_it=config_general.getint("n_it", 1)
 		v_center = config_general.get("v_center", 0)  
 		survey = config_general.get("dataset", "-")
 		

@@ -11,7 +11,7 @@ from src0.momtools import GaussProf,trapecium,trapecium3d
 from src0.constants import __c__,__sigma_2_FWHM__,__FWHM_2_sigma__
 from src0.conv import conv2d,gkernel,gkernel1d
 from src0.conv_spec1d import gaussian_filter1d,convolve_sigma
-from src0.conv_fftw import fftconv,padding,data_2N
+from src0.conv_fftw import fftconv,data_2N
 from src0.momtools import mask_wave
 
 

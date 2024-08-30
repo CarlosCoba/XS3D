@@ -8,7 +8,7 @@ from src0.constants import __c__
 from src0.conv import conv2d,gkernel,gkernel1d
 from src0.conv_spec1d import gaussian_filter1d,convolve_sigma
 from src0.momtools import mask_wave
-from src0.conv_fftw import fftconv,padding,data_2N
+from src0.conv_fftw import fftconv,data_2N
 from src0.start_messenge import Print
 
 def rmse(data_array):
