@@ -105,7 +105,7 @@ Also, if you use the XS colormap (red-black-blue) in a different context, I woul
 
 
 .. |logo| image:: logo.png
-    :scale: 20 %
+    :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
 .. |circ| image:: mommaps_circular_model_califa.png
