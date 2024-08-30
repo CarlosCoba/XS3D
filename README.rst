@@ -96,7 +96,7 @@ Intrinsinc rotation and intrinsic velocity dispersion.
 
 
 
-Referencing XookSuut
+Referencing XookSuut3D
 =================
  
 If you are using XS3D in your work, please cite the XS release paper https://ui.adsabs.harvard.edu/abs/2024RMxAA..60...19L/abstract.
@@ -109,15 +109,15 @@ Also, if you use the XS colormap (red-black-blue) in a different context, I woul
     :target: https://github.com/CarlosCoba/XS3D
 
 .. |circ| image:: mommaps_circular_model_califa.png
-    :scale: 20 %
+    :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
 .. |hrm| image:: mommaps_hrm_2_model_califa.png
-    :scale: 20 %
+    :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
 .. |bis| image:: mommaps_bisymmetric_model_califa.png
-    :scale: 20 %
+    :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
 .. |pvd| image:: pvd_bisymmetric_model_califa.png
@@ -125,6 +125,6 @@ Also, if you use the XS colormap (red-black-blue) in a different context, I woul
     :target: https://github.com/CarlosCoba/XS3D
 
 .. |rotation_curve| image:: kin_bisymmetric_disp_califa.png
-    :scale: 20 %
+    :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
