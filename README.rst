@@ -18,11 +18,13 @@ XookSuut3D (XS3D)
 
 Description
 ===========
-XookSuut3D or XS3D for short, is a python tool developed to model non-circular motions on datacubes.
-It is particularly designed for emission-line observations, such as HI, optical emission lines, IR lines,
+XookSuut3D or XS3D for short, is a python tool developed to model non-circular motions in galaxies through the use of datacubes.
+A datacube in this context comprises two spatial axes (RA, Dec) and one spectral axis, either wavelength or frequency. 
+XS3D perform kinematic modeling while it takes into account the observational PSF and spectral broadening (LSF). For this purpose
+it makes use of the FFTW library via pyFFTW. 
+XS3D is  particularly designed for emission-line observations, such as HI, optical emission lines, IR lines,
 molecular lines, etc.
-A datacube in this context comprises two spatial axes (RA, Dec) and one spectral axis, either wavelength or frequency.
-XS3D adopts the same minimization technique as its 2D version, XookSuut, but adapted for datacubes.
+XS3D adopts the same minimization technique as its 2D version, XookSuut, but extended to datacubes.
 XS3D is able to model circular rotation models, axisymmetric radial flows, bisymmetric flows, and a general harmonic decomposition of the LOSV.
 To derive the best set of parameters on each kinematic model XS3D uses all the information from the datacube. Therefore,
 large dimension cubes could take large CPU time to derive the best model.
@@ -73,7 +75,8 @@ Another input is the desired kinematic model, and in the case of non-circular mo
 
 Examples
 ===========
-Following are some of the outputs you will obtain from running XS3d on a datacube. These examples correpond to a galaxy with an an oval distortion.
+Following are some of the outputs you will obtain from running XS3D on a datacube. These examples correpond to a galaxy with an an oval distortion.
+Moment maps taken from the datacube and model-cube are shown, with mom0=intensity, mom1=velocity and mom2=dispersion.
 
 Results from applying a circular rotation model:
 |circ|
