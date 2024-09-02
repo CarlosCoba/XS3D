@@ -97,13 +97,14 @@ class Circular_model:
 			disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.evel, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
 			vrot_tab[abs(vrot_tab) > 400] = np.nanmedian(vrot_tab)
 			
-			if it == 0: first_guess_it = guess
 			# Try to correct the PA if velocities are negative
 			if np.nanmean(vrot_tab) < 0 :
 				self.pa0 = self.pa0 + 180
 				vrot_tab*=-1						
 				
 			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
+			if it == 0: first_guess_it = guess		
+			
 			# Minimization
 			fitting = fit_routine(self.datacube, self.h, self.mommaps, self.evel, guess, self.vary, self.vmode, self.config, R_pos, self.ring_space, self.frac_pixel, self.inner_interp,N_it=self.n_it0)
 			# outs
