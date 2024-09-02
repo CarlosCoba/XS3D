@@ -66,7 +66,7 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	ax0.imshow(mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	im1=ax1.imshow(mom0_mdl,origin='lower',cmap=cmap_mom0,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')	
 	vmin,vmax=vmin_vmax(res_mom0,2,98)
-	mean=(vmax+vmin)/2
+	mean=(abs(vmax)+abs(vmin))/2
 	im2=ax2.imshow(res_mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=-mean,vmax=mean,aspect='auto')
 
 	#moment 1 maps	
@@ -91,7 +91,7 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	im7=ax7.imshow(mom2_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	#vmin,vmax=vmin_vmax(res_mom2, base=10)
 	vmin,vmax=vmin_vmax(res_mom2,2,98)
-	mean=(vmax+vmin)//2		
+	mean=(abs(vmax)+abs(vmin))//2		
 	im8=ax8.imshow(res_mom2,origin='lower',cmap=cmap,extent=ext,vmin=-mean,vmax=mean,aspect='auto')
 
 
