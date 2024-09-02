@@ -111,19 +111,19 @@ Also, if you use the XS colormap (red-black-blue) in a different context, I woul
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
-.. |circ| image:: mommaps_circular_model_califa.png
+.. |circ| image:: /example/mommaps_circular_model_califa.png
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
-.. |hrm| image:: mommaps_hrm_2_model_califa.png
+.. |hrm| image:: /example/mommaps_hrm_2_model_califa.png
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
-.. |bis| image:: mommaps_bisymmetric_model_califa.png
+.. |bis| image:: /example/mommaps_bisymmetric_model_califa.png
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
-.. |pvd| image:: pvd_bisymmetric_model_califa.png
+.. |pvd| image:: /example/pvd_bisymmetric_model_califa.png
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
