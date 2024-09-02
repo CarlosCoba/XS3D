@@ -43,7 +43,7 @@ Installation
 ===========
 
 1. Go to the XS3D directory
-cd /XookSuut3D-code/
+cd /XS3D/
 
 2.  pip install -e .
 -e stands for editable, meaning that you will be able to work on the script and invoke the latest version without need to reinstall.
@@ -81,7 +81,7 @@ Moment maps taken from the datacube and model-cube are shown, with mom0=intensit
 Results from applying a circular rotation model:
 |circ|
 
-Bisymmetric Results from applying a bisymmetric  model::
+Results from applying a bisymmetric  model::
 |bis|
 
 Harmonic expasion with harmonic number m  = 2
@@ -127,7 +127,7 @@ Also, if you use the XS colormap (red-black-blue) in a different context, I woul
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
-.. |rotation_curve| image:: kin_bisymmetric_disp_califa.png
+.. |rotation_curve| image:: /example/kin_bisymmetric_disp_califa.png
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
