@@ -102,6 +102,10 @@ class Harmonic_model:
 			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.evel, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)			
 			c1_tab = c_tab[0]
 			c1_tab[abs(c1_tab) > 400] = np.nanmedian(c1_tab)
+			# Try to correct the PA if velocities are negative
+			if np.nanmean(c1_tab) < 0 :
+				self.pa0 = self.pa0 + 180			
+				c_tab[0]=-1*c_tab[0]			
 			# convert arrays to list
 			c_tab=[list(c_tab[k]) for k in range(self.m_hrm)]
 			s_tab=[list(s_tab[k]) for k in range(self.m_hrm)]
