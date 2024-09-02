@@ -6,9 +6,9 @@ Recover the different kinemaitc components from each kinematic model.
 #Data: `califa.conv.fits`
 This example simulates the Halpha emission-line (rest frame 6562.68 AA).
 The pixel size of the simulated cube is 0.4 arcsec*pixel**-1.
-The data has been spatial (2.5arcsec@FWHM) and spectral (2AA@FWHM) convolved.
+The data has been spatially convolved by 2.5arcsec@FWHM and spectrally convolved by 3AA@FWHM.
 
-Halpha intensity follows a Sersic profile (n=1)
+Halpha intensity and velocity dispersion follows a Sersic profile (n=1)
 Rotational curve reaches Vmax~280 km/s.
 Vrad = 30 km/s --> radial noncircular flow up to 10arcsec
 Vtan = 50 km/s --> tangential noncircular flow up to 10arcsec
@@ -17,7 +17,7 @@ vsys = 4900 km/s
 
 # USE of XS3D. Type XS3D in a terminal. You will get the following:
  
-USE: XS3D name cube.fits [error_map.fits,SN] PA INC X0 Y0 [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]
+USE: XS3D name cube.fits [mask2D] PA INC X0 Y0 [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]
  
 
 #Setup,

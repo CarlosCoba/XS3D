@@ -32,7 +32,7 @@ from src0.momtools import mask_wave
 from src0.pv import pv_array
 from src0.plot_pv import plot_pvd
 from src0.cube_stats import cstats,baselinecor,ecube,mask_cube
-valid_strings_for_optional_inputs = ["", "-", ".", ",", "#","%", "&"]
+valid_strings_for_optional_inputs = ["", "-", ".", ",", "#","%", "&","None"]
 
 
 def guess_vals(PA,INC,X0,Y0,VSYS,PHI_B ):
@@ -42,7 +42,7 @@ def guess_vals(PA,INC,X0,Y0,VSYS,PHI_B ):
 
 class Run_models:
 
-	def __init__(self, galaxy, datacube, SN, VSYS, PA, INC, X0, Y0, PHI_B, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHI, delta, rstart, rfinal, ring_space, frac_pixel, inner_interp, bar_min_max, vmode, survey, config, prefix, osi):
+	def __init__(self, galaxy, datacube, msk_cube, VSYS, PA, INC, X0, Y0, PHI_B, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHI, delta, rstart, rfinal, ring_space, frac_pixel, inner_interp, bar_min_max, vmode, survey, config, prefix, osi):
 	
 		#set time
 		self.start_time = time.time()
@@ -71,8 +71,11 @@ class Run_models:
 		#baseline correction		
 		self.datacube,self.baselcube=baselinecor(self.datacube,config)
 
-		# apply rms cut to the cube
-		rms3d,self.rms_cube=mask_cube(self.datacube,config)
+
+		# apply rms based mask to the cube
+		if msk_cube in osi: msk_cube=None
+		self.msk2d_cube=msk_cube		
+		rms3d,self.rms_cube=mask_cube(self.datacube,config,msk_user=self.msk2d_cube)
 		self.datacube=self.datacube*rms3d
 		self.h['RMS_CUBE']=self.rms_cube
 
@@ -217,7 +220,7 @@ class XS_out(Run_models):
 		rescube=self.datacube-self.kin_3D_mdls[4]
 		rescube[~np.isfinite(rescube)]=0
 		# apply rms cut to the rescube
-		rms3d,rms_cube=mask_cube(rescube,self.config,clip=1)
+		rms3d,rms_cube=mask_cube(rescube,self.config,clip=1,msk_user=self.msk2d_cube)
 		rescube=rescube*rms3d		
 		rcube=Cube_creation(rescube,self.h,[1]*3,self.config)
 		rmomaps=rcube.obs_mommaps()

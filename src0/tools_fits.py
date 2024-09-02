@@ -1,5 +1,11 @@
 from astropy.io import fits
 
+
+def get_fits_data(file):
+	data_array=fits.getdata(file)
+	return data_array
+
+
 def array_2_fits(data,out,galaxy,vmode, kwargs):
 	if type(kwargs) not in [dict,list]:
 		print("XookSuut: bad header assignation");quit()

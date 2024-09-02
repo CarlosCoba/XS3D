@@ -542,6 +542,8 @@ class Fit_kin_mdls(Models):
 			if self.fit_from_cube:
 				residual=(self.datacube-cube_mdl)**2
 				residual=residual[:,None][self.mask_cube[:,None]]
+				#residual=(np.sum(residual,axis=0))[self.mom0!=0]
+				
 			else:		
 
 				if self.vary_disp:

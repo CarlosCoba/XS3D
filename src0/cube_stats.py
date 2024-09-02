@@ -10,6 +10,7 @@ from src0.conv_spec1d import gaussian_filter1d,convolve_sigma
 from src0.momtools import mask_wave
 from src0.conv_fftw import fftconv,data_2N
 from src0.start_messenge import Print
+from src0.tools_fits import get_fits_data
 
 def rmse(data_array):
 	data=data_array[np.isfinite(data_array) & (data_array!=0)] 
@@ -21,7 +22,7 @@ def rmse(data_array):
 
 
 
-def mask_cube(data,config,f=5,clip=None):
+def mask_cube(data,config,f=5,clip=None,msk_user=None):
 	Print().status("Estimating RMS")
 	config_general = config['general']
 	if clip is None:
@@ -37,6 +38,7 @@ def mask_cube(data,config,f=5,clip=None):
 	#cube[cube==0]=np.nan
 	cube[~np.isfinite(cube)]=0	
 	[nz,ny,nx]=cube.shape
+	
 		
 	# select spectra with low signal
 	avg2d=np.nanmean(cube, axis=0)
@@ -47,6 +49,10 @@ def mask_cube(data,config,f=5,clip=None):
 
 	# mask spectra that have low signal (on average)
 	msk = (avg2d<p5) & (avg2d!=0)
+	
+	if msk_user!=None:
+		msk=get_fits_data(msk_user).astype(bool)
+		
 	c=cube*msk*np.ones(nz)[:,None,None]
 	msk=c!=0
 	# calculate the rms on the original cube
@@ -62,10 +68,9 @@ def mask_cube(data,config,f=5,clip=None):
 	padded_cube, cube_slices = data_2N(cube, axes=[0, 1, 2])
 	padded_psf, psf_slices = data_2N(psf3d_1, axes=[0, 1, 2])
 
-	a=fftconv(padded_cube,padded_psf,threads=nthreads)
-	cube_smooth=a.convolve_3d_same(cube_slices)
+	dft=fftconv(padded_cube,padded_psf,threads=nthreads)
+	cube_smooth=dft.conv_DFT(cube_slices)
 	
-	#cube_smooth=convolve_3d_same(cube, psf3d_1)[0]
 	c=cube_smooth*msk*np.ones(nz)[:,None,None]
 	# calculate the rms on the smooth cube
 	rms_sm=rmse(c[msk])
@@ -109,23 +114,9 @@ def ecube(cube,box=5):
 	
 	
 	
-
 def cstats(cube,f=10):
 	[nz,ny,nx]=cube.shape
-	"""
-	# smooth the cube spectrally and spatially
-	sigma_inst_pix=2
-	
-	lsf3d=np.ones((ny,nx))*gkernel1d(nz,sigma_pix=sigma_inst_pix)[:,None,None]
-	cube_mod_lsf=convolve_1d(cube, lsf3d)[0]
-	cube_mod_conv=cube_mod_lsf
-	
-	lsf1d=gkernel1d(nz,sigma_pix=sigma_inst_pix)
-	psf2d=gkernel((ny,nx),2,pixel_scale=1)	
-	psf3d_1 = psf2d * lsf1d[:, None, None]
-	cube_mod_conv3d=convolve_3d_same(cube, psf3d_1)[0]
-	cube_mod_conv=cube_mod_conv3d
-	"""
+
 	cube_mod_conv=np.copy(cube)
 	cube_mod_conv[cube_mod_conv==0]=np.nan	
 	# select spectra with low signal
@@ -142,10 +133,6 @@ def cstats(cube,f=10):
 	rms=rmse(c[msk])
 	m1=avg2d>2*rms
 	return m1*np.ones(nz)[:,None,None],rms
-
-
-
-
 
 
 

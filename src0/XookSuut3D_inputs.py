@@ -6,7 +6,7 @@ import os
 this_dir, this_filename = os.path.split(__file__)
 #first read the config file
 CONFIG_PATH = os.path.join(this_dir,"config_file", "xs_conf.ini")
-osi = ["-", ".", "#","%", "&", ""]
+osi = ["-", ".", "#","%", "&", "","None"]
 try:
 	config_file=sys.argv[20] if sys.argv[20] not in osi else CONFIG_PATH
 except(IndexError,IOError):
@@ -43,7 +43,7 @@ class input_params:
 	def __init__(self):
 		if (nargs < 19 or nargs > 22):
 
-			print ("USE: XS3D name cube.fits [error_map.fits,SN] PA INC X0 Y0 [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]" )
+			print ("USE: XS3D name cube.fits [mask2D] PA INC X0 Y0 [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]" )
 
 			exit()
 
@@ -52,7 +52,7 @@ class input_params:
 
 		#FITS information
 		vel_map = sys.argv[2]
-		evel_map_SN = sys.argv[3]
+		mask2D = sys.argv[3]
 		#pixel_scale = float(sys.argv[4])
 
 		# Geometrical parameters
@@ -82,7 +82,7 @@ class input_params:
 
 
 		#valid optional-string-inputs (osi):
-		osi = ["-", ".", "#","%", "&", ""]
+		osi = ["-", ".", "#","%", "&", "","None"]
 
 		r_bar_min_max,config_file,prefix = "","",""
 		C, G = "C", "G"
@@ -95,13 +95,6 @@ class input_params:
 		if config_file in osi:
 			config_file = CONFIG_PATH
 			print("XookSuut: No config file has been passed. Using default configuration file ..")
-
-
-		if evel_map_SN not in osi:
-			evel_map_SN =  evel_map_SN.split(",")
-			evel_map, SN = evel_map_SN[0], float(evel_map_SN[1])
-		else:
-			evel_map, SN = "", 1e6	
 
 		if VSYS not in osi: VSYS = eval(sys.argv[8])
 		if delta in osi:
@@ -166,7 +159,7 @@ class input_params:
 
 		config = input_config		
 
-		x = XS_out(galaxy, vel_map, SN, VSYS, PA, INC, X0, Y0, PHI_BAR, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHIB, delta, rstart, rfinal, ring_space, frac_pixel, v_center, bar_min_max, vmode, survey, config, prefix, osi  )
+		x = XS_out(galaxy, vel_map, mask2D, VSYS, PA, INC, X0, Y0, PHI_BAR, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHIB, delta, rstart, rfinal, ring_space, frac_pixel, v_center, bar_min_max, vmode, survey, config, prefix, osi  )
 		out_xs = x()
 
 if __name__ == "__main__":

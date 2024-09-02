@@ -16,11 +16,8 @@ from src0.momtools import mask_wave
 
 
 class Cube_creation:
-
 	def __init__(self,datacube,header,mommaps,config):
 	
-
-
 		self.nz,self.ny,self.nx = datacube.shape
 		self.h=header
 		self.mommaps_obs=mommaps
@@ -153,7 +150,7 @@ class Cube_creation:
 	def create_cube(self,velmap,sigmap,padded_cube=None,padded_psf=None,cube_slices=None, pass_cube=True, fit_cube=False):
 		cube_mod=self.gaussian_cube(velmap,sigmap,f0=1)
 
-		#(2) lsf convolution only.
+		#(2) LSF convolution only.
 		if self.fwhm_inst_A is not None and not self.fit_psf:			
 			lsf3d=np.ones_like(velmap)*gkernel1d(self.nz,sigma_pix=self.sigma_inst_pix[0])[:,None,None]
 			#cube_mod_conv=convolve_1d(cube_mod,lsf3d)
@@ -161,21 +158,20 @@ class Cube_creation:
 			padded_cube, cube_slices = data_2N(cube_mod, axes=[0])
 			padded_lsf, psf_slices = data_2N(lsf3d, axes=[0])
 
-			a=fftconv(padded_cube,padded_lsf,self.nthreads,slice_cube=slice(0,1),axes=[0])
-			cube_mod_conv=a.convolve_1d(cube_slices)
+			dft=fftconv(padded_cube,padded_lsf,self.nthreads,axes=[0])
+			cube_mod_conv=dft.conv_DFT(cube_slices)
 		
 		# fit PSF and fixed broadening
 		if 	self.fit_psf and self.fwhm_inst_A is None or self.vary_disp==False:
 			# spatial convolution py the PSF in each channel
 			psf3d=self.psf2d*np.ones(self.nz)[:,None,None]
-			#cube_mod_conv=convolve_3d_xy(cube_mod,psf3d)
 			
 			padded_cube, cube_slices = data_2N(cube_mod, axes=[1,2])
 			padded_psf, psf_slices = data_2N(psf3d, axes=[1,2])
 
 			#start_time = time.time()
-			a=fftconv(padded_cube,padded_psf,self.nthreads,slice_cube=slice(1,3),axes=[1,2])
-			cube_mod_conv=a.convolve_3d_xy(cube_slices)
+			dft=fftconv(padded_cube,padded_psf,self.nthreads,axes=[1,2])
+			cube_mod_conv=dft.conv_DFT(cube_slices)
 
 		#(3) fit PSF and LSF											
 		if 	self.fit_psf and self.vary_disp and self.fwhm_inst_A is not None :	
@@ -185,15 +181,12 @@ class Cube_creation:
 			if padded_cube is not None:
 				padded_cube[cube_slices]=cube_mod
 				padded_psf[cube_slices]=psf3d_1
-
 			else:	
 				padded_cube, cube_slices = data_2N(cube_mod, axes=[0, 1, 2])
 				padded_psf, psf_slices = data_2N(psf3d_1, axes=[0, 1, 2])
 
-			#start_time = time.time()
-			a=fftconv(padded_cube,padded_psf,self.nthreads)
-			cube_mod_conv=a.convolve_3d_same(cube_slices)
-			#print("--- %s seconds ---" % (time.time() - start_time))
+			dft=fftconv(padded_cube,padded_psf,self.nthreads)
+			cube_mod_conv=dft.conv_DFT(cube_slices)
 
 
 		mom0,mom1_kms,mom2_kms,cube_mod_psf_norm=self.cube_convolved(cube_mod_conv, norm=True)

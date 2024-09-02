@@ -52,7 +52,7 @@ cd /XookSuut3D-code/
 
 you must get the following ::
 
-USE: XS3D name cube.fits [error_map.fits,SN] PA INC X0 Y0 [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]
+USE: XS3D name cube.fits [mask2D] PA INC X0 Y0 [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]
 
 
 

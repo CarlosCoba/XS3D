@@ -17,7 +17,7 @@ from src0.ellipse import drawellipse
 #params =   {'text.usetex' : True }
 #plt.rcParams.update(params)
 
-def vmin_vmax(data,pmin=5,pmax=98,base=None):
+def vmin_vmax(data,pmin=5,pmax=99,base=None):
 	vmin,vmax=np.nanpercentile(np.unique(data),pmin),np.nanpercentile(np.unique(data),pmax)
 	if base is not None:
 		vmin,vmax=(vmin//base+1)*base,(vmax//base+1)*base
@@ -28,6 +28,7 @@ def zero2nan(data):
 	return data
 
 cmap = vel_map()
+cmap_mom0 = vel_map('mom0')
 
 def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out):
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr= momms_mdls
@@ -62,10 +63,11 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	# moment zero maps:
 	res_mom0=mom0-mom0_mdl
 	vmin,vmax=vmin_vmax(mom0_mdl)
-	ax0.imshow(mom0,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
-	im1=ax1.imshow(mom0_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')	
-	vmin,vmax=vmin_vmax(res_mom0)
-	im2=ax2.imshow(res_mom0,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
+	ax0.imshow(mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
+	im1=ax1.imshow(mom0_mdl,origin='lower',cmap=cmap_mom0,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')	
+	vmin,vmax=vmin_vmax(res_mom0,2,98)
+	mean=(vmax+vmin)/2
+	im2=ax2.imshow(res_mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=-mean,vmax=mean,aspect='auto')
 
 	#moment 1 maps	
 	res_mom1=mom1-mom1_mdl
@@ -87,8 +89,10 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	vmin,vmax=vmin_vmax(mom2_mdl,1,99,base=10)
 	ax6.imshow(mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	im7=ax7.imshow(mom2_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
-	vmin,vmax=vmin_vmax(res_mom2, base=10)
-	im8=ax8.imshow(res_mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
+	#vmin,vmax=vmin_vmax(res_mom2, base=10)
+	vmin,vmax=vmin_vmax(res_mom2,2,98)
+	mean=(vmax+vmin)//2		
+	im8=ax8.imshow(res_mom2,origin='lower',cmap=cmap,extent=ext,vmin=-mean,vmax=mean,aspect='auto')
 
 
 
