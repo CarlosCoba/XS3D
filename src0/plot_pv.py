@@ -199,7 +199,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 		specres_kms=(specres/eline)*__c__
 		fwhm_kms=specres_kms/2.
 	else:
-		fwhm_kms=hdr_info.wave_kms
+		fwhm_kms=hdr_info.cdelt3_kms/2.
 	
 	psf=None
 	if psf_arc is not None:
