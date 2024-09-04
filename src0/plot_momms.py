@@ -39,8 +39,15 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	
 	mom1_mdl=mom1_mdl-vsys
 	mom1=mom1-vsys
-
-
+	
+	rnorm=1
+	if np.max(ext)>80:
+		rnorm=60
+		rlabel='$\'$'
+	else:
+		rlabel='$\'\'$'	
+	ext = ext/rnorm
+				
 	width, height = 10, 13 # width [cm]
 	#width, height = 3, 15 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
@@ -128,8 +135,8 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 		#	axs(axes[k],remove_xticks= True)	
 
 
-	for k in range(-3,0,1): axes[k].set_xlabel('$\mathrm{ \Delta RA~(arcsec)}$',fontsize=10,labelpad=1)
-	for k in range(1,10,3): axes[k-1].set_ylabel('$\mathrm{ \Delta Dec~(arcsec)}$',fontsize=10,labelpad=1)
+	for k in range(-3,0,1): axes[k].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=10,labelpad=1)
+	for k in range(1,10,3): axes[k-1].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=10,labelpad=1)
 
 
 	txt0=['mom0','mom1', 'mom2']
@@ -139,10 +146,10 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 
 	k=1
 	for j,i in product(np.arange(3),np.arange(2)):
-		txt = AnchoredText('$\mathrm{%s_{%s}}$'%(txt0[j],txt1[i]), loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);axes[k-1].add_artist(txt)
+		txt = AnchoredText('$\mathrm{%s_{%s}}$'%(txt0[j],txt1[i]), loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);axes[k-1].add_artist(txt)
 		k+=1
 		if not k % 3:
-			txt = AnchoredText('$\mathrm{residual}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);axes[k-1].add_artist(txt)		
+			txt = AnchoredText('$\mathrm{residual}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);axes[k-1].add_artist(txt)		
 			k+=1
 
 
@@ -154,28 +161,29 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	#	spec_u='lambda'
 	
 	spec_u = 'km/s'			
-	cb(im1,ax0,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=10, ticksfontsize=8)
-	cb2=cb(im2,ax2,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=10, ticksfontsize = 8,power=True)
+	cb(im1,ax0,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=10, ticksfontsize=8)
+	cb2=cb(im2,ax2,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=10, ticksfontsize = 8,power=True)
 
 
-	cb(im4,ax3,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=8)
-	cb(im5,ax5,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize = 8)
+	cb(im4,ax3,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=8)
+	cb(im5,ax5,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize = 8)
 
-	cb(im7,ax6,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=8)
-	cb(im8,ax8,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize = 8)
+	cb(im7,ax6,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=8)
+	cb(im8,ax8,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize = 8)
 	
 	
 	[ny,nx]=mom0.shape
 	bar_scale_arc,bar_scale_u,unit=bscale(vsys,nx,pixel)
-
+	bar_scale_arc_norm=bar_scale_arc/rnorm
+	
 	ax0.text(ext[0]*(4/5.+1/10),ext[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
-	ax0.plot([ext[0]*(4/5.),ext[0]*(4/5.)+bar_scale_arc],[ext[2]*(5/6),ext[2]*(5/6)],'k-')
+	ax0.plot([ext[0]*(4/5.),ext[0]*(4/5.)+bar_scale_arc_norm],[ext[2]*(5/6),ext[2]*(5/6)],'k-')
 
 	ax3.text(ext[0]*(4/5.+1/10),ext[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
-	ax3.plot([ext[0]*(4/5.),ext[0]*(4/5.)+bar_scale_arc],[ext[2]*(5/6),ext[2]*(5/6)],'k-')
+	ax3.plot([ext[0]*(4/5.),ext[0]*(4/5.)+bar_scale_arc_norm],[ext[2]*(5/6),ext[2]*(5/6)],'k-')
 
 	ax6.text(ext[0]*(4/5.+1/10),ext[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
-	ax6.plot([ext[0]*(4/5.),ext[0]*(4/5.)+bar_scale_arc],[ext[2]*(5/6),ext[2]*(5/6)],'k-')
+	ax6.plot([ext[0]*(4/5.),ext[0]*(4/5.)+bar_scale_arc_norm],[ext[2]*(5/6),ext[2]*(5/6)],'k-')
 
 
 	# plot PSF ellipse ?
@@ -188,11 +196,11 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	psf=None
 	bmaj,bmin=None,None
 	if psf_arc is not None:
-		psf=psf_arc
+		psf=psf_arc/rnorm
 	if bmaj_arc is not None:		
-		bmaj=bmaj_arc
+		bmaj=bmaj_arc/rnorm
 	if bmin_arc is not None:		
-		bmin=bmaj_arc
+		bmin=bmin_arc/rnorm
 			
 	if psf is not None:
 		x0,y0=ext[1]*(5/6.),ext[2]*(5/6)	

@@ -39,7 +39,7 @@ def plot_kin_models_h(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Ck,Sk,e_Ck,e_Sk,VSY
 
 
 
-	width, height = 14.0, 5 # width [cm]
+	width, height = 14.0, 5.5 # width [cm]
 	#width, height = 3, 15 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
@@ -47,7 +47,7 @@ def plot_kin_models_h(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Ck,Sk,e_Ck,e_Sk,VSY
   
 	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
 	#nrows x ncols
-	widths = [1.2, 1.2, 0.4, 2]
+	widths = [1, 1, 0.4,1.5]
 	heights = [1, 0.6]
 	gs = gridspec.GridSpec(2, 4,  width_ratios=widths, height_ratios=heights)
 	gs.update(left=0.06, right=0.99,top=0.81,bottom=0.14, hspace = 0.03, wspace = 0)
@@ -58,7 +58,15 @@ def plot_kin_models_h(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Ck,Sk,e_Ck,e_Sk,VSY
 	ax3 = plt.subplot(gs[0,3])
 	ax4 = plt.subplot(gs[1,3])
 
-
+	# is it the axes in arcsec or arcmin ?
+	rnorm=1
+	if np.max(ext)>80:
+		rnorm=60
+		rlabel='$\'$'
+	else:
+		rlabel='$\'\'$'	
+	ext = ext/rnorm
+	R=R/rnorm	
 
 	# intrinsic velocity
 	velmap_intr=zero2nan(velmap_intr)
@@ -104,9 +112,9 @@ def plot_kin_models_h(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Ck,Sk,e_Ck,e_Sk,VSY
 	axs(ax1,remove_yticks= True)
 
 
-	ax0.set_ylabel('$\mathrm{ \Delta Dec~(arcsec)}$',fontsize=10,labelpad=1)
-	ax0.set_xlabel('$\mathrm{ \Delta RA~(arcsec)}$',fontsize=10,labelpad=1)
-	ax1.set_xlabel('$\mathrm{ \Delta RA~(arcsec)}$',fontsize=10,labelpad=1)
+	ax0.set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=10,labelpad=1)
+	ax0.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=10,labelpad=1)
+	ax1.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=10,labelpad=1)
 
 
 	txt = AnchoredText('$\mathrm{V}_{intrinsic}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax0.add_artist(txt)
@@ -114,13 +122,15 @@ def plot_kin_models_h(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Ck,Sk,e_Ck,e_Sk,VSY
 
 	ax3.plot(R,c1, color = "#362a1b",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{c_{1}}$")
 	ax3.fill_between(R, c1-e_c1, c1+e_c1, color = "#362a1b", alpha = 0.3, linewidth = 0)
+	ax3.scatter(R,c1,s=7,marker='s',c='#362a1b',edgecolor='k',lw=0.3,zorder=10)
+		
+	ax3.plot(R,Sigma, color = "#db6d52",linestyle='--', alpha = 1, linewidth=0.8, label = "$\sigma_{intr}$")
+	ax3.fill_between(R, Sigma-eSigma, Sigma+eSigma, color = "#db6d52", alpha = 0.3, linewidth = 0)
+	ax3.scatter(R,Sigma,s=7,marker='s',c='#db6d52',edgecolor='k',lw=0.3,zorder=10)
 	
-	ax3.plot(R,Sigma, color = "gold",linestyle='--', alpha = 1, linewidth=0.8, label = "$\sigma_{intr}$")
-	ax3.fill_between(R, Sigma-eSigma, Sigma+eSigma, color = "gold", alpha = 0.3, linewidth = 0)
-
-	ax3.set_ylim(0, max(c1) + 50)
+	ax3.set_ylim(0, 30*(np.max(c1)//30)+40)
 	ax3.set_xlim(0, max(R))
-	axs(ax3, remove_xticks= True)
+	axs(ax3, remove_xticks= True, rotation = 'horizontal')
 
 
 	# plot the 1D velocities with the predefined colors
@@ -133,10 +143,11 @@ def plot_kin_models_h(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Ck,Sk,e_Ck,e_Sk,VSY
 			if i >= 1: 
 				ax4.plot(Rnoncirc,Ck[i], color = color[i],linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{c_{%s}}$"%(i+1))
 				ax4.fill_between(Rnoncirc, Ck[i]-e_Ck[i], Ck[i]+e_Ck[i], color = color[i], alpha = 0.3, linewidth = 0)
-
+				ax4.scatter(Rnoncirc,Ck[i],s=4,marker='s',c=color[i],edgecolor='k',lw=0.3,zorder=10)
+	
 			ax4.plot(Rnoncirc,Sk[i], color = color[i+m_hrm],linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{s_{%s}}$"%(i+1))
 			ax4.fill_between(Rnoncirc, Sk[i]-e_Sk[i], Sk[i]+e_Sk[i], color = color[i+m_hrm], alpha = 0.3, linewidth = 0)
-
+			ax4.scatter(Rnoncirc,Sk[i],s=4,marker='s',c=color[i+m_hrm],edgecolor='k',lw=0.3,zorder=10)
 	else:
 		ax4.clear()
 		#ax4.plot(R,c1*0, color = "#362a1b",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{c_{1}}$")
@@ -154,20 +165,21 @@ def plot_kin_models_h(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Ck,Sk,e_Ck,e_Sk,VSY
 			if i >= 1: 
 				ax4.plot(Rnoncirc,Ck[i], color = colors[k1],linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{c_{%s}}$"%(i+1))
 				ax4.fill_between(Rnoncirc, Ck[i]-e_Ck[i], Ck[i]+e_Ck[i], color = colors[k1], alpha = 0.3, linewidth = 0)
-
+				ax4.scatter(Rnoncirc,Ck[i],s=4,marker='s',c=colors[k1],edgecolor='k',lw=0.3,zorder=10)
+			
 			ax4.plot(Rnoncirc,Sk[i], color = colors[k2],linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{s_{%s}}$"%(i+1))
 			ax4.fill_between(Rnoncirc, Sk[i]-e_Sk[i], Sk[i]+e_Sk[i], color = colors[k2], alpha = 0.3, linewidth = 0)
+			ax4.scatter(Rnoncirc,Sk[i],s=4,marker='s',c=colors[k2],edgecolor='k',lw=0.3,zorder=10)
 
 
-
-	axs(ax4, fontsize_ticklabels = 6)
+	axs(ax4, fontsize_ticklabels = 6,  rotation = 'horizontal')
 	vmin_s1 = 5*abs(np.nanmin(Sk[0]))//5
 	vmax_s1 = 5*abs(np.nanmax(Sk[0]))//5
 	max_vel_s1 = np.nanmax([vmin_s1,vmax_s1])
 
 	ax4.set_ylim(-max_vel_s1 -4 , max_vel_s1 + 4)
 	ax4.set_xlim(0, max(R))
-	ax4.set_xlabel("$\mathrm{r~(arcsec)}$", labelpad = 2, fontsize = 10)
+	ax4.set_xlabel(f"r ({rlabel})", labelpad = 2, fontsize = 10)
 	ax3.set_ylabel("$\mathrm{c_{1} (km/s)}$",fontsize = 10,labelpad=2)
 	ax4.set_ylabel("$\mathrm{v_{non-circ}}$ \n $\mathrm{(km/s)}$",fontsize = 10,labelpad=2)
 

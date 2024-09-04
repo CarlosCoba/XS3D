@@ -13,7 +13,7 @@ from src0.conv import conv2d,gkernel,gkernel1d
 from src0.conv_spec1d import gaussian_filter1d,convolve_sigma
 from src0.conv_fftw import fftconv,data_2N
 from src0.momtools import mask_wave
-
+from src0.utils import parabola
 
 class Cube_creation:
 	def __init__(self,datacube,header,mommaps,config):
@@ -64,8 +64,21 @@ class Cube_creation:
 		self.eflux2d=0
 		
 		self.x_=self.ones2d*self.wave_cover_kms[:,None,None]
-				
-		
+
+
+	def vparabola(self):
+		vpeak=np.zeros((self.ny,self.nx))
+		vmx_indx = np.argmax(self.datacube,axis=0).astype(int)		
+		for i,j in product(np.arange(self.nx),np.arange(self.ny)):
+			k=vmx_indx[j][i]
+			if k!=0 and k<(self.nz-1):
+				y_axis=self.datacube[k-1:k+2,j,i]
+				x_axis=self.wave_cover_kms[k-1:k+2]				
+				vpara,_=parabola(x_axis,y_axis)
+				vpeak[j][i]=vpara
+		return vpeak
+	
+			
 	def gaussian_cube(self,vxy,sigmaxy,f0=1):
 		#x_ = self.ones2d*self.wave_cover_kms[:,None,None] # shape: (nz,ny,nx)
 		vxy_ = vxy*np.ones(self.nz)[:,None,None] # shape: (nz,ny,nx)
@@ -75,10 +88,16 @@ class Cube_creation:
 		cube_mod[~np.isfinite(cube_mod)]=0 
 		return cube_mod
 		
-	def obs_mommaps(self):
+	def obs_mommaps(self, vpeak=False):
 		mom0= trapecium3d(self.datacube,self.cdelt3_kms)
 		Fdv=trapecium3d(self.datacube*self.ones2d*self.wave_cover_kms[:,None,None],self.cdelt3_kms)
-		mom1=np.divide(Fdv,mom0,where=mom0!=0,out=np.zeros_like(mom0))
+
+		# If the spectral sampling is larger than 50km/s, then compute
+		# mom1 using a parabola.
+		if vpeak or self.cdelt3_kms > 50:
+			mom1=self.vparabola()*(mom0!=0)
+		else:
+			mom1=np.divide(Fdv,mom0,where=mom0!=0,out=np.zeros_like(mom0))							
 		
 		dv2= self.datacube*np.square(self.ones3d*self.wave_cover_kms[:,None,None]-mom1*self.ones3d)
 		#mom2=np.sqrt( abs(trapecium3d(dv2,self.cdelt3_kms)/mom0) )

@@ -32,8 +32,11 @@ def pv_array(datacube,hdr,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 
 	wave_kms=Header_info(hdr,config).wave_kms
 	dv=wave_kms
-
 	
+	#if wave_kms[1]-wave_kms[0] > 0: # optical velocities 
+	if wave_kms[1]-wave_kms[0] < 0: # radio velocities 
+		datacube = datacube[::-1]	
+		wave_kms= wave_kms[::-1]	
 	#dv+=vsys
 	vmin,vmax=np.min(dv),np.max(dv)
 	y,x=np.indices((ny,nx))
@@ -92,8 +95,11 @@ def pv_array(datacube,hdr,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 	pv_array_maj[pv_array_maj==0]=np.nan
 	pv_array_min[pv_array_min==0]=np.nan
 	ext_arc0=np.array([rmin*pixel_pvd_arc,rmax*pixel_pvd_arc,vmin,vmax]) 	
-	ext_arc1=np.array([rmin*pixel_pvd_arc,rmax*pixel_pvd_arc,vmin,vmax]) 	
-
+	ext_arc1=np.array([rmin*pixel_pvd_arc,rmax*pixel_pvd_arc,vmin,vmax])
+	# Change scale to arcmin if necessary 	
+	if np.max(abs(ext_arc0)) > 80:
+		ext_arc0=ext_arc0/60
+		ext_arc1=ext_arc1/60
 	
 	m_mjr=msk_slit_maj*np.ones(nz)[:,None,None]	
 	m_mnr=msk_slit_min*np.ones(nz)[:,None,None]		

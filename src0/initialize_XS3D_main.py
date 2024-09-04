@@ -82,7 +82,7 @@ class Run_models:
 
 		#create observed momement maps
 		cube_class=Cube_creation(self.datacube,self.h,[1]*3,config)
-		self.momaps=cube_class.obs_mommaps()
+		self.momaps=cube_class.obs_mommaps(vpeak=False)
 		[self.mom0,self.mom1,self.mom2]=self.momaps
 		
 		# create error mommaps

@@ -50,8 +50,8 @@ def get_continuous_cmap(hex_list, float_list=None):
 # A nice red black and blues
 hex_list = ["#01025a", "#193476", "#376b94", "#5ea1ba", "#a3dbe6","#423f46","#f1b691", "#db6d52", "#aa2c24", "#800d20", "#531132"]
 
-reds = ["#01025a", "#193476", "#376b94", "#5ea1ba", "#a3dbe6"]
-blues = ["#531132", "#800d20", "#aa2c24", "#db6d52", "#f1b691"]
+blues = ["#01025a", "#193476", "#376b94", "#5ea1ba", "#a3dbe6"]
+reds = ["#531132", "#800d20", "#aa2c24", "#db6d52", "#f1b691"]
 black = ["#423f46"]
 
 

@@ -44,6 +44,7 @@ def colorbar(im,axis,orientation="vertical",labelsize=10,colormap="rainbow",tick
 
 	cbar1.ax.tick_params(color = colors)
 	cbar1.ax.tick_params(axis='y', direction='in',rotation=rot_ticks, labelsize=ticksfontsize)
+	cbar1.ax.tick_params(axis='x', labelsize=ticksfontsize)	
 	cax1.tick_params(direction='in', pad = pad, width = 0.5)
 	cax1.tick_params(colors=colors, which='both') 
 

@@ -38,7 +38,7 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
   
 	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
 	#nrows x ncols
-	widths = [1, 1, 0.3,1.5]
+	widths = [1, 1, 0.4,1.5]
 	heights = [1]
 	gs2 = gridspec.GridSpec(1, 4,  width_ratios=widths, height_ratios=heights)
 	gs2.update(left=0.06, right=0.99,top=0.81,bottom=0.14, hspace = 0.03, wspace = 0)
@@ -47,8 +47,17 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	ax1=plt.subplot(gs2[0,1])
 	ax2=plt.subplot(gs2[0,3])
 
-
-
+	# is it the axes in arcsec or arcmin ?
+	rnorm=1
+	if np.max(ext)>80:
+		rnorm=60
+		rlabel='$\'$'
+	else:
+		rlabel='$\'\'$'
+			
+	ext = ext/rnorm
+	R=R/rnorm
+	
 	# intrinsic velocity
 	velmap_intr=zero2nan(velmap_intr)
 	velmap=velmap_intr-VSYS
@@ -79,47 +88,41 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 
 	axs(ax0)
 	axs(ax1,remove_yticks= True)
-	axs(ax2)
+	axs(ax2, rotation='horizontal')
 
 
 
-	ax0.set_ylabel('$\mathrm{ \Delta Dec~(arcsec)}$',fontsize=10,labelpad=1)
-	ax0.set_xlabel('$\mathrm{ \Delta RA~(arcsec)}$',fontsize=10,labelpad=1)
-	ax1.set_xlabel('$\mathrm{ \Delta RA~(arcsec)}$',fontsize=10,labelpad=1)
+	ax0.set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=10,labelpad=1)
+	ax0.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=10,labelpad=1)
+	ax1.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=10,labelpad=1)
 
 
 	txt = AnchoredText('$\mathrm{V}_{intrinsic}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax0.add_artist(txt)
 	txt = AnchoredText('$\sigma_{intrinsic}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax1.add_artist(txt)
 
 
-	ax2.plot(R,Sigma, color = "gold",linestyle='--', alpha = 1, linewidth=0.8, label = "$\sigma_{intrin}$")
-	ax2.fill_between(R, Sigma-eSigma, Sigma+eSigma, color = "gold", alpha = 0.3, linewidth = 0)
+	ax2.plot(R,Sigma, color = "#db6d52",linestyle='--', alpha = 1, linewidth=0.8, label = "$\sigma_{intrin}$")
+	ax2.fill_between(R, Sigma-eSigma, Sigma+eSigma, color = "#db6d52", alpha = 0.3, linewidth = 0)
+	ax2.scatter(R,Sigma,s=7,marker='s',c='#db6d52',edgecolor='k',lw=0.3,zorder=10)
 
-
-	if vmode == "circular":
-
-		ax2.plot(R,Vrot, color = "#362a1b",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{t}}$")
-		ax2.fill_between(R, Vrot-eVrot, Vrot+eVrot, color = "#362a1b", alpha = 0.3, linewidth = 0)
-
+	ax2.plot(R,Vrot, color = "#362a1b",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{t}}$")
+	ax2.fill_between(R, Vrot-eVrot, Vrot+eVrot, color = "#362a1b", alpha = 0.3, linewidth = 0)
+	ax2.scatter(R,Vrot,s=7,marker='s',c='#362a1b',edgecolor='k',lw=0.3,zorder=10)
+	
 	if vmode == "radial":
-
-		ax2.plot(R,Vrot, color = "#362a1b",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{t}}$")
-		ax2.fill_between(R, Vrot-eVrot, Vrot+eVrot, color = "#362a1b", alpha = 0.3, linewidth = 0)
-
 		ax2.plot(R,Vrad, color = "#c73412",linestyle='-', alpha = 0.6, linewidth=0.8, label = "$\mathrm{V_{r}}$")
 		ax2.fill_between(R, Vrad-eVrad, Vrad+eVrad, color = "#c73412", alpha = 0.3, linewidth = 0)
-
+		ax2.scatter(R,Vrad,s=7,marker='s',c='#c73412',edgecolor='k',lw=0.3,zorder=10)
+	
 	if vmode == "bisymmetric":
-
-		ax2.plot(R,Vrot, color = "#362a1b",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{t}}$")
-		ax2.fill_between(R, Vrot-eVrot, Vrot+eVrot, color = "#362a1b", alpha = 0.3, linewidth = 0)
 
 		ax2.plot(R,Vrad, color = "#c73412",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{2,r}}$")
 		ax2.fill_between(R, Vrad-eVrad, Vrad+eVrad, color = "#c73412", alpha = 0.3, linewidth = 0)
-
+		ax2.scatter(R,Vrad,s=7,marker='s',c='#c73412',edgecolor='k',lw=0.3,zorder=10)
+		
 		ax2.plot(R,Vtan, color = "#2fa7ce",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{2,t}}$")
 		ax2.fill_between(R, Vtan-eVtan, Vtan+eVtan, color = "#2fa7ce", alpha = 0.3, linewidth = 0)
-
+		ax2.scatter(R,Vtan,s=7,marker='s',c='#2fa7ce',edgecolor='k',lw=0.3,zorder=10)
 
 
 
@@ -128,18 +131,18 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 
 	vels0 = np.asarray([0*Vrot, Vrot, Vrad, Vtan])
 	vels=vels0.flatten()
-	msk=(np.isfinite(vels)) & (vels!=0)
+	msk=(np.isfinite(vels))
 	vels=vels[msk]
 	max_vel,min_vel = int(np.nanmax(vels)),int(np.nanmin(vels))
 	min_vel = abs(min_vel)
 
-	ax2.set_ylim(-50*(min_vel//50)-50,50*(max_vel//50)+80)
+	ax2.set_ylim(-30*(min_vel//30)-30,30*(max_vel//30)+40)
 	ax2.plot([0,np.nanmax(R)],[0,0],color = "k",linestyle='-', alpha = 0.6,linewidth = 0.3)
-	ax2.set_xlabel('$\mathrm{r~(arcsec)}$',fontsize=10,labelpad = 2)
+	ax2.set_xlabel(f'r ({rlabel})',fontsize=10,labelpad = 2)
 	ax2.set_ylabel('$\mathrm{V_{rot}~(km~s^{-1})}$',fontsize=10,labelpad = 2)
 
-	cb(im0,ax0,orientation = "horizontal", colormap = cmap, bbox= (0.10,1.1,0.8,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{(km~s^{-1})}$",labelsize=10, ticksfontsize = 8)
-	cb(im1,ax1,orientation = "horizontal", colormap = cmap, bbox= (0.10,1.1,0.8,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{(km~s^{-1})}$",labelsize=10, ticksfontsize = 8)
+	cb(im0,ax0,orientation = "horizontal", colormap = cmap, bbox= (0.10,1.1,0.8,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{(km~s^{-1})}$",labelsize=10, ticksfontsize = 9)
+	cb(im1,ax1,orientation = "horizontal", colormap = cmap, bbox= (0.10,1.1,0.8,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{(km~s^{-1})}$",labelsize=10, ticksfontsize = 9)
 	ax2.grid(visible = True, which = "major", axis = "both", color='w', linestyle='-', linewidth=0.5, zorder = 1, alpha = 0.5)
 
 	plt.savefig("%sfigures/kin_%s_disp_%s.png"%(out,vmode,galaxy))
