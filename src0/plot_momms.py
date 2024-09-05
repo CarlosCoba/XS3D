@@ -210,7 +210,7 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 		ax6.plot(x,y,'g-',lw=0.5)
 	if bmaj_arc is not None and bmin_arc is not None:
 		x0,y0=ext[1]*(5/6.),ext[2]*(5/6)	
-		x,y=drawellipse(x0,y0,bmaj_arc,bpa,bminor=bmin_arc)	
+		x,y=drawellipse(x0,y0,bmaj,bpa,bminor=bmin)	
 		ax0.plot(x,y,'g-',lw=0.5)
 		ax3.plot(x,y,'g-',lw=0.5)
 		ax6.plot(x,y,'g-',lw=0.5)						
