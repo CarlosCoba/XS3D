@@ -11,6 +11,7 @@ from src0.momtools import mask_wave
 from src0.conv_fftw import fftconv,data_2N
 from src0.start_messenge import Print
 from src0.tools_fits import get_fits_data
+from src0.utils import vparabola3D
 
 def rmse(data_array):
 	data=data_array[np.isfinite(data_array) & (data_array!=0)] 
@@ -22,9 +23,10 @@ def rmse(data_array):
 
 
 
-def mask_cube(data,config,f=5,clip=None,msk_user=None):
+def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	Print().status("Estimating RMS")
 	config_general = config['general']
+	config_others = config['others']	
 	if clip is None:
 		clip=config_general.getfloat('clip',6)
 
@@ -48,12 +50,12 @@ def mask_cube(data,config,f=5,clip=None,msk_user=None):
 	#print('p5/p95',p5/p95)
 
 	# mask spectra that have low signal (on average)
-	msk = (avg2d<p5) & (avg2d!=0)
+	msk_lowSN = (avg2d<p5) & (avg2d!=0)
 	
 	if msk_user!=None:
-		msk=get_fits_data(msk_user).astype(bool)
+		msk_lowSN=get_fits_data(msk_user).astype(bool)
 		
-	c=cube*msk*np.ones(nz)[:,None,None]
+	c=cube*msk_lowSN*np.ones(nz)[:,None,None]
 	msk=c!=0
 	# calculate the rms on the original cube
 	rms_ori=rmse(c[msk])
@@ -76,7 +78,7 @@ def mask_cube(data,config,f=5,clip=None,msk_user=None):
 	rms_sm=rmse(c[msk])
 	clip_level=rms_sm*clip
 
-	Print().out("Cube RMS",rms_sm)				
+	Print().out("Cube RMS",round(rms_sm,10))				
 	# if clip is too high, try to reduce it.
 	#if clip_level/p95>0.2:
 	#	logger.warning(f'Clip level of {clip} seems to be high. I will try to reduce it.')
@@ -92,8 +94,16 @@ def mask_cube(data,config,f=5,clip=None,msk_user=None):
 
 
 	#calculate rms of the clean cube
-	rms_clean=rmse(cube[msk])	
-	return msk_cube2,rms_clean
+	rms_clean=rmse(cube[msk])
+	
+	# calculate the peak velocity using the smoothed cube
+	vpeak=config_others.getboolean('vpeak',False)
+	if vpeak:
+		wave_cover_kms=hdr.wave_kms
+		vpeak2D=vparabola3D(cube_smooth*msk_cube2,wave_cover_kms)
+	else:
+		vpeak2D=None		
+	return msk_cube2,rms_clean,vpeak2D
 
 
 	

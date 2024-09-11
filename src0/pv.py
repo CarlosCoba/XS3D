@@ -23,7 +23,8 @@ def slit(xy,pa,eps,x0,y0,width=5,pixel=1):
 def pv_array(datacube,hdr,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr= momms_mdls
 	[nz,ny,nx]=datacube.shape
-
+	extimg=np.dot([-nx/2.,nx/2.,-ny/2.,ny/2.],pixel)
+	
 	config_general = config['general']
 	eline=config_general.getfloat('eline',None)
 	psf_fwhm=config_general.getfloat('psf_fwhm',None)
@@ -33,9 +34,9 @@ def pv_array(datacube,hdr,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 	wave_kms=Header_info(hdr,config).wave_kms
 	dv=wave_kms
 	
-	#if wave_kms[1]-wave_kms[0] > 0: # optical velocities 
 	if wave_kms[1]-wave_kms[0] < 0: # radio velocities 
 		datacube = datacube[::-1]	
+		cube_mdl = cube_mdl[::-1]			
 		wave_kms= wave_kms[::-1]	
 	#dv+=vsys
 	vmin,vmax=np.min(dv),np.max(dv)
@@ -92,12 +93,10 @@ def pv_array(datacube,hdr,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 	pv_array_maj_mdl=np.zeros((len(dv),dr))
 	pv_array_min_mdl=np.zeros((len(dv),dr))
 
-	pv_array_maj[pv_array_maj==0]=np.nan
-	pv_array_min[pv_array_min==0]=np.nan
 	ext_arc0=np.array([rmin*pixel_pvd_arc,rmax*pixel_pvd_arc,vmin,vmax]) 	
 	ext_arc1=np.array([rmin*pixel_pvd_arc,rmax*pixel_pvd_arc,vmin,vmax])
-	# Change spatial scale to arcmin if necessary 	
-	if np.max(abs(ext_arc0[:2])) > 80:
+	# Change scale to arcmin if necessary 	
+	if np.max(abs(extimg)) > 80:
 		ext_arc0[:2]=ext_arc0[:2]/60
 		ext_arc1[:2]=ext_arc1[:2]/60
 	
@@ -105,25 +104,25 @@ def pv_array(datacube,hdr,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 	m_mnr=msk_slit_min*np.ones(nz)[:,None,None]		
 	for ind,rval in enumerate(np.arange(rmin,rmax,1)):
 		# loop for major axis	
-		msk_R=r_norm_int==rval	
+		msk_R=r_norm_int==rval
+		# Numer of spectra to coadd
+		Npix=np.sum(msk_R*msk_slit_maj)
+		if Npix==0: Npix=1
 		masked_cube_maj_mdl=cube_mdl*(msk_R*m_mjr)
 		masked_cube_maj=datacube*(msk_R*m_mjr)
 		# the array[0][0] position contains the most blueshifted point, e.g., vmin-vsys.			
-		pv_array_maj_mdl[:,ind]=np.nanmean(np.nansum(masked_cube_maj_mdl,axis=2),axis=1)#[::-1]						
-		pv_array_maj[:,ind]=np.nanmean(np.nansum(masked_cube_maj,axis=2),axis=1)#[::-1]
+		pv_array_maj_mdl[:,ind]=np.nansum(np.nansum(masked_cube_maj_mdl,axis=2),axis=1)/Npix						
+		pv_array_maj[:,ind]=np.nansum(np.nansum(masked_cube_maj,axis=2),axis=1)/Npix
 
-		# loop for minor axis	
+		# loop for minor axis
+		Npix=np.sum(msk_R*msk_slit_min)
+		if Npix==0: Npix=1					
 		msk_R=r_norm_int==rval			
 		masked_cube_min_mdl=cube_mdl*(msk_R*m_mnr)
 		masked_cube_min=datacube*(msk_R*m_mnr)
 		# the array[0][0] position contains the most blueshifted point, e.g., vmin-vsys.
-		pv_array_min_mdl[:,ind]=np.nanmean(np.nansum(masked_cube_min_mdl,axis=2),axis=1)#[::-1]
-		pv_array_min[:,ind]=np.nanmean(np.nansum(masked_cube_min,axis=2),axis=1)#[::-1]
-	
-	pv_array_maj[pv_array_maj==0]=np.nan
-	pv_array_maj_mdl[pv_array_maj_mdl==0]=np.nan	
-	pv_array_min[pv_array_min==0]=np.nan
-	pv_array_min_mdl[pv_array_min_mdl==0]=np.nan
+		pv_array_min_mdl[:,ind]=np.nansum(np.nansum(masked_cube_min_mdl,axis=2),axis=1)/Npix
+		pv_array_min[:,ind]=np.nansum(np.nansum(masked_cube_min,axis=2),axis=1)/Npix
 	
 	return [pv_array_maj,pv_array_min,pv_array_maj_mdl,pv_array_min_mdl], [msk_slit_maj,msk_slit_min], [ext_arc0,ext_arc1]
 

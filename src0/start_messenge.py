@@ -9,33 +9,61 @@ class Print:
 			
 	def guess_vals(self,galaxy,guess,vmode):
 		PA,INC,X0,Y0,VSYS,PHI_B = 	guess[0],guess[1],guess[2],guess[3], guess[4], guess[5] 
-
-		print(self.deli)		
-		print("Guess values for %s"%galaxy)
-		print("PA:\t\t %s"%PA)
-		print("INC:\t\t %s"%INC)
-		print("X0,Y0:\t\t %s,%s"%(round(X0,2),round(Y0,2)))
-		print("VSYS:\t\t %s"%round(VSYS,2))
+		print(self.deli)
+		print ('{:<20}'.format(f'**Guess values for {galaxy}**'))		
+		print ('{:<20} {:<15}'.format('P.A.:', f'{PA}'))
+		print ('{:<20} {:<15}'.format('INC:', f'{INC}'))
+		print ('{:<20} {:<15}'.format('X0,Y0:', '%s, %s'%(round(X0,2),round(Y0,2))))				
+		print ('{:<20} {:<15}'.format('VSYS:', '%s km/s'%round(VSYS,2)))
 		if vmode == "bisymmetric" :
-			print("PHI_BAR:\t %s"%PHI_B)			
-		print("MODEL:\t\t %s"%vmode)
+			print ('{:<20} {:<15}'.format('PHI_BAR:', f'{PHI_B}'))
+		print ('{:<20} {:<15}'.format('KIN MODEL:', f'{vmode}'))
 		print(self.deli)		
 
 	def __call__(self):
 		print(self.deli)		
-		print("---------------XS3D-----------------")
+		print("-------------- XS3D ----------------")
 		
 
 	def out(self,hdr,value,tab="\t"):
 		print(self.deli)		
-		print(f'{hdr}:{tab}{value}')
+		print ('{:<20} {:<15}'.format(f'{hdr}:', f'{value}'))
+				
 		
 	def cubehdr(self,hdr):
-		print(self.deli)		
-		print(f"Cube dims:\t{hdr.nz}x{hdr.ny}x{hdr.ny} pix")
-		print(f"Rest frame eline: \t {hdr.eline}")	
-		print(f"Channel width: \t {hdr.cdelt3_kms} km/s")		
-
+		print(self.deli)
+		cdelt3=round(hdr.cdelt3_kms,3)
+		print ('{:<20} {:<15}'.format('Cube dims:', f'{hdr.nz}x{hdr.ny}x{hdr.nx} pix'))
+		print ('{:<20} {:<15}'.format('Rest frame eline:', f'{hdr.eline}'))
+		print ('{:<20} {:<15}'.format('Channel width:', f'{cdelt3} km/s'))
+		
+	def configprint(self,config):
+		general=config['general']
+		others=config['others']		
+		psf_fwhm=general.getfloat('psf_fwhm',0)
+		bmaj=general.getfloat('bmaj',0)	
+		bmin=general.getfloat('bmin',0)	
+		bpa=general.getfloat('bpa',0)			
+		fwhm_inst=general.getfloat('fwhm_inst',0)
+		vpeak=others.getboolean('vpeak',False)
+		print(self.deli)						
+		if psf_fwhm != 0:
+				print ('{:<20} {:<15}'.format('PSF FWHM:', f'{psf_fwhm} arcsec'))
+		if bmaj !=0 and bmin !=0:				
+				print ('{:<20} {:<15}'.format('BMAJ:', f'{bmaj} arcsec'))
+				print ('{:<20} {:<15}'.format('BMIN:', f'{bmin} arcsec'))				
+		if bpa!=0:				
+				print ('{:<20} {:<15}'.format('BPA:', f'{bpa} deg'))										
+		if fwhm_inst != 0:
+				fwhm_inst=round(fwhm_inst,3)
+				print ('{:<20} {:<15}'.format('Spec. broadening:', f'{fwhm_inst}'))
+				
+		if vpeak:
+			print(self.deli)						
+			print ('{:<20} {:<15}'.format('Vpeak:', f'{vpeak}'))
+												
+		print(self.deli)				
+					
 	def status(self,msn,line=False):
 		print(self.deli)			
 		m=len(msn)

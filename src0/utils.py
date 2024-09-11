@@ -1,5 +1,7 @@
 import os
 import numpy as np
+from itertools import product
+import matplotlib.pylab as plt
 	
 def set_threads(ncores=None):
 	if ncores is None:
@@ -28,3 +30,15 @@ def parabola(x,y):
 	#print(A,B,C)	
 	return xmax, ymax
 
+def vparabola3D(datacube,wave_cover_kms):
+	[nz,ny,nx]=datacube.shape
+	vpeak2D=np.zeros((ny,nx))
+	vmx_indx = np.argmax(datacube,axis=0).astype(int)		
+	for i,j in product(np.arange(nx),np.arange(ny)):
+		k=vmx_indx[j][i]
+		if k!=0 and k<(nz-1):
+			y_axis=datacube[k-1:k+2,j,i]
+			x_axis=wave_cover_kms[k-1:k+2]				
+			vpara,_=parabola(x_axis,y_axis)
+			vpeak2D[j][i]=vpara
+	return vpeak2D		

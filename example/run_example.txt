@@ -3,17 +3,22 @@ Example of running XookSuut3D on a simulated datacube with an oval distortion in
 #Goal:
 Recover the different kinemaitc components from each kinematic model.
 
-#Data: `califa.conv.fits`
-This example simulates the Halpha emission-line (rest frame 6562.68 AA).
+#################################
+# Wavelength type spectral axis.#
+#################################
+
+#Data: `example_lambda.conv.fits`
+
+This example simulates the Halpha emission-line (rest frame 6562.68 AA) of galaxy at z = 0.0018.
 The pixel size of the simulated cube is 0.4 arcsec*pixel**-1.
+The channel width is 2AA ~ 57 km/s 
 The data has been spatially convolved by 2.5arcsec@FWHM and spectrally convolved by 3AA@FWHM.
 
 Halpha intensity and velocity dispersion follows a Sersic profile (n=1)
 Rotational curve reaches Vmax~280 km/s.
 Vrad = 30 km/s --> radial noncircular flow up to 10arcsec
 Vtan = 50 km/s --> tangential noncircular flow up to 10arcsec
-Bar angle on the galaxy PHI_BAR = 30
-vsys = 4900 km/s
+Bar angle on the galaxy plane PHI_BAR = 30
 
 # USE of XS3D. Type XS3D in a terminal. You will get the following:
  
@@ -25,44 +30,32 @@ In this example we will estimate the rotation curves in raddi equali spaced.
 The starting ring (`Rstart`) will be placed at 1 arcsec, and subsequent rings will be placed each 2 arcsec (`ring_space`).
 The maximum radius (`Rfinal`)will be placed up to 40 arcsec (on the disk plane).
 - Velocities will be computed in each ring only if rings contain at least 1/3 of the total pixels contained in a ring, (`cover` = 1/3).
-- Noncircular motions describing the bar distortion will be computed up to 11 arcsec (`R_bar_max`=11).
+- Noncircular motions describing the bar distortion will be computed up to 10 arcsec (`R_bar_max`=10).
 - It will be used the Levenberg–Marquardt (LM) for the least-square analysis
 
-- PA[deg] = 15, INC[deg] = 35, X0[pixels] = 50.1, Y0[pixels] = 50.1 are the initial guess values for the disk geometry.
+- PA[deg] = 15, INC[deg] = 35, X0[pixels] = 75.1, Y0[pixels] = 75.1 are the initial guess values for the disk geometry.
 For this example all parameters are not allowed to vary during the fitting (i.e, VARY_PARAM = 0)
 - The starting systemic velocity VSYS[km/s] is estimated around the kinematic centre (X0,Y0)
 
 
-
 # For running a circular model (`kin_model`=circular):
-
 In a terminal type the following:
-
-XS3D califa califa.conv.fits - 15 35 50.1 50.1  - 0 0 0 0 1 2 - 1,40 1/3 circular - xs_califa.ini 
-
-
+XS3D example_lambda example_lambda.conv.fits - 15 35 75.1 75.1  - 0 0 0 0 1 2 - 1,40 1/3 circular - xs_conf_lambda.ini 
 
 # For running a radial model (`kin_model`=radial):
-
 In a terminal type the following
-XS3D califa califa.conv.fits - 15 35 50.1 50.1  - 0 0 0 0 1 2 - 1,40 1/3 radial 11 xs_califa.ini 
-
-
-
+XS3D example_lambda example_lambda.conv.fits - 15 35 75.1 75.1  - 0 0 0 0 1 2 - 1,40 1/3 radial 10 xs_conf_lambda.ini 
 
 # For running a bisymmetric model (`kin_model`=bisymmetric):
-
 In a terminal type the following
-XS3D califa califa.conv.fits - 15 35 50.1 50.1  - 0 0 0 0 1 2 - 1,40 1/3 bisymmetric 11 xs_califa.ini 
-
+XS3D example_lambda example_lambda.conv.fits - 15 35 75.1 75.1  - 0 0 0 0 1 2 - 1,40 1/3 bisymmetric 10 xs_conf_lambda.ini 
 
 
 # For running a harmonic decomposition model up to m=2 (`kin_model`=hrm_2):
+Note the harmonic order is complained with an underscore `hrm_n`, where n is the harmonic order.
 
 In a terminal type the following
-XS3D califa califa.conv.fits - 15 35 50.1 50.1  - 0 0 0 0 1 2 - 1,40 1/3 hrm_2 11 xs_califa.ini 
-
-
+XS3D example_lambda example_lambda.conv.fits - 15 35 75.1 75.1  - 0 0 0 0 1 2 - 1,40 1/3 hrm_2 10 xs_conf_lambda.ini 
 
 
 ############################
@@ -72,11 +65,36 @@ XS3D califa califa.conv.fits - 15 35 50.1 50.1  - 0 0 0 0 1 2 - 1,40 1/3 hrm_2 1
 The XS3D configuration file is designed to pass informations about the PSF and LSF, as well as to
 set-up the errors via bootstrap.
 This information is needed to convolve the model at the obserational spatial and spectral resolutions.
-This file is passed in command line, for this example it takes the name as `xs_califa.ini`, which has been
+This file is passed in command line, for this example it takes the name as `xs_conf_lambda.ini`, which has been
 configured in advance.
 
 
-***By default XS3D ALWAYS uses the config file stored in ./src0/xs_config.ini, where all variables are deactivated by default.***
+***By default XS3D ALWAYS use the config file stored in ./src0/xs_config.ini, where all variables are deactivated by default.***
  
 It is recomended that you copy the xs_config.ini file in your working directory and edit it accordingly.
+
+
+
+
+
+
+
+#################################
+# Frequency type spectral axis.#
+#################################
+
+
+#Data: `example_freq.conv.fits`
+
+This example simulates the HI emission (rest frame 1420405752 Hz) of galaxy at z = 0.0018.
+The pixel size of the simulated cube is 0.4 arcsec*pixel**-1.
+The channel width is 24414.0625 Hz ~ 5 km/s 
+The data has been spatially convolved by 2.5arcsec@FWHM and spectrally convolved by 10 km/s.
+
+The intrinsic dispersion has been set to a constant value of 20 km/s.
+The rotation curve grows slowly from 0 km/s @ 0 arsec to 150 km/s @ 40arcsec
+
+- PA[deg] = 330, INC[deg] = 50, X0[pixels] = 75.1, Y0[pixels] = 75.1 are the initial guess values for the disk geometry.
+
+XS3D example_freq example_freq.conv.fits - 330 50 75.1 75.1  - 0 0 0 0 1 2 - 1,40 1/3 circular - xs_conf_freq.ini 
 

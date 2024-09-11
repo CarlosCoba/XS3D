@@ -16,6 +16,8 @@ from src0.colormaps_CLC import vel_map
 from src0.barscale import bscale
 from src0.constants import __c__
 from src0.ellipse import drawellipse
+from src0.conv import conv2d,gkernel,gkernel1d
+from src0.conv_fftw import fftconv,data_2N,fftconv_numpy
 cmap=vel_map()
 
 
@@ -44,6 +46,7 @@ fig, ax = plt.subplots(ncols=2)
 cmap = plt.get_cmap('magma_r')
 new_cmap = truncate_colormap(cmap, 0, 0.6)
 cmap = vel_map()
+cmap_mom0 = vel_map('mom0')
 
 def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacube,pixel,hdr_info,config,out):
 	pvds,slits,ext=out_pvd
@@ -58,10 +61,12 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	mom0,mom1,mom2=momaps
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr= momms_mdls
 	pvd_maj,pvd_min,pvd_maj_mdl,pvd_min_mdl=pvds[0],pvds[1],pvds[2],pvds[3]
-	pvd_maj,pvd_min,pvd_maj_mdl,pvd_min_mdl=pvd_maj/rms,pvd_min/rms,pvd_maj_mdl/rms,pvd_min_mdl/rms
+	#pvd_maj,pvd_min,pvd_maj_mdl,pvd_min_mdl=pvd_maj/rms,pvd_min/rms,pvd_maj_mdl/rms,pvd_min_mdl/rms
 	msk=np.isfinite(mom0*mom0_mdl/mom0)	
 	pa_maj = pa % 360
 	pa_min = (pa+90) % 360
+	pa_maj = int(round(pa_maj))
+	pa_min = int(round(pa_min))
 	[ny,nx]=mom0.shape
 	extimg=np.dot([-nx/2.,nx/2.,-ny/2.,ny/2.],pixel)
 
@@ -102,22 +107,38 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	heights = [1,1,0.1,1,1]
 	gs2 = gridspec.GridSpec(5, 5, width_ratios=widths, height_ratios=heights)
 	gs2.update(left=0.1, right=0.97,top=0.98,bottom=0.1, hspace = 0.0, wspace = 0.0)
-	levels=2**np.arange(0,6,1)
+	levels=2**np.arange(1,7,1,dtype=float)
 
 
-
-	kernel = Gaussian2DKernel(x_stddev=1)
-	pvd_maj = convolve(pvd_maj, kernel)
-	pvd_min = convolve(pvd_min, kernel)
-
+	#"""
+	pixelconv=1
+	bmajconv=bminconv=1
+	psf2d=gkernel(pvd_maj_mdl.shape,fwhm=None,bmaj=bmajconv,bmin=bminconv,pixel_scale=pixelconv)
+	padded_pvd_maj, cube_slices = data_2N(pvd_maj_mdl, axes=[0, 1])	
+	padded_pvd_min, _ = data_2N(pvd_min_mdl, axes=[0, 1])		
+	padded_psf, _ = data_2N(psf2d, axes=[0, 1])
 	
-	pvd_maj_mdl = convolve(pvd_maj_mdl, kernel)
-	contmaj = np.ma.masked_array(pvd_maj_mdl.astype(int),mask= np.isnan(pvd_maj_mdl) )
-	pvd_min_mdl = convolve(pvd_min_mdl, kernel)
-	contmin = np.ma.masked_array(pvd_min_mdl.astype(int),mask= ~np.isfinite(pvd_min_mdl) )
+	dft=fftconv_numpy(padded_pvd_maj,padded_psf,threads=2,axes = [0,1])
+	pvd_maj_mdl=dft.conv_DFT(cube_slices)
+	dft=fftconv_numpy(padded_pvd_min,padded_psf,threads=2,axes = [0,1])
+	pvd_min_mdl=dft.conv_DFT(cube_slices)
 
-
-
+	padded_pvd_maj, cube_slices = data_2N(pvd_maj, axes=[0, 1])	
+	padded_pvd_min, _ = data_2N(pvd_min, axes=[0, 1])	
+	dft=fftconv_numpy(padded_pvd_maj,padded_psf,threads=2,axes = [0,1])
+	pvd_maj=dft.conv_DFT(cube_slices)
+	dft=fftconv_numpy(padded_pvd_min,padded_psf,threads=2,axes = [0,1])
+	pvd_min=dft.conv_DFT(cube_slices)
+		
+	
+	# normalize by the rms
+	pvd_min_mdl/=rms
+	pvd_maj_mdl/=rms
+	pvd_min/=rms
+	pvd_maj/=rms	
+	
+	#"""
+					
 
 	# bar scale
 	bar_scale_arc,bar_scale_u,unit=bscale(vsys,nx,pixel)
@@ -128,11 +149,11 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	broadband[broadband==0]=np.nan
 	vmin,vmax=vmin_vmax(broadband)
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	
-	im2=ax2.imshow(broadband,norm=norm,cmap=new_cmap,aspect='auto',origin='lower',extent=extimg)
+	im2=ax2.imshow(broadband,norm=norm,cmap=cmap_mom0,aspect='auto',origin='lower',extent=extimg)
 	ax2.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 1,zorder=10,extent=extimg)
 	ax2.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 1,zorder=10,extent=extimg)		
 	axs(ax2,rotation='horizontal',remove_xyticks=True)		
-	clb=cb(im2, ax2, labelsize=10, colormap = new_cmap, bbox=(-0.1, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vmin, vmax], label = "flux", label_pad = -26, colors  = "k",orientation='vertical')
+	clb=cb(im2, ax2, labelsize=10, colormap = cmap_mom0, bbox=(-0.1, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vmin, vmax], label = "flux", label_pad = -26, colors  = "k",orientation='vertical')
 	clb.text(-1,-0.15,round(vmin,1),transform=clb.transAxes)
 	clb.text(-1,1.03,round(vmax,1),transform=clb.transAxes)
 
@@ -159,13 +180,14 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 		
 
 	# PVD major
-	pa_maj = int(pa_maj)
-	vmin,vmax=vmin_vmax(pvd_maj)
+	vmin,vmax=vmin_vmax(pvd_maj,pmax=99.5)
+	if vmin<=0: vmin = 1
+	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	
 	ax0=plt.subplot(gs2[0:-3,3:])
 	axs(ax0,rotation='horizontal',remove_xticks=True)
 	txt = AnchoredText('$\mathrm{PV_{major}}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0.5);ax0.add_artist(txt)	
 	txt = AnchoredText(f'PA={pa_maj}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0);ax0.add_artist(txt)	
-	ax0.imshow(pvd_maj,cmap=new_cmap,origin = "lower",extent=ext0,aspect='auto',vmin=vmin,vmax=vmax)
+	ax0.imshow(pvd_maj,norm=norm,cmap=cmap_mom0,origin = "lower",extent=ext0,aspect='auto')#,vmin=vmin,vmax=vmax)
 	#levels=np.linspace(np.nanmin(pvd_maj_mdl),np.nanmax(pvd_maj_mdl),10)
 	cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors='k', linestyles='solid',zorder=10,extent=ext0,linewidths=1,alpha=1)
 	
@@ -182,23 +204,23 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 		
 	#ax0.set_xlabel('$\mathrm{r (arc)}$',fontsize=12,labelpad=2)
 	ax0.set_ylabel('$V\mathrm{_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
-		
+	Nmultiple=50*( (abs(ext1[2])//2) // 50 )
+	if Nmultiple>0: ax0.yaxis.set_major_locator(MultipleLocator(Nmultiple))		
 
 	# PVD minor
-	pa_min = int(pa_min)
 	ax1=plt.subplot(gs2[3:,3:])
 	axs(ax1,rotation='horizontal')
 	txt = AnchoredText('$\mathrm{PV_{minor}}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0.5);ax1.add_artist(txt)	
 	txt = AnchoredText(f'PA={pa_min}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0);ax1.add_artist(txt)	
-	ax1.imshow(pvd_min,cmap=new_cmap,origin='lower',extent=ext1,aspect='auto',vmin=vmin,vmax=vmax)
+	ax1.imshow(pvd_min,norm=norm,cmap=cmap_mom0,origin='lower',extent=ext1,aspect='auto')#,vmin=vmin,vmax=vmax)
 	#levels=np.linspace(np.nanmin(pvd_min_mdl),np.nanmax(pvd_min_mdl),10)
 	ax1.contour(pvd_min_mdl,levels=levels,colors='k', linestyles='solid',zorder=10,extent=ext1,linewidths=1,alpha=1)
 	ax1.plot((ext1[0],ext1[1]),(0,0),"k-",lw=0.5)
 	ax1.plot((0,0),(ext1[2],ext1[3]),"k-",lw=0.5)
 	ax1.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)
 	ax1.set_ylabel('$V\mathrm{_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
-	ax1.legend(lines,labels,loc='upper right',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False)		
-	
+	ax1.legend(lines,labels,loc='upper right',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10)		
+	if Nmultiple>0: ax1.yaxis.set_major_locator(MultipleLocator(Nmultiple))
 	# plot PSF ellipse ?
 	config_general = config['general']	
 	eline=config_general.getfloat('eline')

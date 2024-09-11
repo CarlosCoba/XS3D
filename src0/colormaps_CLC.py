@@ -57,7 +57,8 @@ black = ["#423f46"]
 
 # for intensity maps
 mom0 = black+blues[::-1]+reds[::-1]
-
+# for intensity maps
+mom0=['#e3e2d1','#a3a08d','#6e655c','#3c3130','#3d4c0e','#5a7321','#8abb49','#dbf2c0','#f7f3c6','#f4be3d','#df6d07','#720c09','#310a34','#616de0','#acbddf','#fafafa']
 # for velocity maps
 mom1=hex_list
 

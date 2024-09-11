@@ -91,9 +91,8 @@ class Cube_creation:
 	def obs_mommaps(self, vpeak=False):
 		mom0= trapecium3d(self.datacube,self.cdelt3_kms)
 		Fdv=trapecium3d(self.datacube*self.ones2d*self.wave_cover_kms[:,None,None],self.cdelt3_kms)
-
-		# If the spectral sampling is larger than 50km/s, then compute
-		# mom1 using a parabola.
+		# If the spectral resolution is low ~50 km/s
+		# then compute the mom1 map with paraboloid
 		if vpeak or self.cdelt3_kms > 50:
 			mom1=self.vparabola()*(mom0!=0)
 		else:
@@ -184,11 +183,14 @@ class Cube_creation:
 		if 	self.fit_psf and self.fwhm_inst_A is None or self.vary_disp==False:
 			# spatial convolution py the PSF in each channel
 			psf3d=self.psf2d*np.ones(self.nz)[:,None,None]
-			
-			padded_cube, cube_slices = data_2N(cube_mod, axes=[1,2])
-			padded_psf, psf_slices = data_2N(psf3d, axes=[1,2])
 
-			#start_time = time.time()
+			if padded_cube is not None:
+				padded_cube[cube_slices]=cube_mod
+				padded_psf[cube_slices]=psf3d
+			else:							
+				padded_cube, cube_slices = data_2N(cube_mod, axes=[1,2])
+				padded_psf, psf_slices = data_2N(psf3d, axes=[1,2])
+
 			dft=fftconv(padded_cube,padded_psf,self.nthreads,axes=[1,2])
 			cube_mod_conv=dft.conv_DFT(cube_slices)
 
@@ -222,7 +224,7 @@ class Cube_creation:
 		if pass_cube:
 			return mom0,mom1_kms,mom2_kms,mom2,cube_mod_psf_norm
 		else:	
-			return mom0,mom1_kms,mom2_kms,mom2,0		
+			return mom0,mom1_kms,mom2_kms,mom2,np.nanmax(cube_mod_psf_norm,axis=0)		
 			
 	
 class Zeropadding:

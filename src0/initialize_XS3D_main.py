@@ -54,36 +54,43 @@ class Run_models:
 		self.outdir = direc_out(config)
 		self.vmode = vmode
 		self.galaxy = galaxy
-		#deconv_map=lucydec(galaxy,vel_map,config,pixel_scale)
+
 		self.datacube, self.h=fits.getdata(datacube,header=True)
+		if 'CRPIX3' not in self.h: self.h['CRPIX3']=1
 		# Read header information
 		self.hdr_info=Header_info(self.h,config)
 		self.P.cubehdr(self.hdr_info)				
+		# Print 
+		self.P.out('V Doppler',self.hdr_info.vdoppler)	
+		self.P.configprint(config)	
 		# remove NaN values
 		self.datacube[~np.isfinite(self.datacube)]=0
 		
 		#if cut wavelenghts apply here
-		msk_w,minw=mask_wave(self.h,config)
-		self.datacube=self.datacube[:,None][msk_w[:,None]]
-		self.h['CRVAL3']=minw
-		if 'CRPIX3' not in self.h: self.h['CRPIX3']=1
+		msk_w,h_tmp,cut_spec=mask_wave(self.h,config)
+		if cut_spec:
+			self.datacube=self.datacube[:,None][msk_w[:,None]]
+			# Change header if axes are cut
+			self.h=h_tmp
+			# update
+			self.hdr_info=Header_info(self.h,config)
 
 		#baseline correction		
 		self.datacube,self.baselcube=baselinecor(self.datacube,config)
 
 
-		# apply rms based mask to the cube
+		# apply rms-based-mask to the cube
 		if msk_cube in osi: msk_cube=None
 		self.msk2d_cube=msk_cube		
-		rms3d,self.rms_cube=mask_cube(self.datacube,config,msk_user=self.msk2d_cube)
+		rms3d,self.rms_cube,vpeak2D=mask_cube(self.datacube,config,self.hdr_info,msk_user=self.msk2d_cube)
 		self.datacube=self.datacube*rms3d
 		self.h['RMS_CUBE']=self.rms_cube
-
-
-		#create observed momement maps
+		
+		#create observed momemnt maps
 		cube_class=Cube_creation(self.datacube,self.h,[1]*3,config)
 		self.momaps=cube_class.obs_mommaps(vpeak=False)
 		[self.mom0,self.mom1,self.mom2]=self.momaps
+		if vpeak2D is not None: self.mom1=vpeak2D
 		
 		# create error mommaps
 		errcube=ecube(self.datacube)
@@ -213,6 +220,7 @@ class XS_out(Run_models):
 		save_momments(self.galaxy,self.vmode,self.kin_3D_mdls,self.momaps,self.datacube,self.baselcube,self.h,out=self.outdir)		
 		self.P.status("creating PVD maps")				
 		out_pvd=pv_array(self.datacube,self.h,self.kin_3D_mdls,self.Vrot,self.R,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.pixel_scale,self.config)
+		pvd_arr=out_pvd[0] 
 		plot_pvd(self.galaxy,out_pvd,self.Vrot,self.R,self.PA,self.INC,self.VSYS,self.vmode,self.rms_cube,self.kin_3D_mdls,self.momaps,self.datacube,self.pixel_scale,self.hdr_info,self.config,self.outdir)
 
 		self.P.status("creating residual cube")							
@@ -220,7 +228,7 @@ class XS_out(Run_models):
 		rescube=self.datacube-self.kin_3D_mdls[4]
 		rescube[~np.isfinite(rescube)]=0
 		# apply rms cut to the rescube
-		rms3d,rms_cube=mask_cube(rescube,self.config,clip=1,msk_user=self.msk2d_cube)
+		rms3d,rms_cube,_=mask_cube(rescube,self.config,self.hdr_info,clip=1,msk_user=self.msk2d_cube)
 		rescube=rescube*rms3d		
 		rcube=Cube_creation(rescube,self.h,[1]*3,self.config)
 		rmomaps=rcube.obs_mommaps()
@@ -229,6 +237,11 @@ class XS_out(Run_models):
 			mom[mom==0]=np.nan
 			rmomaps[k]=mom		
 		[rmom0,rmom1,rmom2]=rmomaps
+		
+		# remove zeros from PV diagrams
+		for k,pvds in enumerate(pvd_arr):
+			pvds[pvds==0]=np.nan
+			pvd_arr[k]=pvds
 
 		self.h['RMS_RESCUBE']=rms_cube
 		save_rmomments(self.galaxy,self.vmode,rmomaps,self.h,out=self.outdir)		

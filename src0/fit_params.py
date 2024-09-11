@@ -204,6 +204,7 @@ class Least_square_fit:
 		self.fit_from_cube=config_general.getboolean('fit_from_cube',False)		
 		
 		self.rel=1e10
+		self.peakI0=np.nanmax(self.datacube,axis=0)
 	def iter_cb(self,params, iter, resid, *args, **kws):
 		sumres=0.5*np.sum(resid**2)
 		print(iter,sumres)		
@@ -542,19 +543,20 @@ class Fit_kin_mdls(Models):
 			if self.fit_from_cube:
 				residual=(self.datacube-cube_mdl)**2
 				residual=residual[:,None][self.mask_cube[:,None]]
+				n=len(residual)
 				#residual=(np.sum(residual,axis=0))[self.mom0!=0]
 				
 			else:		
 
 				if self.vary_disp:
-					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta
-					residual = residual[self.mom0!=0]											
+					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta + msk*((self.peakI0-cube_mdl)**2)
+					residual = residual[self.mom0!=0]
+					n=len(residual)*3											
 				else:									
-					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta				
-				
+					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta + msk*((self.peakI0-cube_mdl)**2)			
+					n=len(residual)														
 			#residual=np.ravel(residual)
-			n=len(residual)
-			#n=(self.ny*self.nx*self.nz)
+			#n=len(residual)
 
 			#residual=np.sqrt(residual*residual/n)
 			residual=np.sqrt(residual/n)

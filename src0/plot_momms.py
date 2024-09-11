@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pylab as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
+import matplotlib.colors as colors
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
 from itertools import product
@@ -17,7 +18,7 @@ from src0.ellipse import drawellipse
 #params =   {'text.usetex' : True }
 #plt.rcParams.update(params)
 
-def vmin_vmax(data,pmin=5,pmax=99,base=None):
+def vmin_vmax(data,pmin=2,pmax=99.5,base=None):
 	vmin,vmax=np.nanpercentile(np.unique(data),pmin),np.nanpercentile(np.unique(data),pmax)
 	if base is not None:
 		vmin,vmax=(vmin//base+1)*base,(vmax//base+1)*base
@@ -70,8 +71,9 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	# moment zero maps:
 	res_mom0=mom0-mom0_mdl
 	vmin,vmax=vmin_vmax(mom0_mdl)
-	ax0.imshow(mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
-	im1=ax1.imshow(mom0_mdl,origin='lower',cmap=cmap_mom0,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')	
+	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	
+	ax0.imshow(mom0,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
+	im1=ax1.imshow(mom0_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')	
 	vmin,vmax=vmin_vmax(res_mom0,2,98)
 	mean=(abs(vmax)+abs(vmin))/2
 	im2=ax2.imshow(res_mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=-mean,vmax=mean,aspect='auto')

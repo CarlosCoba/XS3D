@@ -64,7 +64,10 @@ def GaussProf_V(wave_kms,V0,f0,sigma=None,fwhm=None):
 
 def mask_wave(h,config):
 	config_general = config['general']
-	wmin,wmax=config_general.getfloat('wmin',None),config_general.getfloat('wmax',None)										
+	wmin,wmax=config_general.getfloat('wmin',None),config_general.getfloat('wmax',None)
+	cut = False										
+	if wmin is None and wmax is None:
+		return None, None, False
 
 	hdr=Header_info(h,config)
 	[nz,ny,nx]=hdr.cube_dims()
@@ -78,7 +81,13 @@ def mask_wave(h,config):
 		for j,val in enumerate(wmax_i):
 			if not val: msk[j]=False
 
-	return msk,np.min(wave_cover[msk])
+	crval3=(wave_cover[msk])[0]
+	cdelt3=wave_cover[1]-wave_cover[0]
+	
+	h['CRVAL3']=crval3
+	h['CRPIX3']=1
+	h['CDELT3']=cdelt3	
+	return msk,h,True
 
 def mommaps(cube,h,config,rms=0):
 	#[nz,ny,nx]=cube.shape

@@ -20,7 +20,9 @@ class Header_info:
 		self.wavelength_frec=['FREQ','Freq','freq','FREQUENCY','frequency','Hz','HZ']			
 		self.wave_types=self.wavelength_wave+self.wavelength_frec
 		general=self.config['general']
+		others=self.config['others']		
 		self.eline=general.getfloat('eline',None)
+		self.vdoppler=others.get('vdoppler','opt')		
 		
 		try:
 			self.crval3=hdr['CRVAL3']
@@ -67,15 +69,20 @@ class Header_info:
 
 		self.scale=self.scale*3600 # from degree to arcsec			
 		self.spec_axis = self.crval3 + self.cdelt3*(np.arange(self.nz) + 1 - self.crpix3) # wave axis in original units
-
+		#if self.spec_axis[0]>self.spec_axis[-1]:
+		#	self.cdelt3=-1*self.cdelt3
+		#	self.spec_axis = self.crval3 + self.cdelt3*(np.arange(self.nz) + 1 - self.crpix3) # wave axis in original units
 
 
 		if (self.cunit3 in self.wavelength_wave) or (self.ctype3 in self.wavelength_wave):
 			wave_A2kms=__c__*(self.spec_axis-self.eline)/self.eline # wave in kms
 			self.wave_kms=wave_A2kms
 			self.cdelt3_kms=__c__*(self.cdelt3/self.eline)		
-		elif (self.cunit3 in self.wavelength_frec) or (self.ctype3 in self.wavelength_frec): 
-			wave_hz2kms=__c__*(self.eline-self.spec_axis)/self.eline # wave in kms
+		elif (self.cunit3 in self.wavelength_frec) or (self.ctype3 in self.wavelength_frec):
+			if self.vdoppler == 'rad':		 
+				wave_hz2kms=__c__*(self.eline-self.spec_axis)/self.eline # wave in kms radio definitiom
+			if self.vdoppler == 'opt':
+				wave_hz2kms=__c__*((self.eline/self.spec_axis)-1) # wave in kms	optical definition		
 			self.wave_kms=wave_hz2kms
 			self.cdelt3_kms=__c__*(self.cdelt3/self.eline)
 		else:

@@ -137,6 +137,17 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	min_vel = abs(min_vel)
 
 	ax2.set_ylim(-30*(min_vel//30)-30,30*(max_vel//30)+40)
+	M=25
+	if max_vel> 120:
+		M=30
+	if max_vel>190:
+		M=40
+	if max_vel>250:
+		M=50
+	if max_vel>300:
+		M=60	   
+	ax2.yaxis.set_major_locator(MultipleLocator(M))
+
 	ax2.plot([0,np.nanmax(R)],[0,0],color = "k",linestyle='-', alpha = 0.6,linewidth = 0.3)
 	ax2.set_xlabel(f'r ({rlabel})',fontsize=10,labelpad = 2)
 	ax2.set_ylabel('$\mathrm{V_{rot}~(km~s^{-1})}$',fontsize=10,labelpad = 2)
