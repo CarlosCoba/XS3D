@@ -1,10 +1,9 @@
 import numpy as np
 from astropy.io import fits
-import matplotlib.pylab as plt
-
 from src0.pixel_params import Rings
 from src0.constants import __c__
 from src0.read_hdr import Header_info
+from src0.psf_lsf import PsF_LsF
 
 def slit(xy,pa,eps,x0,y0,width=5,pixel=1):
 	
@@ -20,18 +19,16 @@ def slit(xy,pa,eps,x0,y0,width=5,pixel=1):
 	return msk
 
 
-def pv_array(datacube,hdr,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
+def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr= momms_mdls
 	[nz,ny,nx]=datacube.shape
 	extimg=np.dot([-nx/2.,nx/2.,-ny/2.,ny/2.],pixel)
 	
-	config_general = config['general']
-	eline=config_general.getfloat('eline',None)
-	psf_fwhm=config_general.getfloat('psf_fwhm',None)
-	bmaj=config_general.getfloat('bmaj',psf_fwhm)
-		
 
-	wave_kms=Header_info(hdr,config).wave_kms
+	psf_lsf=PsF_LsF(hdr_cube,config)
+	bmaj_arc=psf_lsf.bmaj 
+			
+	wave_kms=Header_info(hdr_cube,config).wave_kms
 	dv=wave_kms
 	
 	if wave_kms[1]-wave_kms[0] < 0: # radio velocities 
@@ -59,7 +56,7 @@ def pv_array(datacube,hdr,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 	else:
 		s=-1
 
-	width=4*bmaj if bmaj is not None else 5 # arcsec
+	width=4*bmaj_arc if bmaj_arc is not None else 5 # arcsec
 	# if the FOV is too small draw 5pixels width
 	if nx*pixel//width <=2:
 		width=5*pixel
@@ -117,16 +114,12 @@ def pv_array(datacube,hdr,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 		# loop for minor axis
 		Npix=np.sum(msk_R*msk_slit_min)
 		if Npix==0: Npix=1					
-		msk_R=r_norm_int==rval			
+		#msk_R=r_norm_int==rval # already defined above.			
 		masked_cube_min_mdl=cube_mdl*(msk_R*m_mnr)
 		masked_cube_min=datacube*(msk_R*m_mnr)
 		# the array[0][0] position contains the most blueshifted point, e.g., vmin-vsys.
 		pv_array_min_mdl[:,ind]=np.nansum(np.nansum(masked_cube_min_mdl,axis=2),axis=1)/Npix
 		pv_array_min[:,ind]=np.nansum(np.nansum(masked_cube_min,axis=2),axis=1)/Npix
 	
-	return [pv_array_maj,pv_array_min,pv_array_maj_mdl,pv_array_min_mdl], [msk_slit_maj,msk_slit_min], [ext_arc0,ext_arc1]
-
-	#plt.imshow(pv_array,extent=ext,aspect='auto')
-	#plt.plot(r,vt+vsys,'ko')
-	#plt.plot(-r,-vt+vsys,'ko')
-	#plt.show()
+	return [pv_array_maj,pv_array_min,pv_array_maj_mdl,pv_array_min_mdl], [msk_slit_maj,msk_slit_min], [ext_arc0,ext_arc1,pixel_pvd_arc]
+	

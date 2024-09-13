@@ -22,6 +22,7 @@ from src0.save_fits_1D_model_harmonic import save_model_h
 from src0.plot_models_harmonic import plot_kin_models_h
 from src0.save_fits_1D_model import save_model
 from src0.save_fits_mommaps import save_momments,save_rmomments
+from src0.save_fits_pvd import save_pvds
 from src0.plot_models import plot_kin_models
 from src0.plot_momms import plot_mommaps
 from src0.plot_resmoms import plot_rmommaps
@@ -62,7 +63,7 @@ class Run_models:
 		self.P.cubehdr(self.hdr_info)				
 		# Print 
 		self.P.out('V Doppler',self.hdr_info.vdoppler)	
-		self.P.configprint(config)	
+		self.P.configprint(self.h,config)	
 		# remove NaN values
 		self.datacube[~np.isfinite(self.datacube)]=0
 		
@@ -143,7 +144,7 @@ class Run_models:
 		self.P.status("Starting Least Squares analysis",line=True)
 		if "hrm" not in self.vmode: 
 			circ = Circular_model(self.vmode, galaxy, self.datacube, self.h, self.momaps, self.evel_map, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.outdir,cube_class)
-			self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.PHI_BAR,self.R,self.Disp,self.Vrot,self.Vrad,self.Vtan, self.kin_3D_mdls,_,_,self.bic_aic,self.errors_fit = circ()
+			self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.PHI_BAR,self.R,self.Disp,self.Vrot,self.Vrad,self.Vtan, self.kin_3D_mdls,self.PA_bar_mjr,self.PA_bar_mnr,self.bic_aic,self.errors_fit = circ()
 		if "hrm" in self.vmode:
 			hrm = Harmonic_model(galaxy, self.datacube, self.h, self.momaps, self.evel_map, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.m_hrm, self.outdir,cube_class)
 			self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.R,self.Disp,self.Ck,self.Sk,self.kin_3D_mdls,self.bic_aic,self.errors_fit = hrm()
@@ -220,15 +221,18 @@ class XS_out(Run_models):
 		save_momments(self.galaxy,self.vmode,self.kin_3D_mdls,self.momaps,self.datacube,self.baselcube,self.h,out=self.outdir)		
 		self.P.status("creating PVD maps")				
 		out_pvd=pv_array(self.datacube,self.h,self.kin_3D_mdls,self.Vrot,self.R,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.pixel_scale,self.config)
-		pvd_arr=out_pvd[0] 
-		plot_pvd(self.galaxy,out_pvd,self.Vrot,self.R,self.PA,self.INC,self.VSYS,self.vmode,self.rms_cube,self.kin_3D_mdls,self.momaps,self.datacube,self.pixel_scale,self.hdr_info,self.config,self.outdir)
+		pvd_arr=out_pvd[0]
+		# plot pvds 
+		plot_pvd(self.galaxy,out_pvd,self.Vrot,self.R,self.PA,self.INC,self.VSYS,self.vmode,self.rms_cube,self.kin_3D_mdls,self.momaps,self.datacube,self.pixel_scale,self.h,self.hdr_info,self.config,self.outdir)
+		# save pvds
+		save_pvds(self.galaxy,self.vmode,out_pvd,self.rms_cube,self.hdr_info,self.outdir)
 
 		self.P.status("creating residual cube")							
 		#create residual cube momement maps
 		rescube=self.datacube-self.kin_3D_mdls[4]
 		rescube[~np.isfinite(rescube)]=0
 		# apply rms cut to the rescube
-		rms3d,rms_cube,_=mask_cube(rescube,self.config,self.hdr_info,clip=1,msk_user=self.msk2d_cube)
+		rms3d,rms_cube_res,_=mask_cube(rescube,self.config,self.hdr_info,clip=1,msk_user=self.msk2d_cube)
 		rescube=rescube*rms3d		
 		rcube=Cube_creation(rescube,self.h,[1]*3,self.config)
 		rmomaps=rcube.obs_mommaps()
@@ -243,7 +247,7 @@ class XS_out(Run_models):
 			pvds[pvds==0]=np.nan
 			pvd_arr[k]=pvds
 
-		self.h['RMS_RESCUBE']=rms_cube
+		self.h['RMS_RESCUBE']=rms_cube_res
 		save_rmomments(self.galaxy,self.vmode,rmomaps,self.h,out=self.outdir)		
 		plot_rmommaps(self.galaxy,self.kin_3D_mdls,rmomaps,self.VSYS,self.ext,self.vmode,self.h,out=self.outdir)
 		

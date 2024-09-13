@@ -18,6 +18,7 @@ from src0.constants import __c__
 from src0.ellipse import drawellipse
 from src0.conv import conv2d,gkernel,gkernel1d
 from src0.conv_fftw import fftconv,data_2N,fftconv_numpy
+from src0.psf_lsf import PsF_LsF
 cmap=vel_map()
 
 
@@ -48,10 +49,10 @@ new_cmap = truncate_colormap(cmap, 0, 0.6)
 cmap = vel_map()
 cmap_mom0 = vel_map('mom0')
 
-def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacube,pixel,hdr_info,config,out):
+def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacube,pixel,hdr_cube,hdr_info,config,out):
 	pvds,slits,ext=out_pvd
 	slit_major,slit_minor = slits
-	[ext0,ext1]=ext
+	[ext0,ext1,_]=ext
 	
 	ext0[2]=ext0[2]-vsys
 	ext1[2]=ext1[2]-vsys	
@@ -221,19 +222,28 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	ax1.set_ylabel('$V\mathrm{_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
 	ax1.legend(lines,labels,loc='upper right',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10)		
 	if Nmultiple>0: ax1.yaxis.set_major_locator(MultipleLocator(Nmultiple))
+	
 	# plot PSF ellipse ?
-	config_general = config['general']	
-	eline=config_general.getfloat('eline')
+	"""
 	psf_arc=config_general.getfloat('psf_fwhm',None)
 	bmaj_arc=config_general.getfloat('bmaj',None)
-		
+	"""
+	config_general = config['general']	
+	eline=config_general.getfloat('eline')	
 	specres=config_general.getfloat('fwhm_inst',None)
+	
 	if specres	is not None:
 		specres_kms=(specres/eline)*__c__
 		fwhm_kms=specres_kms/2.
 	else:
 		fwhm_kms=hdr_info.cdelt3_kms/2.
-	
+
+	psf_lsf=PsF_LsF(hdr_cube,config)
+	bmaj_arc=psf_lsf.bmaj 
+	bmin_arc=psf_lsf.bmin
+	bpa= psf_lsf.bpa
+	psf_arc=psf_lsf.fwhm_psf_arc
+				
 	psf=None
 	if psf_arc is not None:
 		psf=psf_arc/rnorm

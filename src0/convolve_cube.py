@@ -14,6 +14,7 @@ from src0.conv_spec1d import gaussian_filter1d,convolve_sigma
 from src0.conv_fftw import fftconv,data_2N
 from src0.momtools import mask_wave
 from src0.utils import parabola
+from src0.psf_lsf import PsF_LsF
 
 class Cube_creation:
 	def __init__(self,datacube,header,mommaps,config):
@@ -39,19 +40,30 @@ class Cube_creation:
 		self.sigma_inst_kms=(self.sigma_inst_A/self.eline_A)*__c__ if self.fwhm_inst_A is not None else None
 		self.sigma_inst_pix=(self.sigma_inst_A/self.cdelt3)*np.ones(self.nz) if self.fwhm_inst_A is not None else None
 
+		psf_lsf= PsF_LsF(self.h, config)
+		self.fit_psf=psf_lsf.fit_psf
+		self.bmaj=psf_lsf.bmaj 
+		self.bmin=psf_lsf.bmin
+		self.bpa= psf_lsf.bpa
+		self.fwhm_psf_arc=psf_lsf.fwhm_psf_arc
+		"""		 
 		try:
 			self.bmaj=self.h['BMAJ']*3600
 			self.bmin=self.h['BMIN']*3600
 			self.bpa=self.h['BPA']
+			self.fit_psf=True
+			raise(KeyError)
 		except(KeyError):		
 			self.fwhm_psf_arc=config_general.getfloat('psf_fwhm',None)
 			self.bpa=config_general.getfloat('bpa',0)
 			self.bmaj=config_general.getfloat('bmaj',self.fwhm_psf_arc)
 			self.bmin=config_general.getfloat('bmin',self.fwhm_psf_arc)
-			self.fit_psf=False
 			if self.fwhm_psf_arc is not None or self.bmaj is not None:
-				self.fit_psf=True			
-
+				self.fit_psf=True
+			else:
+				self.fit_psf=False					
+		"""
+		
 		self.hdr=Header_info(header,config)
 		self.wave_cover_kms=self.hdr.wave_kms
 		self.cdelt3_kms=self.hdr.cdelt3_kms
@@ -231,20 +243,32 @@ class Zeropadding:
 	def __init__(self,cube,h,config):
 
 		self.datacube=cube
+		self.h=h
 		config_general = config['general']
 		self.vary_disp=config_general.getboolean('fit_dispersion',False)
 		self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)
 
+		"""
 		try:
 			self.bmaj=h['BMAJ']*3600
 			self.bmin=h['BMIN']*3600
+			self.fit_psf=True
+			raise(KeyError)			
 		except(KeyError):		
 			self.fwhm_psf_arc=config_general.getfloat('psf_fwhm',None)
 			self.bpa=config_general.getfloat('bpa',0)
 			self.bmaj=config_general.getfloat('bmaj',self.fwhm_psf_arc)
-			self.fit_psf=False
 			if self.fwhm_psf_arc is not None or self.bmaj is not None:
-				self.fit_psf=True			
+				self.fit_psf=True
+			else:
+				self.fit_psf=False
+		"""
+		psf_lsf= PsF_LsF(self.h, config)
+		self.fit_psf=psf_lsf.fit_psf
+		self.bmaj=psf_lsf.bmaj 
+		self.bmin=psf_lsf.bmin
+		self.bpa= psf_lsf.bpa
+		self.fwhm_psf_arc=psf_lsf.fwhm_psf_arc						
 
 
 

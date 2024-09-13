@@ -1,6 +1,7 @@
 import numpy as np
 np.set_printoptions(precision=4,suppress=True)
 from src0.read_config import config_file
+from src0.psf_lsf import PsF_LsF
 
 class Print:
 	def __init__(self):
@@ -37,19 +38,31 @@ class Print:
 		print ('{:<20} {:<15}'.format('Rest frame eline:', f'{hdr.eline}'))
 		print ('{:<20} {:<15}'.format('Channel width:', f'{cdelt3} km/s'))
 		
-	def configprint(self,config):
+	def configprint(self,cube_hdr,config):
+		#"""
 		general=config['general']
 		others=config['others']		
-		psf_fwhm=general.getfloat('psf_fwhm',0)
-		bmaj=general.getfloat('bmaj',0)	
-		bmin=general.getfloat('bmin',0)	
-		bpa=general.getfloat('bpa',0)			
+		#psf_fwhm=general.getfloat('psf_fwhm',0)
+		#bmaj=general.getfloat('bmaj',0)	
+		#bmin=general.getfloat('bmin',0)	
+		#bpa=general.getfloat('bpa',0)			
 		fwhm_inst=general.getfloat('fwhm_inst',0)
 		vpeak=others.getboolean('vpeak',False)
+		#"""
+		psf_lsf= PsF_LsF(cube_hdr, config)
+		fit_psf=psf_lsf.fit_psf
+		bmaj=psf_lsf.bmaj 
+		bmin=psf_lsf.bmin
+		bpa= psf_lsf.bpa
+		psf_fwhm=psf_lsf.fwhm_psf_arc						
+
 		print(self.deli)						
-		if psf_fwhm != 0:
+		if psf_fwhm is not None:
+				psf_fwhm=round(psf_fwhm,3)
 				print ('{:<20} {:<15}'.format('PSF FWHM:', f'{psf_fwhm} arcsec'))
-		if bmaj !=0 and bmin !=0:				
+		if bmaj is not None and bmin is not None:				
+				bmaj=round(bmaj,3)
+				bmin=round(bmaj,3)
 				print ('{:<20} {:<15}'.format('BMAJ:', f'{bmaj} arcsec'))
 				print ('{:<20} {:<15}'.format('BMIN:', f'{bmin} arcsec'))				
 		if bpa!=0:				

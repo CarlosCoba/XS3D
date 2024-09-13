@@ -14,6 +14,7 @@ from src0.cbar import colorbar as cb
 from src0.colormaps_CLC import vel_map
 from src0.barscale import bscale
 from src0.ellipse import drawellipse
+from src0.psf_lsf import PsF_LsF
 
 #params =   {'text.usetex' : True }
 #plt.rcParams.update(params)
@@ -188,13 +189,21 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	ax6.plot([ext[0]*(4/5.),ext[0]*(4/5.)+bar_scale_arc_norm],[ext[2]*(5/6),ext[2]*(5/6)],'k-')
 
 
+
 	# plot PSF ellipse ?
+	"""
 	config_general = config['general']	
 	psf_arc=config_general.getfloat('psf_fwhm',None)
 	bmaj_arc=config_general.getfloat('bmaj',None)
 	bmin_arc=config_general.getfloat('bmin',None)
 	bpa=config_general.getfloat('bpa',0)
-				
+	"""
+	psf_lsf=PsF_LsF(hdr,config)
+	bmaj_arc=psf_lsf.bmaj 
+	bmin_arc=psf_lsf.bmin
+	bpa= psf_lsf.bpa
+	psf_arc=psf_lsf.fwhm_psf_arc
+						
 	psf=None
 	bmaj,bmin=None,None
 	if psf_arc is not None:
