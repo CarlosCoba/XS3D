@@ -3,10 +3,8 @@ import matplotlib.pylab as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
 import matplotlib.colors as colors
-from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
-                               AutoMinorLocator)
+from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
 from itertools import product
-
 
 from matplotlib.offsetbox import AnchoredText
 from src0.axes_params import axes_ambient as axs 
@@ -191,13 +189,6 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 
 
 	# plot PSF ellipse ?
-	"""
-	config_general = config['general']	
-	psf_arc=config_general.getfloat('psf_fwhm',None)
-	bmaj_arc=config_general.getfloat('bmaj',None)
-	bmin_arc=config_general.getfloat('bmin',None)
-	bpa=config_general.getfloat('bpa',0)
-	"""
 	psf_lsf=PsF_LsF(hdr,config)
 	bmaj_arc=psf_lsf.bmaj 
 	bmin_arc=psf_lsf.bmin

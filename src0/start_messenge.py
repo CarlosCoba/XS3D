@@ -11,6 +11,8 @@ class Print:
 	def guess_vals(self,galaxy,guess,vmode):
 		PA,INC,X0,Y0,VSYS,PHI_B = 	guess[0],guess[1],guess[2],guess[3], guess[4], guess[5] 
 		print(self.deli)
+		INC=round(INC,2)
+		PA=round(PA,2)
 		print ('{:<20}'.format(f'**Guess values for {galaxy}**'))		
 		print ('{:<20} {:<15}'.format('P.A.:', f'{PA}'))
 		print ('{:<20} {:<15}'.format('INC:', f'{INC}'))

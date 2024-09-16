@@ -16,7 +16,7 @@ class Header_info:
 		self.cunit1='deg'
 		#self.cdelt3_kms=0
 		self.cunit3=''
-		self.wavelength_wave=['Angstrom','angstrom','um','WAVELENGTH','WAVE','ANGSTROM','UM','micron']
+		self.wavelength_wave=['Angstrom','angstrom','um','WAVELENGTH','WAVE','ANGSTROM','UM','micron','lambda']
 		self.wavelength_frec=['FREQ','Freq','freq','FREQUENCY','frequency','Hz','HZ']			
 		self.wave_types=self.wavelength_wave+self.wavelength_frec
 		general=self.config['general']

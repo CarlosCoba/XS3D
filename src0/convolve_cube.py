@@ -46,23 +46,6 @@ class Cube_creation:
 		self.bmin=psf_lsf.bmin
 		self.bpa= psf_lsf.bpa
 		self.fwhm_psf_arc=psf_lsf.fwhm_psf_arc
-		"""		 
-		try:
-			self.bmaj=self.h['BMAJ']*3600
-			self.bmin=self.h['BMIN']*3600
-			self.bpa=self.h['BPA']
-			self.fit_psf=True
-			raise(KeyError)
-		except(KeyError):		
-			self.fwhm_psf_arc=config_general.getfloat('psf_fwhm',None)
-			self.bpa=config_general.getfloat('bpa',0)
-			self.bmaj=config_general.getfloat('bmaj',self.fwhm_psf_arc)
-			self.bmin=config_general.getfloat('bmin',self.fwhm_psf_arc)
-			if self.fwhm_psf_arc is not None or self.bmaj is not None:
-				self.fit_psf=True
-			else:
-				self.fit_psf=False					
-		"""
 		
 		self.hdr=Header_info(header,config)
 		self.wave_cover_kms=self.hdr.wave_kms
@@ -248,21 +231,6 @@ class Zeropadding:
 		self.vary_disp=config_general.getboolean('fit_dispersion',False)
 		self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)
 
-		"""
-		try:
-			self.bmaj=h['BMAJ']*3600
-			self.bmin=h['BMIN']*3600
-			self.fit_psf=True
-			raise(KeyError)			
-		except(KeyError):		
-			self.fwhm_psf_arc=config_general.getfloat('psf_fwhm',None)
-			self.bpa=config_general.getfloat('bpa',0)
-			self.bmaj=config_general.getfloat('bmaj',self.fwhm_psf_arc)
-			if self.fwhm_psf_arc is not None or self.bmaj is not None:
-				self.fit_psf=True
-			else:
-				self.fit_psf=False
-		"""
 		psf_lsf= PsF_LsF(self.h, config)
 		self.fit_psf=psf_lsf.fit_psf
 		self.bmaj=psf_lsf.bmaj 
