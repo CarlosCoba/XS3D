@@ -56,7 +56,7 @@ def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 	else:
 		s=-1
 
-	width=4*bmaj_arc if bmaj_arc is not None else 5 # arcsec
+	width=2*bmaj_arc if bmaj_arc is not None else 5 # arcsec
 	# if the FOV is too small draw 5pixels width
 	if nx*pixel//width <=2:
 		width=5*pixel
