@@ -18,12 +18,12 @@ XookSuut3D (XS3D)
 
 Description
 ===========
-XookSuut3D or XS3D for short, is a python tool developed to model non-circular motions in galaxies through the use of datacubes.
-A datacube in this context comprises two spatial axes (RA, Dec) and one spectral axis, either wavelength or frequency. 
-XS3D perform kinematic modeling while it takes into account the observational PSF and spectral broadening (LSF). For this purpose
+XookSuut3D or XS3D for short, is a python tool developed to model circular and non-circular motions on 3D data cubes like those obtained
+with Integral-Field-Spectroscopy, ALMA, VLA, etc. XS3D models a spectral-line cube obsevation, while corrects for the 
+the observational PSF and spectral broadening (LSF). For this purpose
 it makes use of the FFTW library via pyFFTW. 
-XS3D is  particularly designed for emission-line observations, such as HI, optical emission lines, IR lines,
-molecular lines, etc.
+XS3D is  particularly designed for spectral-line observations on frequency and wavelenght domain, which makes it suitable to 
+model a wide variety of emission-lines from CO, HI, ionized gas and IR lines etc.
 XS3D adopts the same minimization technique as its 2D version, XookSuut, but extended to datacubes.
 XS3D is able to model circular rotation models, axisymmetric radial flows, bisymmetric flows, and a general harmonic decomposition of the LOSV.
 To derive the best set of parameters on each kinematic model XS3D uses all the information from the datacube. Therefore,
@@ -73,30 +73,29 @@ In addition, XS3D requires guess values for the disk geometry, and parameters de
 Another input is the desired kinematic model, and in the case of non-circular models, the maximum radial extention of the non-circular flows.
 
 
-Examples
+Example on a Galaxy
 ===========
-Following are some of the outputs you will obtain from running XS3D on a datacube. These examples correpond to a galaxy with an an oval distortion.
-Moment maps taken from the datacube and model-cube are shown, with mom0=intensity, mom1=velocity and mom2=dispersion.
+Following are some of the outputs you will obtain from running XS3D on a datacube from MUSE/VLT for the Halpha line.
 
-Results from applying a circular rotation model:
-|circ|
+Observed and moment cubes
+|mom_muse|
 
-Results from applying a bisymmetric  model::
-|bis|
+Intrinsic velocity and velocity dispersion of the gas.
+|disp_muse|
 
-Harmonic expasion with harmonic number m  = 2
-|hrm|
-
-Following are shown some other outputs from XS3D.
-
-Position velocity diagrams (PVD) along the major and minor axis:
-|pvd|
-
-Intrinsinc rotation and intrinsic velocity dispersion.
-|rotation_curve|
+Position velocity diagram from the model cube along the major and minor axes
+|pvd_muse|
 
 
 
+Example on a protoplanetary disk from ALMA
+===========
+
+Observed and model moment maps.
+|mommaps_proto|
+
+Position velocity diagram
+|pvd_proto|
 
 
 Referencing XookSuut3D
@@ -111,23 +110,23 @@ Also, if you use the XS colormap (red-black-blue) in a different context, I woul
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
-.. |circ| image:: /example/mommaps_circular_model_califa.png
+.. |mom_muse| image:: /figures/mommaps_circular_model_NGC3351.png
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
-.. |hrm| image:: /example/mommaps_hrm_2_model_califa.png
+.. |disp_muse| image::  /figures/kin_circular_disp_NGC3351.png
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
-.. |bis| image:: /example/mommaps_bisymmetric_model_califa.png
+.. |pvd_muse| image:: /figures/pvd_circular_model_NGC3351.png
     :scale: 10 %
     :target: https://github.com/CarlosCoba/XS3D
 
-.. |pvd| image:: /example/pvd_bisymmetric_model_califa.png
-    :scale: 10 %
+.. |mommaps_proto| image:: /figures/mommaps_circular_model_HD163296_v2.png
+    :scale: 5 %
     :target: https://github.com/CarlosCoba/XS3D
 
-.. |rotation_curve| image:: /example/kin_bisymmetric_disp_califa.png
-    :scale: 10 %
+.. |pvd_proto| image:: /figures/pvd_circular_model_HD163296_v2.png
+    :scale: 5 %
     :target: https://github.com/CarlosCoba/XS3D
 
