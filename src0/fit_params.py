@@ -32,6 +32,7 @@ from src0.create_dataset import dataset_to_2D
 from src0.read_hdr import Header_info
 from src0.momtools import GaussProf,trapecium
 from src0.convolve_cube import Cube_creation,Zeropadding
+from src0.psf_lsf import PsF_LsF
 
 from src0.constants import __c__
 from src0.conv import conv2d,gkernel,gkernel1d
@@ -40,8 +41,8 @@ from src0.conv_spec1d import gaussian_filter1d,convolve_sigma
 
 
 class Least_square_fit:
-	#def __init__(self,vel_map, e_vel_map, guess, vary, vmode, config, rings_pos, ring_space, fit_method, e_ISM, pixel_scale, frac_pixel, v_center, m_hrm = 1, N_it = 1):
-	def __init__(self,datacube, header, mommaps, e_vel_map, guess, vary, vmode, config, rings_pos, ring_space, frac_pixel, v_center, m_hrm = 1, N_it = 1):
+	#def __init__(self,vel_map, emoms, guess, vary, vmode, config, rings_pos, ring_space, fit_method, e_ISM, pixel_scale, frac_pixel, v_center, m_hrm = 1, N_it = 1):
+	def __init__(self,datacube, edatacube, header, mommaps, emoms, guess, vary, vmode, config, rings_pos, ring_space, frac_pixel, v_center, m_hrm = 1, N_it = 1):
 	
 		"""
 		vary = [Vrot,Vrad,Vtan,PA,INC,XC,YC,VSYS,theta]
@@ -85,8 +86,8 @@ class Least_square_fit:
 		[self.mom0,self.mom1,self.mom2]=mommaps
 		self.vel_map = self.mommaps_obs[1]
 		self.datacube=datacube
-		self.e_vel_map = e_vel_map
-		[self.emom0,self.emom1,self.emom2]=e_vel_map		
+		self.emoms = emoms
+		[self.emom0,self.emom1,self.emom2]=emoms		
 		self.vmode = vmode
 		self.ring_space = ring_space
 		self.fit_method = 'nelder'#'least_squares'
@@ -152,13 +153,12 @@ class Least_square_fit:
 		if outliers: self.kwargs["loss"]="soft_l1"
 		#self.kwargs["loss"]="soft_l1"
 
-		
-		self.eline_A=config_general.getfloat('eline',None)
 		self.vary_disp=config_general.getboolean('fit_dispersion',False)
-		self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)
-		self.sigma_inst_A=self.fwhm_inst_A/(np.sqrt(8*np.log(2))) if self.fwhm_inst_A is not None else None
-		self.sigma_inst_kms=(self.sigma_inst_A/self.eline_A)*__c__ if self.fwhm_inst_A is not None else None
-		self.sigma_inst_pix=(self.sigma_inst_A/self.cdelt3)*np.ones(self.nz) if self.fwhm_inst_A is not None else None
+		psf_lsf= PsF_LsF(self.h, config)		
+		self.fwhm_inst_A=psf_lsf.fwhm_inst_A
+		self.sigma_inst_A=psf_lsf.sigma_inst_A
+		self.sigma_inst_kms=psf_lsf.sigma_inst_kms
+
 
 		self.min_sig=0
 		if self.sigma_inst_A is not None:
@@ -172,20 +172,6 @@ class Least_square_fit:
 		if not self.vary_disp and self.fwhm_inst_A is not None:
 			self.sig0=np.ones_like(self.sig0)*self.sigma_inst_kms					
 		
-		try:
-			self.bmaj=self.h['BMAJ']
-			self.bmin=self.h['BMIN']
-			self.bpa=self.h['BPA']
-		except(KeyError):		
-			self.fwhm_psf_arc=config_general.getfloat('psf_fwhm',None)
-			self.bpa=config_general.getfloat('bpa',0)
-			self.bmaj=config_general.getfloat('bmaj',self.fwhm_psf_arc)
-			self.bmin=config_general.getfloat('bmin',self.fwhm_psf_arc)
-			
-
-		self.psf2d=gkernel(self.mom0.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin,pixel_scale=self.pixel_scale)	if self.fwhm_psf_arc is not None else None
-				
-
 		# Rename to capital letters
 		self.PA = self.pa0
 		self.EPS =  self.eps0 
@@ -195,7 +181,7 @@ class Least_square_fit:
 		self.PHI_BAR = self.phi_bar
 		
 		self.cube_modl = Cube_creation(datacube,header,mommaps,config)
-		self.ecube=(self.e_vel_map)#*np.ones(self.nz)[:,None,None]
+		self.ecube=edatacube#*np.ones(self.nz)[:,None,None]
 		a=Zeropadding(datacube,header,config)
 		pad=a()
 		self.padded_cube, self.cube_slices=pad[0],pad[1]
@@ -633,7 +619,7 @@ class Fit_kin_mdls(Models):
 						
 			create_3D=	best_3d_model(self.mommaps_obs,self.datacube,self.h,self.config,self.vmode,self.V_k,pa,eps,x0,y0, Vsys,self.rings_pos,self.ring_space,self.pixel_scale,self.v_center,self.m_hrm,phi_b,self.Vk)
 			mdls_3D = create_3D.model3D()
-			mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr=mdls_3D
+			mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels=mdls_3D
 			
 
 			#We need to re-compute chisquare with the best model !

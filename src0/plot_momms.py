@@ -4,6 +4,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
 import matplotlib.colors as colors
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
+from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,AnchoredSizeBar)
 from itertools import product
 
 from matplotlib.offsetbox import AnchoredText
@@ -17,10 +18,13 @@ from src0.psf_lsf import PsF_LsF
 #params =   {'text.usetex' : True }
 #plt.rcParams.update(params)
 
-def vmin_vmax(data,pmin=2,pmax=99.5,base=None):
+def vmin_vmax(data,pmin=2,pmax=99.5,base=None,symmetric =False):
 	vmin,vmax=np.nanpercentile(np.unique(data),pmin),np.nanpercentile(np.unique(data),pmax)
+	vsym = (vmax+abs(vmin))*0.5
+	if symmetric: vmin,vmax=-1*vsym,vsym				
 	if base is not None:
 		vmin,vmax=(vmin//base+1)*base,(vmax//base+1)*base
+		if symmetric: vmin,vmax=-1*(vsym//base+1)*base,(vsym//base+1)*base
 	return vmin,vmax
 
 def zero2nan(data):
@@ -31,7 +35,7 @@ cmap = vel_map()
 cmap_mom0 = vel_map('mom0')
 
 def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out):
-	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr= momms_mdls
+	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
 	mom0,mom1,mom2=momms_obs
 	mom0,mom1,mom2=zero2nan(mom0),zero2nan(mom1),zero2nan(mom2)
 	mom0_mdl,mom1_mdl,mom2_mdl=zero2nan(mom0_mdl),zero2nan(mom1_mdl),zero2nan(mom2_mdl_kms)
@@ -49,6 +53,7 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	ext = ext/rnorm
 				
 	width, height = 10, 13 # width [cm]
+	width, height = 14, 18 # width [cm]	
 	#width, height = 3, 15 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
@@ -68,28 +73,29 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 
 
 	# moment zero maps:
+	mom0_mdl=abs(mom0_mdl)	
 	res_mom0=mom0-mom0_mdl
 	vmin,vmax=vmin_vmax(mom0_mdl)
-	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	
+	norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 	ax0.imshow(mom0,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
 	im1=ax1.imshow(mom0_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')	
-	vmin,vmax=vmin_vmax(res_mom0,2,98)
-	mean=(abs(vmax)+abs(vmin))/2
-	im2=ax2.imshow(res_mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=-mean,vmax=mean,aspect='auto')
+	vmin,vmax=vmin_vmax(res_mom0,2,98,symmetric=True)
+	#mean=(abs(vmax)+abs(vmin))/2
+	im2=ax2.imshow(res_mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
 	#moment 1 maps	
 	res_mom1=mom1-mom1_mdl
-	vmin = abs(np.nanmin(mom1_mdl))
-	vmax = abs(np.nanmax(mom1_mdl))
-	vmin,vmax=vmin_vmax(mom1_mdl)
-	max_vel = np.nanmax([vmin,vmax])	
-	vmin = -(max_vel//50 + 1)*50
-	vmax = (max_vel//50 + 1)*50
+	#vmin = abs(np.nanmin(mom1_mdl))
+	#vmax = abs(np.nanmax(mom1_mdl))
+	vmin,vmax=vmin_vmax(mom1_mdl,base=10,symmetric=True)
+	#max_vel = np.nanmax([vmin,vmax])	
+	#vmin = -(max_vel//10 + 1)*10
+	#vmax = (max_vel//10 + 1)*10
 
 	ax3.imshow(mom1,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	im4=ax4.imshow(mom1_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')	
-	vmin,vmax=vmin_vmax(res_mom1)
-	im5=ax5.imshow(res_mom1,origin='lower',cmap=cmap,extent=ext,vmin=-50,vmax=50,aspect='auto')
+	vmin,vmax=vmin_vmax(res_mom1,base=10,symmetric=True)
+	im5=ax5.imshow(res_mom1,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
 	#moment 2 maps
 	res_mom2=mom2-mom2_mdl
@@ -98,9 +104,9 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	ax6.imshow(mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	im7=ax7.imshow(mom2_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	#vmin,vmax=vmin_vmax(res_mom2, base=10)
-	vmin,vmax=vmin_vmax(res_mom2,2,98)
-	mean=(abs(vmax)+abs(vmin))//2		
-	im8=ax8.imshow(res_mom2,origin='lower',cmap=cmap,extent=ext,vmin=-mean,vmax=mean,aspect='auto')
+	vmin,vmax=vmin_vmax(res_mom2,2,98,symmetric=True)
+	#mean=(abs(vmax)+abs(vmin))//2		
+	im8=ax8.imshow(res_mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
 
 
@@ -162,15 +168,14 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	#	spec_u='lambda'
 	
 	spec_u = 'km/s'			
-	cb(im1,ax0,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=10, ticksfontsize=8)
-	cb2=cb(im2,ax2,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=10, ticksfontsize = 8,power=True)
+	cb(im1,ax0,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=10, ticksfontsize=9)
+	cb2=cb(im2,ax2,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=10, ticksfontsize=9,power=True)
 
+	cb(im4,ax3,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=9)
+	cb(im5,ax5,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=9)
 
-	cb(im4,ax3,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=8)
-	cb(im5,ax5,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize = 8)
-
-	cb(im7,ax6,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=8)
-	cb(im8,ax8,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -21, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize = 8)
+	cb(im7,ax6,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=9)
+	cb(im8,ax8,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=9)
 	
 	
 	[ny,nx]=mom0.shape
@@ -205,18 +210,20 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 		bmin=bmin_arc/rnorm
 			
 	if psf is not None:
-		x0,y0=ext[1]*(5/6.),ext[2]*(5/6)	
-		x,y=drawellipse(x0,y0,psf/2.,0,bminor=psf/2.)
-		ax0.plot(x,y,'g-',lw=0.5)
-		ax3.plot(x,y,'g-',lw=0.5)
-		ax6.plot(x,y,'g-',lw=0.5)
+		for axes in [ax0,ax1,ax6]:
+			beam=AnchoredEllipse(axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.4, borderpad=0.5,frameon=True, )
+			axes.add_artist(beam)
+      
 	if bmaj_arc is not None and bmin_arc is not None:
-		x0,y0=ext[1]*(5/6.),ext[2]*(5/6)	
-		x,y=drawellipse(x0,y0,bmaj,bpa,bminor=bmin)	
-		ax0.plot(x,y,'g-',lw=0.5)
-		ax3.plot(x,y,'g-',lw=0.5)
-		ax6.plot(x,y,'g-',lw=0.5)						
-			
+		for axes in [ax0,ax1,ax3,ax4,ax6,ax7]:
+			beam=AnchoredEllipse(axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.4, borderpad=0.5,frameon=True)
+			beam.ellipse.set(color='gray')
+			axes.add_artist(beam)
+
+
+
+	
+	  			
 	plt.savefig("%sfigures/mommaps_%s_model_%s.png"%(out,vmode,galaxy))
 	#plt.clf()
 	plt.close()

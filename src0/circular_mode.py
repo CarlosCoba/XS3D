@@ -14,15 +14,16 @@ import matplotlib.pylab as plt
 #first_guess_it = []
 
 class Circular_model:
-	def __init__(self, vmode, galaxy, datacube, header, mommaps, evel, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, outdir,cube_class):
+	def __init__(self, vmode, galaxy, datacube, edatacube, header, mommaps, emoms, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, outdir,cube_class):
 
 		self.galaxy=galaxy
 		self.datacube=datacube
+		self.edatacube=edatacube		
 		self.h=header
 		self.mommaps=mommaps
 		self.vel_copy=np.copy(self.mommaps[1])
 		self.vel=self.mommaps[1]
-		self.evel=evel
+		self.emoms=emoms
 		self.guess0=guess0
 		self.vary=vary
 		self.n_it,self.n_it0=n_it,n_it
@@ -78,7 +79,8 @@ class Circular_model:
 		
 		self.cube_class=cube_class
 		self.outdir = outdir
-		self.emomscube=0
+		self.momscube=0
+		self.emomscube=0		
 		self.nthreads=config_general.getint('nthreads',1)
 		"""
 
@@ -94,7 +96,7 @@ class Circular_model:
 		for it in np.arange(self.n_it):
 
 			# Here we create the tabulated model
-			disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.evel, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
+			disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.emoms, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
 			vrot_tab[abs(vrot_tab) > 400] = np.nanmedian(vrot_tab)
 			
 			# Try to correct the PA if velocities are negative
@@ -103,10 +105,10 @@ class Circular_model:
 				vrot_tab*=-1						
 				
 			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
-			if it == 0: first_guess_it = guess		
+			if it == 0: first_guess_it = guess
 			
 			# Minimization
-			fitting = fit_routine(self.datacube, self.h, self.mommaps, self.evel, guess, self.vary, self.vmode, self.config, R_pos, self.ring_space, self.frac_pixel, self.inner_interp,N_it=self.n_it0)
+			fitting = fit_routine(self.datacube, self.edatacube, self.h, self.mommaps, self.emoms, guess, self.vary, self.vmode, self.config, R_pos, self.ring_space, self.frac_pixel, self.inner_interp,N_it=self.n_it0)
 			# outs
 			kin_3D_modls, Vk , self.pa0, self.eps0, self.x0, self.y0, self.vsys0, self.theta_b, out_data, Errors, true_rings = fitting.results()
 			xi_sq = out_data[-1]
@@ -139,23 +141,25 @@ class Circular_model:
 		self.frac_pixel = 0
 		self.n_it,self.n_it0 = 1, 1			
 		runs = [individual_run]
-		[mom0_cube,mom1_cube,mom2_cube]=self.emomscube
+		[mom0_cube,mom1_cube,mom2_cube]=self.momscube
+		[emom0,emom1,emom2]=self.emomscube		
 		
 		for k in runs:
 			mommaps=[mom0_cube[k],mom1_cube[k],mom2_cube[k]]
+			emommaps=[emom0,emom1,emom2]			
 		
 			seed0 = int(os.getpid()*time.time() / 123456789)
 			self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b = self.GUESS[-6:]
 			# setting chisq to -inf will preserve the leastsquare results
 			self.chisq_global = -np.inf
 			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
-			disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.Rings,mommaps, self.evel, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
+			disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.Rings,mommaps, emommaps, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
 			vels=list(disp_tab)+list(vrot_tab)+list(vrad_tab)+list(vtan_tab)
 			#self.bootstrap_kin[k,:len(vels)] = np.asarray(vels)
 
 			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]			
 			# Minimization
-			fitting = fit_boots(None, self.h, mommaps, self.evel, guess, self.vary, self.vmode, self.config, self.Rings, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
+			fitting = fit_boots(None, self.h, mommaps, emommaps, guess, self.vary, self.vmode, self.config, self.Rings, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
 			# outs
 			_ , pa0, eps0, x0, y0, vsys0, theta_b = fitting.results()
 			# convert PA to rad:
@@ -192,7 +196,7 @@ class Circular_model:
 			print("------------------------------------")			
 			print("starting bootstrap analysis ..")
 			print("------------------------------------")						
-			_,self.emomscube=(self.cube_class).obs_emommaps_boots(self.n_boot)
+			self.emomscube,self.momscube=(self.cube_class).obs_emommaps_boots(self.n_boot)
 			eboots= self.run_boost_para()
 
 

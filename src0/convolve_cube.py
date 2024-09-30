@@ -34,11 +34,6 @@ class Cube_creation:
 		self.vary_disp=config_general.getboolean('fit_dispersion',False)
 		
 		self.wmin,self.wmax=config_general.getfloat('wmin',None),config_general.getfloat('wmax',None)												
-		self.eline_A=config_general.getfloat('eline',None)
-		self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)
-		self.sigma_inst_A=self.fwhm_inst_A*__FWHM_2_sigma__ if self.fwhm_inst_A is not None else None
-		self.sigma_inst_kms=(self.sigma_inst_A/self.eline_A)*__c__ if self.fwhm_inst_A is not None else None
-		self.sigma_inst_pix=(self.sigma_inst_A/self.cdelt3)*np.ones(self.nz) if self.fwhm_inst_A is not None else None
 
 		psf_lsf= PsF_LsF(self.h, config)
 		self.fit_psf=psf_lsf.fit_psf
@@ -46,20 +41,31 @@ class Cube_creation:
 		self.bmin=psf_lsf.bmin
 		self.bpa= psf_lsf.bpa
 		self.fwhm_psf_arc=psf_lsf.fwhm_psf_arc
+				
+		self.eline_A=psf_lsf.eline_A
+		self.fwhm_inst_A=psf_lsf.fwhm_inst_A
+		self.sigma_inst_A=psf_lsf.sigma_inst_A
+		self.sigma_inst_kms=psf_lsf.sigma_inst_kms
+		self.sigma_inst_pix=psf_lsf.sigma_inst_pix
+		
 		
 		self.hdr=Header_info(header,config)
 		self.wave_cover_kms=self.hdr.wave_kms
 		self.cdelt3_kms=self.hdr.cdelt3_kms
+		self.dV=abs(self.cdelt3_kms)		
 		self.ones2d=np.ones((self.ny,self.nx))
 		self.ones3d=np.ones((self.nz,self.ny,self.nx))		
 		self.psf2d=gkernel(self.ones2d.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin,pixel_scale=self.pixel_scale) if self.fit_psf else None
 		self.mom0,self.mom1,self.mom2=self.obs_mommaps()
 		#self.mask_cube=np.isfinite(self.mom0)			
 		self.nthreads=config_general.getint('nthreads',2)			
-		self.eflux2d=0
+		self.eflux3d=0
 		
 		self.x_=self.ones2d*self.wave_cover_kms[:,None,None]
 
+		a=self.vparabola()
+		_,b,_=self.obs_mommaps(vpeak=False)
+		self.emom1=abs(a-b)
 
 	def vparabola(self):
 		vpeak=np.zeros((self.ny,self.nx))
@@ -75,53 +81,51 @@ class Cube_creation:
 	
 			
 	def gaussian_cube(self,vxy,sigmaxy,f0=1):
-		#x_ = self.ones2d*self.wave_cover_kms[:,None,None] # shape: (nz,ny,nx)
 		vxy_ = vxy*np.ones(self.nz)[:,None,None] # shape: (nz,ny,nx)
 		delta_v2=np.square(self.x_-vxy_)
 		sig2= np.square(sigmaxy)*np.ones(self.nz)[:,None,None] # shape: (nz,ny,nx)
-		cube_mod=f0*np.exp(-0.5*delta_v2/sig2 )
+		#cube_mod=f0*np.exp(-0.5*delta_v2/sig2 )
+		# normalize cube_mod ?
+		cube_mod=f0*np.exp(-0.5*delta_v2/sig2 )/(sigmaxy*np.sqrt(2*np.pi))		
 		cube_mod[~np.isfinite(cube_mod)]=0 
 		return cube_mod
 		
 	def obs_mommaps(self, vpeak=False):
-		mom0= trapecium3d(self.datacube,self.cdelt3_kms)
-		Fdv=trapecium3d(self.datacube*self.ones2d*self.wave_cover_kms[:,None,None],self.cdelt3_kms)
+		mom0= trapecium3d(self.datacube,self.dV)
+		Fdv=trapecium3d(self.datacube*self.ones2d*self.wave_cover_kms[:,None,None],self.dV)
 		# If the spectral resolution is low ~50 km/s
 		# then compute the mom1 map with paraboloid
-		if vpeak or self.cdelt3_kms > 50:
+		if vpeak:
 			mom1=self.vparabola()*(mom0!=0)
 		else:
 			mom1=np.divide(Fdv,mom0,where=mom0!=0,out=np.zeros_like(mom0))							
 		
 		dv2= self.datacube*np.square(self.ones3d*self.wave_cover_kms[:,None,None]-mom1*self.ones3d)
-		#mom2=np.sqrt( abs(trapecium3d(dv2,self.cdelt3_kms)/mom0) )
-		mom2=np.sqrt( abs(np.divide(trapecium3d(dv2,self.cdelt3_kms),mom0,where=mom0!=0,out=np.zeros_like(mom0))) )
+		#mom2=np.sqrt( abs(trapecium3d(dv2,self.dV)/mom0) )
+		mom2=np.sqrt( abs(np.divide(trapecium3d(dv2,self.dV),mom0,where=mom0!=0,out=np.zeros_like(mom0))) )
 				
 		return [mom0,mom1,mom2]
 
-	def obs_emommaps(self,individual_run=0):
-	
-		sigma_spectral = self.sigma_inst_kms/1. if self.sigma_inst_kms is not None else self.cdelt3_kms/1.
-		sigma_spectral*=0.5
+	def obs_mommaps_rnd(self,individual_run=0):
+		sigma_spectral = self.sigma_inst_kms/1. if self.sigma_inst_kms is not None else self.dV/1.
 		runs = [individual_run]
 				
 		for k in runs:
 			# randomly draw a sample of the observed spectrum
-			newfluxcube=self.datacube+np.random.randn(self.nz,self.ny,self.nx)*self.eflux2d
-			newspectral=self.wave_cover_kms[:,None,None]+np.random.randn(self.nz,self.ny,self.nx)*sigma_spectral
-			#newcube0=np.copy(self.datacube)
+			newfluxcube=self.datacube+np.random.randn(self.nz,self.ny,self.nx)*self.eflux3d
+			newspectral=self.wave_cover_kms[:,None,None]+np.random.randn(self.ny,self.nx)*self.emom1
 			for i,j in product(np.arange(self.nx),np.arange(self.ny)):
 				fi = interpolate.interp1d(newspectral[:,j,i],newfluxcube[:,j,i],fill_value='extrapolate')	
-				newfluxcube[:,j,i]=fi(self.wave_cover_kms)
-				            				
+				newfluxcube[:,j,i]=fi(self.wave_cover_kms)            				
+						
 			#newcube=newcube0	            				
-			mom0= trapecium3d(newfluxcube,self.cdelt3_kms)
-			Fdv=trapecium3d(newfluxcube*self.ones2d*self.wave_cover_kms[:,None,None],self.cdelt3_kms)
+			mom0= trapecium3d(newfluxcube,self.dV)
+			Fdv=trapecium3d(newfluxcube*self.ones2d*self.wave_cover_kms[:,None,None],self.dV)
 			mom1=np.divide(Fdv,mom0,where=mom0!=0,out=np.ones_like(mom0))
 			
 			dv2= newfluxcube*np.square(self.ones3d*self.wave_cover_kms[:,None,None]-mom1*self.ones3d)
-			#mom2=np.sqrt( abs(trapecium3d(dv2,self.cdelt3_kms)/mom0) )
-			mom2=np.sqrt( abs(np.divide(trapecium3d(dv2,self.cdelt3_kms),mom0,where=mom0!=0,out=np.ones_like(mom0))) )
+			#mom2=np.sqrt( abs(trapecium3d(dv2,self.dV)/mom0) )
+			mom2=np.sqrt( abs(np.divide(trapecium3d(dv2,self.dV),mom0,where=mom0!=0,out=np.ones_like(mom0))) )
 		
 		del newfluxcube	
 		return mom0,mom1,mom2
@@ -132,7 +136,7 @@ class Cube_creation:
 		mom1_cube=np.ones((niter,self.ny,self.nx))
 		mom2_cube=np.ones((niter,self.ny,self.nx))
 		with Pool(self.nthreads) as pool:
-			result=pool.map(self.obs_emommaps,np.arange(niter))
+			result=pool.map(self.obs_mommaps_rnd,np.arange(niter))
 		
 		for k in range(niter):
 			mom0_cube[k] = result[k][0]
@@ -142,22 +146,21 @@ class Cube_creation:
 		emom0_2d=np.nanstd(mom0_cube,axis=0)
 		emom1_2d=np.nanstd(mom1_cube,axis=0)
 		emom2_2d=np.nanstd(mom2_cube,axis=0)
-							
 		return [emom0_2d,emom1_2d,emom2_2d],[mom0_cube,mom1_cube,mom2_cube]
 
 				
 	def cube_convolved(self,cube,norm=False):
-		mom0= trapecium3d(cube,self.cdelt3_kms)
+		mom0= trapecium3d(cube,self.dV)
 		cube_mod_psf_norm=cube*np.divide(self.mom0,mom0,where=mom0!=0,out=np.zeros_like(mom0)) #if norm else cube_mod
-		mom0_norm=trapecium3d(cube_mod_psf_norm,self.cdelt3_kms)
+		mom0_norm=trapecium3d(cube_mod_psf_norm,self.dV)
 		
-		Fdv=trapecium3d(cube_mod_psf_norm*self.ones2d*self.wave_cover_kms[:,None,None],self.cdelt3_kms)
+		Fdv=trapecium3d(cube_mod_psf_norm*self.ones2d*self.wave_cover_kms[:,None,None],self.dV)
 		#mom1=Fdv/mom0_norm
 		mom1=np.divide(Fdv,mom0_norm,where=mom0_norm!=0,out=np.zeros_like(mom0_norm))
 				
 		dv2= cube_mod_psf_norm*np.square(self.ones3d*self.wave_cover_kms[:,None,None]-mom1*self.ones3d)
-		#mom2=np.sqrt( trapecium3d(dv2,self.cdelt3_kms)/mom0_norm)
-		mom2=np.sqrt( abs(np.divide(trapecium3d(dv2,self.cdelt3_kms),mom0_norm,where=mom0_norm!=0,out=np.zeros_like(mom0_norm))) )
+		#mom2=np.sqrt( trapecium3d(dv2,self.dV)/mom0_norm)
+		mom2=np.sqrt( abs(np.divide(trapecium3d(dv2,self.dV),mom0_norm,where=mom0_norm!=0,out=np.zeros_like(mom0_norm))) )
 		return mom0_norm,mom1,mom2,cube_mod_psf_norm
 		
 	def create_cube(self,velmap,sigmap,padded_cube=None,padded_psf=None,cube_slices=None, pass_cube=True, fit_cube=False):

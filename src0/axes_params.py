@@ -4,11 +4,11 @@ import matplotlib.pylab as plt
 from matplotlib.ticker import FormatStrFormatter
 majorFormatter = FormatStrFormatter("$%g$")
 
-def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 10, fontsize_yticklabel = 10, fontsize_ticklabels = None,  rotation = "vertical", frame = False, remove_axis_lines = 0 ):
-	
-	if fontsize_ticklabels != None:
-		fontsize_xticklabel, fontsize_yticklabel = 8, 8
+#def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 10, fontsize_yticklabel = 10, fontsize_ticklabels = None,  rotation = "vertical", frame = False, remove_axis_lines = 0 ):
 
+def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 10, fontsize_yticklabel = 10, fontsize_ticklabels = 8,  rotation = "vertical", frame = False, remove_axis_lines = 0 ):
+	
+	fontsize_xticklabel, fontsize_yticklabel = fontsize_ticklabels, fontsize_ticklabels
 	plt.setp(axis.get_yticklabels(), rotation=rotation, fontsize=fontsize_yticklabel)#,visible=False)
 	plt.setp(axis.get_xticklabels(), fontsize=fontsize_xticklabel)
 
@@ -41,8 +41,8 @@ def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks
 		plt.setp(axis.get_xticklabels(), fontsize=fontsize_xticklabel)
 
 
-	axis.tick_params(axis='x', colors='k',pad=1)
-	axis.tick_params(axis='y', colors='k',pad=1)
+	axis.tick_params(axis='x', colors='k',pad=3)
+	axis.tick_params(axis='y', colors='k',pad=3)
 	axis.tick_params(axis='both',direction='in',color=tickscolor)
 
 

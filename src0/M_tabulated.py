@@ -94,7 +94,7 @@ def trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode="radial",pixel_s
 
 
 
-def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, evel_map, pixel_scale=1,vmode = "radial", m_hrm = 1):
+def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=1,vmode = "radial", m_hrm = 1):
 
 	[ny,nx] = shape
 
@@ -103,13 +103,10 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, evel_map, pixel_sca
 	X = np.arange(0, nx, 1)
 	Y = np.arange(0, ny, 1)
 	xy_mesh = np.meshgrid(X,Y)
-	#evel_map[evel_map == 1] = np.nan
-	e_vel = evel_map
-	mom0,mom1,mom2=mommaps
+	[emom0,emom1,emom2]=emoms
+	[mom0,mom1,mom2]=mommaps
 	vel_val=mom1
 	disp=mom2
-	e_vel=np.ones_like(disp)
-
 
 	weigths_k,weigths_j,mask = weigths_w(xy_mesh,shape,pa,eps,x0,y0,rings,delta,k,pixel_scale =pixel_scale)
 	weigths_k,weigths_j = np.asarray(weigths_k),np.asarray(weigths_j)
@@ -117,7 +114,7 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, evel_map, pixel_sca
 	# dispersion
 
 	w_rot = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,'dispersion')
-	sigma_v = e_vel[mask]
+	sigma_v = emom2[mask]
 	x11,x12 = w_rot**2/sigma_v**2,0/sigma_v**2
 	x21,x22 = 0/sigma_v**2,0/sigma_v**2
 
@@ -133,7 +130,7 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, evel_map, pixel_sca
 
 		w_rot = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,vmode)
 
-		sigma_v = e_vel[mask]
+		sigma_v = emom1[mask]
 		x11,x12 = w_rot**2/sigma_v**2,0/sigma_v**2
 		x21,x22 = 0/sigma_v**2,0/sigma_v**2
 
@@ -160,7 +157,7 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, evel_map, pixel_sca
 
 		w_rot, w_rad = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,vmode)
 
-		sigma_v = e_vel[mask]
+		sigma_v = emom1[mask]
 		x11,x12 = w_rot**2/sigma_v**2,w_rot*w_rad/sigma_v**2
 		x21,x22 = w_rot*w_rad/sigma_v**2,w_rad**2/sigma_v**2
 
@@ -185,7 +182,7 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, evel_map, pixel_sca
 
 		w_rot, w_rad, w_tan = trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode)
 
-		sigma_v = e_vel[mask]
+		sigma_v = emom1[mask]
 		x11,x12,x13 = w_rot**2/sigma_v**2,w_rot*w_rad/sigma_v**2,w_tan*w_rot/sigma_v**2
 		x21,x22,x23 = w_rot*w_rad/sigma_v**2,w_rad**2/sigma_v**2,w_rad*w_tan/sigma_v**2
 		x31,x32,x33 = w_rot*w_tan/sigma_v**2,w_rad*w_tan/sigma_v**2,w_tan**2/sigma_v**2
@@ -221,7 +218,7 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, evel_map, pixel_sca
 		w = w_c + w_s
 
 		m = 2*m_hrm
-		sigma_v = e_vel[mask]
+		sigma_v = emom1[mask]
 		X = []
 		for j in range(1,m+1):
 			for i in range(1,m+1):				

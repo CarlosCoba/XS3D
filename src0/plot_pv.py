@@ -60,7 +60,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	ext1[3]=ext1[3]-vsys
 			
 	mom0,mom1,mom2=momaps
-	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr= momms_mdls
+	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels = momms_mdls
 	pvd_maj,pvd_min,pvd_maj_mdl,pvd_min_mdl=pvds[0],pvds[1],pvds[2],pvds[3]
 	#pvd_maj,pvd_min,pvd_maj_mdl,pvd_min_mdl=pvd_maj/rms,pvd_min/rms,pvd_maj_mdl/rms,pvd_min_mdl/rms
 	msk=np.isfinite(mom0*mom0_mdl/mom0)	
@@ -92,11 +92,11 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	vmin = abs(np.nanmin(mom1_mdl[msk]))
 	vmax = abs(np.nanmax(mom1_mdl[msk]))
 	max_vel = np.nanmax([vmin,vmax])	
-	vminv = -(max_vel//50 + 1)*50
-	vmaxv = (max_vel//50 + 1)*50
+	vminv = -(max_vel//10 + 1)*10
+	vmaxv = (max_vel//10 + 1)*10
 
 
-	width, height = 13, 8 # width [cm]
+	width, height = 14, 8 # width [cm]
 	#width, height = 3, 15 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
@@ -104,7 +104,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
   
 	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
 	#nrows x ncols
-	widths = [0.7,0.7,0.7,1,1]
+	widths = [0.6,0.6,0.7,1,1]
 	heights = [1,1,0.1,1,1]
 	gs2 = gridspec.GridSpec(5, 5, width_ratios=widths, height_ratios=heights)
 	gs2.update(left=0.1, right=0.97,top=0.98,bottom=0.1, hspace = 0.0, wspace = 0.0)
@@ -253,11 +253,11 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	if psf is not None and 	fwhm_kms is not None:
 		x0,y0=ext0[0]*(5/6.),ext0[2]*(5/6)	
 		x,y=drawellipse(x0,y0,fwhm_kms,0,bminor=psf/2.)
-		ax0.plot(x,y,'g-',lw=0.5)
+		ax0.plot(x,y,'k-',lw=0.5)
 		
 		x0,y0=ext1[0]*(5/6.),ext1[2]*(5/6)	
 		x,y=drawellipse(x0,y0,fwhm_kms,0,bminor=psf/2.)		
-		ax1.plot(x,y,'g-',lw=0.5)		
+		ax1.plot(x,y,'k-',lw=0.5)		
 	
 	ax0.set_xlim(ext0[0],ext0[1])
 	ax1.set_xlim(ext1[0],ext1[1])	

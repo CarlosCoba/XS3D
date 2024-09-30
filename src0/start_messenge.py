@@ -64,10 +64,11 @@ class Print:
 				print ('{:<20} {:<15}'.format('PSF FWHM:', f'{psf_fwhm} arcsec'))
 		if bmaj is not None and bmin is not None:				
 				bmaj=round(bmaj,3)
-				bmin=round(bmaj,3)
+				bmin=round(bmin,3)
 				print ('{:<20} {:<15}'.format('BMAJ:', f'{bmaj} arcsec'))
 				print ('{:<20} {:<15}'.format('BMIN:', f'{bmin} arcsec'))				
-		if bpa!=0:				
+		if bpa!=0:
+				bpa=round(bpa,1)				
 				print ('{:<20} {:<15}'.format('BPA:', f'{bpa} deg'))										
 		if fwhm_inst != 0:
 				fwhm_inst=round(fwhm_inst,3)

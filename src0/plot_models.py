@@ -12,10 +12,13 @@ from src0.colormaps_CLC import vel_map
 #params =   {'text.usetex' : True }
 #plt.rcParams.update(params) 
 
-def vmin_vmax(data,pmin=5,pmax=98,base=None):
+def vmin_vmax(data,pmin=2,pmax=99.5,base=None,symmetric =False):
 	vmin,vmax=np.nanpercentile(np.unique(data),pmin),np.nanpercentile(np.unique(data),pmax)
+	vsym = (vmax+abs(vmin))*0.5
+	if symmetric: vmin,vmax=-1*vsym,vsym				
 	if base is not None:
 		vmin,vmax=(vmin//base+1)*base,(vmax//base+1)*base
+		if symmetric: vmin,vmax=-1*(vsym//base+1)*base,(vsym//base+1)*base
 	return vmin,vmax
 
 def zero2nan(data):
@@ -25,25 +28,26 @@ def zero2nan(data):
 cmap = vel_map()
 
 def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad,Vtan,eVtan,VSYS,ext,out):
-	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr= momms_mdls
+	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
+	vt2D=twoDmodels[0]
 
-
-	width, height = 14.0, 5.5 # width [cm]
+	width, height = 9, 10 # width [cm]
 	#width, height = 3, 15 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
   
 	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
-	#nrows x ncols
-	widths = [1, 1, 0.4,1.5]
-	heights = [1]
-	gs2 = gridspec.GridSpec(1, 4,  width_ratios=widths, height_ratios=heights)
-	gs2.update(left=0.06, right=0.99,top=0.81,bottom=0.14, hspace = 0.03, wspace = 0)
 
-	ax0=plt.subplot(gs2[0,0])
-	ax1=plt.subplot(gs2[0,1])
-	ax2=plt.subplot(gs2[0,3])
+	widths = [1,1,1,1,1,0.2]
+	heights = [1.5,1,1,1,1,1]
+	gs2 = gridspec.GridSpec(6, 6,  width_ratios=widths, height_ratios=heights)
+	gs2.update(left=0.15, right=1,top=0.98,bottom=0.08, hspace = 0.0, wspace = 0.0)
+	ax0=plt.subplot(gs2[0:2,0:2])
+	ax1=plt.subplot(gs2[0:2,2:4])
+	ax2=plt.subplot(gs2[3:,0:-1])
+
+	#ax2=plt.subplot(gs2[0,3])
 
 	# is it the axes in arcsec or arcmin ?
 	rnorm=1
@@ -56,17 +60,12 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	ext = ext/rnorm
 	R=R/rnorm
 	
+	
 	# intrinsic velocity
-	velmap_intr=zero2nan(velmap_intr)
-	velmap=velmap_intr-VSYS
-	
-	vmin = abs(np.nanmin(velmap))
-	vmax = abs(np.nanmax(velmap))
-	max_vel = np.nanmax([vmin,vmax])	
-	vmin = -(max_vel//50 + 1)*50
-	vmax = (max_vel//50 + 1)*50
-	
-	im0=ax0.imshow(velmap,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
+	vt=zero2nan(vt2D)
+	#velmap=velmap_intr-VSYS
+	velmax = 10*(np.nanmax(vt) // 10) 		
+	im0=ax0.imshow(vt,origin='lower',cmap=cmap,extent=ext, vmin=0,vmax=velmax, aspect='auto')
 	
 	
 	# intrinsic velocity dispersion
@@ -85,18 +84,18 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 
 
 	axs(ax0)
-	axs(ax1,remove_yticks= True)
+	axs(ax1,remove_yticks=True)
 	axs(ax2, rotation='horizontal')
 
 
 
-	ax0.set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=10,labelpad=1)
-	ax0.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=10,labelpad=1)
-	ax1.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=10,labelpad=1)
+	ax0.set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=8,labelpad=1)
+	ax0.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=8,labelpad=1)
+	ax1.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=8,labelpad=1)
+	#ax1.set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=8,labelpad=1)
 
-
-	txt = AnchoredText('$\mathrm{V}_{intrinsic}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax0.add_artist(txt)
-	txt = AnchoredText('$\sigma_{intrinsic}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax1.add_artist(txt)
+	txt = AnchoredText('$\mathrm{V}_{t}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax0.add_artist(txt)
+	txt = AnchoredText('$\sigma$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax1.add_artist(txt)
 
 
 	ax2.plot(R,Sigma, color = "#db6d52",linestyle='--', alpha = 1, linewidth=0.8, label = "$\sigma_{intrin}$")
@@ -133,8 +132,8 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	vels=vels[msk]
 	max_vel,min_vel = int(np.nanmax(vels)),int(np.nanmin(vels))
 	min_vel = abs(min_vel)
+	pad=40
 
-	ax2.set_ylim(-30*(min_vel//30)-30,30*(max_vel//30)+40)
 	M=25
 	if max_vel> 120:
 		M=30
@@ -143,16 +142,22 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	if max_vel>250:
 		M=50
 	if max_vel>300:
-		M=60	   
+		M=60
+
+	if max_vel < 50:
+		M = 10
+		ax2.set_ylim(-5*(min_vel//5)-5,5*(max_vel//5))
+	else:			   		
+		ax2.set_ylim(-30*(min_vel//30)-30,30*(max_vel//30)+40)			   
 	ax2.yaxis.set_major_locator(MultipleLocator(M))
 
 	ax2.plot([0,np.nanmax(R)],[0,0],color = "k",linestyle='-', alpha = 0.6,linewidth = 0.3)
 	ax2.set_xlabel(f'r ({rlabel})',fontsize=10,labelpad = 2)
 	ax2.set_ylabel('$\mathrm{V_{rot}~(km~s^{-1})}$',fontsize=10,labelpad = 2)
 
-	cb(im0,ax0,orientation = "horizontal", colormap = cmap, bbox= (0.10,1.1,0.8,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{(km~s^{-1})}$",labelsize=10, ticksfontsize = 9)
-	cb(im1,ax1,orientation = "horizontal", colormap = cmap, bbox= (0.10,1.1,0.8,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{(km~s^{-1})}$",labelsize=10, ticksfontsize = 9)
-	ax2.grid(visible = True, which = "major", axis = "both", color='w', linestyle='-', linewidth=0.5, zorder = 1, alpha = 0.5)
+	cb(im0,ax0,orientation = "horizontal", colormap = cmap, bbox= (2.07,0.5,0.45,1),width = "100%", height = "5%",label_pad = -23, label = "$V/\mathrm{km~s^{-1}}$",labelsize=8, ticksfontsize = 8, ticks = [0,velmax])
+	cb(im1,ax1,orientation = "horizontal", colormap = cmap, bbox= (1.07,0.1,0.45,1),width = "100%", height = "5%",label_pad = -23, label = "$\sigma/\mathrm{km~s^{-1}}$",labelsize=8, ticksfontsize = 8)
+	#ax2.grid(visible = True, which = "major", axis = "both", color='w', linestyle='-', linewidth=0.5, zorder = 1, alpha = 0.5)
 
 	plt.savefig("%sfigures/kin_%s_disp_%s.png"%(out,vmode,galaxy))
 	#plt.clf()

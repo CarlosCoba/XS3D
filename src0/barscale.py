@@ -7,6 +7,12 @@ def bscale(vsys,nx,pixel,f=4):
 	dist=Angdist(red_)
 	dL,scale_pc_arc=dist.comv_distance()
 	bar_scale_arc0 = (nx//f)*pixel
+	
+	if scale_pc_arc < 1:
+		bar_scale_au = int(bar_scale_arc0)
+		bar_scale_u=int(bar_scale_au*scale_pc_arc*206265)
+		return bar_scale_au,0,'pc'
+		
 	if bar_scale_arc0 // 10 == 0:
 		round_int=int(abs(np.log10(bar_scale_arc0)))
 		bar_scale_arc=int(round(bar_scale_arc0,round_int))

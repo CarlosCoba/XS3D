@@ -8,7 +8,7 @@ def zero2nan(data):
 
 
 def save_momments(galaxy,vmode,momms_mdls,momms_obs,datacube,baselcube,hdr,out):
-	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr= momms_mdls
+	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
 	mom0,mom1,mom2=momms_obs
 	mom0,mom1,mom2=zero2nan(mom0),zero2nan(mom1),zero2nan(mom2)
 	mom0_mdl,mom1_mdl,mom2_mdl=zero2nan(mom0_mdl),zero2nan(mom1_mdl),zero2nan(mom2_mdl_kms)
@@ -35,13 +35,13 @@ def save_momments(galaxy,vmode,momms_mdls,momms_obs,datacube,baselcube,hdr,out):
 	data=zero2nan(data)
 	
 	hdu = fits.PrimaryHDU(data)
-	hdu.header['NAME0'] = f'observed mom0 (flux*{spec_u})'
-	hdu.header['NAME1'] = f'model mom0 (flux*{spec_u})'			
+	hdu.header['NAME0'] = f'observed mom0 (flux)'
+	hdu.header['NAME1'] = f'model mom0 (flux)'			
 	hdu.header['NAME2'] = 'observed mom1 (km/s)'
 	hdu.header['NAME3'] = 'model mom1 (km/s)'
 	hdu.header['NAME4'] = 'intrinsic circular velocity (km/s)'
 	hdu.header['NAME5'] = 'observed mom2 (km/s)'
-	hdu.header['NAME6'] = f'model mom2 (AA)'
+	hdu.header['NAME6'] = f'model mom2 (km/s)'
 	hdu.header['NAME7'] = 'model mom2 (km/s)'
 	hdu.header['NAME8'] = 'intrinsic dispersion(km/s)'
 	

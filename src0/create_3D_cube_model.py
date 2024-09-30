@@ -143,7 +143,6 @@ class best_3d_model:
 			sigmap=twoDmdls[0]
 			interp_model=twoDmdls[1:]
 			
-
 			"""
 			Analysis of the inner radius
 
@@ -202,8 +201,8 @@ class best_3d_model:
 			sigmap[mask_inner] = v_new
 			#"""
 
-
-
+			#create a copy
+			twoDmodels=np.copy(interp_model)
 
 			theta,cos_theta0=AZIMUTHAL_ANGLE([self.ny,self.nx],self.pa,self.eps,self.x0,self.y0)
 			sin,cos=SIN_COS(self.XY_mesh,self.pa,self.eps,self.x0,self.y0)			
@@ -252,6 +251,6 @@ class best_3d_model:
 			mom2_mdl_kms[mom2_mdl_kms==0]=np.nan						
 			mom2_mdl_A[mom2_mdl_A==0]=np.nan
 
-			return mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr
+			return mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels
 
 

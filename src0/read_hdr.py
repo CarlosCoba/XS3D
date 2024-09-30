@@ -16,7 +16,7 @@ class Header_info:
 		self.cunit1='deg'
 		#self.cdelt3_kms=0
 		self.cunit3=''
-		self.wavelength_wave=['Angstrom','angstrom','um','WAVELENGTH','WAVE','ANGSTROM','UM','micron','lambda']
+		self.wavelength_wave=['Angstrom','angstrom','um','WAVELENGTH','WAVE','ANGSTROM','UM','micron','lambda','LAMBDA']
 		self.wavelength_frec=['FREQ','Freq','freq','FREQUENCY','frequency','Hz','HZ']			
 		self.wave_types=self.wavelength_wave+self.wavelength_frec
 		general=self.config['general']
@@ -85,6 +85,13 @@ class Header_info:
 				wave_hz2kms=__c__*((self.eline/self.spec_axis)-1) # wave in kms	optical definition		
 			self.wave_kms=wave_hz2kms
 			self.cdelt3_kms=__c__*(self.cdelt3/self.eline)
+		elif 'velocity' in self.ctype3:
+			if 'kms' in self.ctype3:
+				self.wave_kms=self.spec_axis
+				self.cdelt3_kms=self.cdelt3			
+			elif 'ms' in self.ctype3:
+				self.wave_kms=self.spec_axis/1e3
+				self.cdelt3_kms=self.cdelt3/1e3					
 		else:
 			print("No spectral information/units found in header or in config_file");quit()
 			

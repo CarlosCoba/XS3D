@@ -108,19 +108,21 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	
 	
-def ecube(cube,box=5):
-	# estimate the error in every pixel based on the
+def ecube(cube,rms,box=5):
+	# estimate the error in every channel based on the
 	# negative values on the spectra along the spectral axis.
-	# Each spectrum has a unique error.
+
 	neg_msk=cube<0
 	neg_cube=abs(cube*neg_msk)
-	neg_cube[neg_cube==0]=np.nan
-	avg_z=np.nanmedian(neg_cube, axis=0)
 	
-	if not np.nansum(avg_z):
-		avg_z=np.ones_like(avg_z)
-
-	return 	avg_z	
+	errorcube=np.zeros_like(cube)
+	error2D = np.mean(neg_cube, axis = 0, where = neg_cube!=0)	
+	#for k in range(cube.shape[0]):
+	#	rms_channel=rmse(neg_cube[k])
+	#	errorcube[k]=rms_channel if rms_channel !=0 else 0
+	
+	errorcube=np.sqrt(rms**2 + error2D**2) + errorcube	
+	return 	errorcube	
 	
 	
 	

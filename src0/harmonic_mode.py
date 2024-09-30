@@ -13,16 +13,17 @@ import os
 from multiprocessing import Pool, cpu_count
 
 class Harmonic_model:
-	def __init__(self, galaxy, datacube, header, mommaps, evel, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, m_hrm, outdir,cube_class):
+	def __init__(self, galaxy, datacube, edatacube, header, mommaps, emoms, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, m_hrm, outdir,cube_class):
 
 
 		self.galaxy=galaxy
 		self.datacube=datacube
+		self.edatacube=edatacube		
 		self.h=header
 		self.mommaps=mommaps
 		self.vel_copy=np.copy(self.mommaps[1])
 		self.vel=self.mommaps[1]
-		self.evel=evel
+		self.emoms=emoms
 		self.guess0=guess0
 		self.vary=vary
 		self.n_it,self.n_it0=n_it,n_it
@@ -81,6 +82,7 @@ class Harmonic_model:
 
 		self.cube_class=cube_class
 		self.outdir = outdir
+		self.momscube=0
 		self.emomscube=0
 		self.nthreads=config_general.getint('nthreads',1)
 
@@ -99,20 +101,20 @@ class Harmonic_model:
 		c1_tab_it, c3_tab_it, s1_tab_it, s3_tab_it = np.zeros(self.nrings,), np.zeros(self.nrings,), np.zeros(self.nrings,),np.zeros(self.nrings,)
 		for it in np.arange(self.n_it):
 			# Here we create the tabulated model
-			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.evel, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)			
+			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.emoms, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)			
 			c1_tab = c_tab[0]
 			c1_tab[abs(c1_tab) > 400] = np.nanmedian(c1_tab)
 			# Try to correct the PA if velocities are negative
 			if np.nanmean(c1_tab) < 0 :
 				self.pa0 = self.pa0 + 180			
-				c_tab[0]=-1*c_tab[0]			
+				c_tab[0]=-1*c_tab[0]							
 			# convert arrays to list
 			c_tab=[list(c_tab[k]) for k in range(self.m_hrm)]
 			s_tab=[list(s_tab[k]) for k in range(self.m_hrm)]
 			disp_tab=list(disp_tab)
 			guess = [disp_tab,c_tab,s_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 			# Minimization
-			fitting = fit_routine(self.datacube, self.h, self.mommaps, self.evel, guess, self.vary, self.vmode, self.config, R_pos, self.ring_space, self.frac_pixel, self.inner_interp, self.m_hrm, N_it=self.n_it0)
+			fitting = fit_routine(self.datacube, self.edatacube, self.h, self.mommaps, self.emoms, guess, self.vary, self.vmode, self.config, R_pos, self.ring_space, self.frac_pixel, self.inner_interp, self.m_hrm, N_it=self.n_it0)
 			kin_3D_modls, Vk , self.pa0, self.eps0, self.x0, self.y0, self.vsys0, self.theta_b, out_data, Errors, true_rings = fitting.results()
 			xi_sq = out_data[-1]
 			
@@ -121,10 +123,6 @@ class Harmonic_model:
 			# The first circular and first radial components
 			c1 = c_k[0]
 			s1 = s_k[0]
-
-			if np.nanmean(c1) < 0 :
-				self.pa0 = self.pa0 + 180			
-				c1 = abs(np.asarray(c1))
 
 			# Keep the best fit 
 			if xi_sq < self.chisq_global:
@@ -152,9 +150,11 @@ class Harmonic_model:
 		self.n_it,self.n_it0 = 1, 1			
 		runs = [individual_run]
 		[mom0_cube,mom1_cube,mom2_cube]=self.emomscube
-		
+		[emom0_cube,emom1_cube,emom2_cube]=self.emomscube		
+				
 		for k in runs:
 			mommaps=[mom0_cube[k],mom1_cube[k],mom2_cube[k]]
+			emommaps=[emom0,emom1,emom2]			
 			
 			seed0 = int(os.getpid()*time.time() / 123456789)
 			self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b = self.GUESS[-6:]
@@ -162,7 +162,7 @@ class Harmonic_model:
 			self.chisq_global = -np.inf
 			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
 								
-			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.Rings,mommaps, self.evel, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)			
+			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.Rings,mommaps, emommaps, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)			
 			c_tab=[list(c_tab[j]) for j in range(self.m_hrm)]
 			s_tab=[list(s_tab[j]) for j in range(self.m_hrm)]			
 			kin=[c_tab, s_tab, disp_tab]
@@ -171,7 +171,7 @@ class Harmonic_model:
 
 			guess = [disp_tab,c_tab,s_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 			# Minimization
-			fitting = fit_boots(None, self.h, mommaps, self.evel, guess, self.vary, self.vmode, self.config, self.Rings, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
+			fitting = fit_boots(None, self.h, mommaps, emommaps, guess, self.vary, self.vmode, self.config, self.Rings, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
 			# outs
 			_ , pa0, eps0, x0, y0, vsys0, theta_b = fitting.results()
 			# convert PA to rad:
@@ -211,7 +211,7 @@ class Harmonic_model:
 			print("------------------------------------")			
 			print("starting bootstrap analysis ..")
 			print("------------------------------------")								
-			_,self.emomscube=(self.cube_class).obs_emommaps_boots(self.n_boot)
+			self.emomscube,self.momscube=(self.cube_class).obs_emommaps_boots(self.n_boot)
 			eboots=self.run_boost_para()
 
 

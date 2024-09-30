@@ -20,7 +20,7 @@ def slit(xy,pa,eps,x0,y0,width=5,pixel=1):
 
 
 def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
-	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr= momms_mdls
+	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
 	[nz,ny,nx]=datacube.shape
 	extimg=np.dot([-nx/2.,nx/2.,-ny/2.,ny/2.],pixel)
 	

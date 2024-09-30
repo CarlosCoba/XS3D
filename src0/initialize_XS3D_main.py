@@ -16,14 +16,13 @@ from src0.harmonic_mode import Harmonic_model
 from src0.start_messenge import Print
 from src0.pixel_params import inc_2_eps, eps_2_inc,e_eps2e_inc
 from src0.momtools import mommaps
-
-from src0.save_fits_2D_model import save_vlos_model
+from src0.save_2D_kin_models import  save_2d_models
 from src0.save_fits_1D_model_harmonic import save_model_h
 from src0.plot_models_harmonic import plot_kin_models_h
+from src0.plot_models import plot_kin_models
 from src0.save_fits_1D_model import save_model
 from src0.save_fits_mommaps import save_momments,save_rmomments
 from src0.save_fits_pvd import save_pvds
-from src0.plot_models import plot_kin_models
 from src0.plot_momms import plot_mommaps
 from src0.plot_resmoms import plot_rmommaps
 from src0.create_directories import direc_out
@@ -86,18 +85,24 @@ class Run_models:
 		rms3d,self.rms_cube,vpeak2D=mask_cube(self.datacube,config,self.hdr_info,msk_user=self.msk2d_cube)
 		self.datacube=self.datacube*rms3d
 		self.h['RMS_CUBE']=self.rms_cube
-		
-		#create observed momemnt maps
+
+		#cube class
 		cube_class=Cube_creation(self.datacube,self.h,[1]*3,config)
-		self.momaps=cube_class.obs_mommaps(vpeak=False)
+				
+		# create error cube
+		self.errcube=ecube(self.datacube,self.rms_cube)
+		cube_class.eflux3d=self.errcube
+				
+		#create observed momemnt maps
+		self.momaps=cube_class.obs_mommaps(vpeak=False)		
+		# create random moments instead ?
+		#self.momaps=cube_class.obs_mommaps_rnd(individual_run=1)
+				
 		[self.mom0,self.mom1,self.mom2]=self.momaps
 		if vpeak2D is not None: self.mom1=vpeak2D
 		
-		# create error mommaps
-		errcube=ecube(self.datacube)
-		cube_class.eflux2d=errcube
-		emoments=cube_class.obs_emommaps()
-		self.evel_map=emoments
+		# create temporary error moment maps
+		self.emoms=[np.ones_like(self.mom0),np.ones_like(self.mom1),np.ones_like(self.mom2)]
 		
 		self.vel_map=self.mom1
 		self.pixel_scale=self.hdr_info.scale
@@ -143,10 +148,10 @@ class Run_models:
 
 		self.P.status("Starting Least Squares analysis",line=True)
 		if "hrm" not in self.vmode: 
-			circ = Circular_model(self.vmode, galaxy, self.datacube, self.h, self.momaps, self.evel_map, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.outdir,cube_class)
+			circ = Circular_model(self.vmode, galaxy, self.datacube, self.errcube, self.h, self.momaps, self.emoms, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.outdir,cube_class)
 			self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.PHI_BAR,self.R,self.Disp,self.Vrot,self.Vrad,self.Vtan, self.kin_3D_mdls,self.PA_bar_mjr,self.PA_bar_mnr,self.bic_aic,self.errors_fit = circ()
 		if "hrm" in self.vmode:
-			hrm = Harmonic_model(galaxy, self.datacube, self.h, self.momaps, self.evel_map, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.m_hrm, self.outdir,cube_class)
+			hrm = Harmonic_model(galaxy, self.datacube, self.errcube, self.h, self.momaps, self.emoms, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.m_hrm, self.outdir,cube_class)
 			self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.R,self.Disp,self.Ck,self.Sk,self.kin_3D_mdls,self.bic_aic,self.errors_fit = hrm()
 			self.Vrot=self.Ck[0]
 		
@@ -201,14 +206,15 @@ class XS_out(Run_models):
 		# plot momment maps and 1D profiles
 		self.P.status("Plotting results")
 		plot_mommaps(self.galaxy,self.kin_3D_mdls,self.momaps,self.VSYS,self.ext,self.vmode,self.h,self.config,self.pixel_scale,out=self.outdir)
-		self.P.status("Saving 1D profiles")		
+		self.P.status("Saving 1D & 2D profiles")		
 		if 'hrm' not in self.vmode:
 			# save 1d profiles
 			s = save_model(self.galaxy, self.vmode,self.R,self.Disp,self.Vrot,self.Vrad,self.Vtan,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.PHI_BAR,self.PA_bar_mjr,self.PA_bar_mnr,self.errors_fit,self.bic_aic, self.e_ISM,out=self.outdir)
 		else:
 			s = save_model_h(self.galaxy, self.vmode,self.R,self.Disp,e_Disp,self.Ck,self.Sk,e_Ck,e_Sk,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.m_hrm,self.errors_fit,self.bic_aic,self.e_ISM,out=self.outdir)
-			
 
+		save_2d_models(self.galaxy,self.vmode,self.kin_3D_mdls,self.PA,self.INC,self.XC,self.YC,self.VSYS,self.m_hrm,out=self.outdir)
+			
 		# plot 1d models
 		if "hrm" not in self.vmode:
 			plot_kin_models(self.galaxy,self.vmode,self.kin_3D_mdls,self.R,self.Disp,e_Disp,self.Vrot,e_Vrot,self.Vrad,e_Vrad,self.Vtan,e_Vtan,self.VSYS,self.ext,out=self.outdir)

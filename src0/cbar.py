@@ -35,7 +35,7 @@ def colorbar(im,axis,orientation="vertical",labelsize=10,colormap="rainbow",tick
 	if label != None:
 		if orientation == "vertical":
 			rot = 90
-			rot_ticks = 90
+			rot_ticks = 0
 		else:
 			rot = 0
 			rot_ticks=0
