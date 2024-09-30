@@ -107,16 +107,16 @@ class Cube_creation:
 		return [mom0,mom1,mom2]
 
 	def obs_mommaps_rnd(self,individual_run=0):
-		sigma_spectral = self.sigma_inst_kms/1. if self.sigma_inst_kms is not None else self.dV/1.
 		runs = [individual_run]
 				
 		for k in runs:
+			np.random.seed()
 			# randomly draw a sample of the observed spectrum
 			newfluxcube=self.datacube+np.random.randn(self.nz,self.ny,self.nx)*self.eflux3d
 			newspectral=self.wave_cover_kms[:,None,None]+np.random.randn(self.ny,self.nx)*self.emom1
-			for i,j in product(np.arange(self.nx),np.arange(self.ny)):
-				fi = interpolate.interp1d(newspectral[:,j,i],newfluxcube[:,j,i],fill_value='extrapolate')	
-				newfluxcube[:,j,i]=fi(self.wave_cover_kms)            				
+			#for i,j in product(np.arange(self.nx),np.arange(self.ny)):
+			#	fi = interpolate.interp1d(newspectral[:,j,i],newfluxcube[:,j,i],fill_value='extrapolate')	
+			#	newfluxcube[:,j,i]=fi(self.wave_cover_kms)            				
 						
 			#newcube=newcube0	            				
 			mom0= trapecium3d(newfluxcube,self.dV)

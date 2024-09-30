@@ -149,8 +149,8 @@ class Harmonic_model:
 		self.frac_pixel = 0
 		self.n_it,self.n_it0 = 1, 1			
 		runs = [individual_run]
-		[mom0_cube,mom1_cube,mom2_cube]=self.emomscube
-		[emom0_cube,emom1_cube,emom2_cube]=self.emomscube		
+		[mom0_cube,mom1_cube,mom2_cube]=self.momscube
+		[emom0,emom1,emom2]=self.emomscube		
 				
 		for k in runs:
 			mommaps=[mom0_cube[k],mom1_cube[k],mom2_cube[k]]
