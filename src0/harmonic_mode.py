@@ -11,6 +11,7 @@ from src0.create_2D_vlos_model import best_2d_model
 from src0.read_hdr import Header_info
 import os
 from multiprocessing import Pool, cpu_count
+from src0.pixel_params import inc_2_eps, eps_2_inc,e_eps2e_inc
 
 class Harmonic_model:
 	def __init__(self, galaxy, datacube, edatacube, header, mommaps, emoms, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, m_hrm, outdir,cube_class):
@@ -156,13 +157,16 @@ class Harmonic_model:
 			mommaps=[mom0_cube[k],mom1_cube[k],mom2_cube[k]]
 			emommaps=[emom0,emom1,emom2]			
 			
-			seed0 = int(os.getpid()*time.time() / 123456789)
 			self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b = self.GUESS[-6:]
+			np.random.seed()
+			pa = self.pa0 + 5*np.random.normal()
+			inc= eps_2_inc(self.eps0) + (5*np.pi/180)*np.random.normal() # rad
+			eps=inc_2_eps(inc*180/np.pi) 
 			# setting chisq to -inf will preserve the leastsquare results
 			self.chisq_global = -np.inf
 			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
 								
-			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.Rings,mommaps, emommaps, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)			
+			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.Rings,mommaps, emommaps,pa,eps,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)			
 			c_tab=[list(c_tab[j]) for j in range(self.m_hrm)]
 			s_tab=[list(s_tab[j]) for j in range(self.m_hrm)]			
 			kin=[c_tab, s_tab, disp_tab]

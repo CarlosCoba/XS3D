@@ -113,7 +113,7 @@ class Cube_creation:
 			np.random.seed()
 			# randomly draw a sample of the observed spectrum
 			newfluxcube=self.datacube+np.random.randn(self.nz,self.ny,self.nx)*self.eflux3d
-			newspectral=self.wave_cover_kms[:,None,None]+np.random.randn(self.ny,self.nx)*self.emom1
+			newspectral=self.wave_cover_kms[:,None,None]# +np.random.randn(self.ny,self.nx)*self.emom1
 			#for i,j in product(np.arange(self.nx),np.arange(self.ny)):
 			#	fi = interpolate.interp1d(newspectral[:,j,i],newfluxcube[:,j,i],fill_value='extrapolate')	
 			#	newfluxcube[:,j,i]=fi(self.wave_cover_kms)            				
