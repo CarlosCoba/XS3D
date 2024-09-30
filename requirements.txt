@@ -1,6 +1,6 @@
 astropy>=4
 matplotlib>=3.2
-numpy>=1.18
+numpy>=1.20
 scipy>=1.5
 lmfit>=1.0.0
 numdifftools>=0.9
