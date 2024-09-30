@@ -10,6 +10,7 @@ def bscale(vsys,nx,pixel,f=4):
 	
 	if scale_pc_arc < 1:
 		bar_scale_au = int(bar_scale_arc0)
+		if bar_scale_au == 0 : bar_scale_au = 0.1*(bar_scale_arc0//0.1)
 		bar_scale_u=int(bar_scale_au*scale_pc_arc*206265)
 		return bar_scale_au,0,'pc'
 		

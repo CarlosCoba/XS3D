@@ -25,10 +25,13 @@ cmap=vel_map()
 #params =   {'text.usetex' : True }
 #plt.rcParams.update(params)
 
-def vmin_vmax(data,pmin=2,pmax=99,base=None):
+def vmin_vmax(data,pmin=2,pmax=99.5,base=None,symmetric =False):
 	vmin,vmax=np.nanpercentile(np.unique(data),pmin),np.nanpercentile(np.unique(data),pmax)
+	vsym = (vmax+abs(vmin))*0.5
+	if symmetric: vmin,vmax=-1*vsym,vsym				
 	if base is not None:
-		vmin,vmax=(vmin//base+1)*base,(vmax//base+1)*base
+		vmin,vmax=(vmin//base)*base,(vmax//base)*base
+		if symmetric: vmin,vmax=-1*(vsym//base)*base,(vsym//base)*base
 	return vmin,vmax
 
 def zero2nan(data):
@@ -62,7 +65,6 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	mom0,mom1,mom2=momaps
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels = momms_mdls
 	pvd_maj,pvd_min,pvd_maj_mdl,pvd_min_mdl=pvds[0],pvds[1],pvds[2],pvds[3]
-	#pvd_maj,pvd_min,pvd_maj_mdl,pvd_min_mdl=pvd_maj/rms,pvd_min/rms,pvd_maj_mdl/rms,pvd_min_mdl/rms
 	msk=np.isfinite(mom0*mom0_mdl/mom0)	
 	pa_maj = pa % 360
 	pa_min = (pa+90) % 360
@@ -164,6 +166,8 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	
 	ax3=plt.subplot(gs2[3:,0:2])
 	vmin,vmax=vmin_vmax(mom1,base=25)
+	if abs(vmin) < 10 or abs(vmax) < 10:
+		vminv,vmaxv=vmin_vmax(mom1,symmetric=True)
 	im3=ax3.imshow(mom1,cmap=cmap,aspect='auto',vmin=vminv,vmax=vmaxv,origin='lower',extent=extimg)
 	ax3.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 1,zorder=10,extent=extimg)
 	ax3.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 1,zorder=10,extent=extimg)		
@@ -172,9 +176,6 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	clb.text(-2,-0.15,int(vminv),transform=clb.transAxes)
 	clb.text(-2,1.03,int(vmaxv),transform=clb.transAxes)
 	ax3.set_xlabel('$\mathrm{\Delta RA}$ (%s)'%rlabel,fontsize=12,labelpad=1)
-	#print([extimg[0]*(4/5.),extimg[0]*(4/5.)+bar_scale_arc],[extimg[2]*(5/6),extimg[2]*(5/6)],bar_scale_arc)
-	
-	#ax3.text(extimg[0]*(4/5.),extimg[2]*(5/6),f'{bar_scale_arc}:{bar_scale_pc}{unit}')
 	ax3.text(extimg[0]*(4/5.+1/10),extimg[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
 	ax3.plot([extimg[0]*(4/5.),extimg[0]*(5/6)+bar_scale_arc_norm],[extimg[2]*(5/6),extimg[2]*(5/6)],'k-')
 
@@ -194,16 +195,10 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	
 	lines = [Line2D([0], [0], color='k',lw=0.8)];labels=['model']
 	ax0.legend(lines,labels,loc='upper right',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10)
-
-	
-	#ax0.plot(R,vt, 'r.',lw=3,zorder=100)	
-	#ax0.plot(-R,-vt, 'r.',lw=3,zorder=100)
 	ax0.scatter(R,vt,s=7,marker='s',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)
 	ax0.scatter(-R,-vt,s=7,marker='s',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)	
 	ax0.plot((ext0[0],ext0[1]),(0,0),"k-",lw=0.5)
 	ax0.plot((0,0),(ext0[2],ext0[3]),"k-",lw=0.5)
-		
-	#ax0.set_xlabel('$\mathrm{r (arc)}$',fontsize=12,labelpad=2)
 	ax0.set_ylabel('$V\mathrm{_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
 	Nmultiple=50*( (abs(ext1[2])//2) // 50 )
 	if Nmultiple>0: ax0.yaxis.set_major_locator(MultipleLocator(Nmultiple))		

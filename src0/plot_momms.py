@@ -80,32 +80,29 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	ax0.imshow(mom0,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
 	im1=ax1.imshow(mom0_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')	
 	vmin,vmax=vmin_vmax(res_mom0,2,98,symmetric=True)
-	#mean=(abs(vmax)+abs(vmin))/2
 	im2=ax2.imshow(res_mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
 	#moment 1 maps	
 	res_mom1=mom1-mom1_mdl
-	#vmin = abs(np.nanmin(mom1_mdl))
-	#vmax = abs(np.nanmax(mom1_mdl))
-	vmin,vmax=vmin_vmax(mom1_mdl,base=10,symmetric=True)
-	#max_vel = np.nanmax([vmin,vmax])	
-	#vmin = -(max_vel//10 + 1)*10
-	#vmax = (max_vel//10 + 1)*10
+	vmin = abs(np.nanmin(mom1_mdl))
+	vmax = abs(np.nanmax(mom1_mdl))
+	base=10
+	if vmax < 10 or vmin < 10:
+		base = 0.1 
+	vmin,vmax=vmin_vmax(mom1_mdl,base=base,symmetric=True)
+
 
 	ax3.imshow(mom1,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	im4=ax4.imshow(mom1_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')	
-	vmin,vmax=vmin_vmax(res_mom1,base=10,symmetric=True)
+	vmin,vmax=vmin_vmax(res_mom1,base=base,symmetric=True)
 	im5=ax5.imshow(res_mom1,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
 	#moment 2 maps
 	res_mom2=mom2-mom2_mdl
-
-	vmin,vmax=vmin_vmax(mom2_mdl,1,99,base=10)
+	vmin,vmax=vmin_vmax(mom2_mdl,5,95,base=base)
 	ax6.imshow(mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	im7=ax7.imshow(mom2_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
-	#vmin,vmax=vmin_vmax(res_mom2, base=10)
 	vmin,vmax=vmin_vmax(res_mom2,2,98,symmetric=True)
-	#mean=(abs(vmax)+abs(vmin))//2		
 	im8=ax8.imshow(res_mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
 

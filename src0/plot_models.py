@@ -63,8 +63,10 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	
 	# intrinsic velocity
 	vt=zero2nan(vt2D)
+	vmax=np.max(vt)	
 	#velmap=velmap_intr-VSYS
-	velmax = 10*(np.nanmax(vt) // 10) 		
+	base=10 if vmax > 50 else 1
+	velmax = base*(np.nanmax(vt) // base) 	
 	im0=ax0.imshow(vt,origin='lower',cmap=cmap,extent=ext, vmin=0,vmax=velmax, aspect='auto')
 	
 	
@@ -75,8 +77,8 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	max_vel = np.nanmax([vmin,vmax])	
 	vmin = -(max_vel//25 + 1)*25
 	vmax = (max_vel//25 + 1)*25
-	vmin,vmax=vmin_vmax(sigmap_intr,base=10)
-	im1=ax1.imshow(sigmap_intr,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')		
+	vmin,vmax=vmin_vmax(sigmap_intr)
+	im1=ax1.imshow(sigmap_intr,origin='lower',cmap=cmap,extent=ext,vmin=0,vmax=vmax,aspect='auto')		
 
 	Vrad[Vrad == 0] = np.nan
 	Vtan[Vtan == 0] = np.nan
@@ -143,13 +145,13 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 		M=50
 	if max_vel>300:
 		M=60
-
 	if max_vel < 50:
-		M = 10
-		ax2.set_ylim(-5*(min_vel//5)-5,5*(max_vel//5))
+		M = 10 if max_vel > 10 else 1
+		ax2.set_ylim(-1*(min_vel//1)-1,1.25*(max_vel//1))
 	else:			   		
 		ax2.set_ylim(-30*(min_vel//30)-30,30*(max_vel//30)+40)			   
 	ax2.yaxis.set_major_locator(MultipleLocator(M))
+
 
 	ax2.plot([0,np.nanmax(R)],[0,0],color = "k",linestyle='-', alpha = 0.6,linewidth = 0.3)
 	ax2.set_xlabel(f'r ({rlabel})',fontsize=10,labelpad = 2)

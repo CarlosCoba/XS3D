@@ -1,7 +1,7 @@
-astropy>=5.2.2
-matplotlib>=3.7.4
-numpy>=1.24.4
-scipy>=1.10.1
-lmfit>=1.2.2
-numdifftools>=0.9.39
-pyfftw>=0.13.1
+astropy>=4
+matplotlib>=3.2
+numpy>=1.18
+scipy>=1.5
+lmfit>=1.0.0
+numdifftools>=0.9
+pyfftw>=0.11.0
