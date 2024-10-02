@@ -76,7 +76,7 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	mom0_mdl=abs(mom0_mdl)	
 	res_mom0=mom0-mom0_mdl
 	vmin,vmax=vmin_vmax(mom0_mdl)
-	norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+	norm = colors.LogNorm(vmin=vmin, vmax=vmax) if vmax > 1 else colors.Normalize(vmin=vmin, vmax=vmax)
 	ax0.imshow(mom0,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
 	im1=ax1.imshow(mom0_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')	
 	vmin,vmax=vmin_vmax(res_mom0,2,98,symmetric=True)

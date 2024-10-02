@@ -94,31 +94,19 @@ class bidi_models:
 			return interp_model
 
 
-
-
-
 	def interp(self):
 			if self.vmode == "circular":
-
 				Vcirc_2D = self.mdl(self.Vrot, v_t = True)
 				Vrad_2D = 0
 				Vtan_2D = 0
-
-
-			if self.vmode == "radial":
-
+			if self.vmode == "radial" or self.vmode == 'vertical':
 				Vcirc_2D = self.mdl(self.Vrot, v_t = True)
 				Vrad_2D = self.mdl(self.Vrad)
 				Vtan_2D = 0
-
-
 			if self.vmode == "bisymmetric":
-
 				Vcirc_2D = self.mdl(self.Vrot, v_t = True)
 				Vrad_2D = self.mdl(self.Vrad)
 				Vtan_2D = self.mdl(self.Vtan)
-
-
 			if "hrm" in self.vmode:
 				C = [self.mdl(self.C_k[k]) for k in range(self.m_hrm)]
 				S = [self.mdl(self.S_k[k]) for k in range(self.m_hrm)]

@@ -7,7 +7,7 @@ from matplotlib.offsetbox import AnchoredText
 from src0.axes_params import axes_ambient as axs 
 from src0.cbar import colorbar as cb
 from src0.colormaps_CLC import vel_map
-
+from src0.constants import __c__
 
 #params =   {'text.usetex' : True }
 #plt.rcParams.update(params) 
@@ -27,7 +27,7 @@ def zero2nan(data):
 
 cmap = vel_map()
 
-def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad,Vtan,eVtan,VSYS,ext,out):
+def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad,Vtan,eVtan,VSYS,INC,ext,hdr_info,config,out):
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
 	vt2D=twoDmodels[0]
 
@@ -63,10 +63,10 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	
 	# intrinsic velocity
 	vt=zero2nan(vt2D)
-	vmax=np.max(vt)	
+	vmax=np.max(vt)
 	#velmap=velmap_intr-VSYS
 	base=10 if vmax > 50 else 1
-	velmax = base*(np.nanmax(vt) // base) 	
+	velmax = base*(np.nanmax(vt) // base) 		
 	im0=ax0.imshow(vt,origin='lower',cmap=cmap,extent=ext, vmin=0,vmax=velmax, aspect='auto')
 	
 	
@@ -112,9 +112,13 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 		ax2.plot(R,Vrad, color = "#c73412",linestyle='-', alpha = 0.6, linewidth=0.8, label = "$\mathrm{V_{r}}$")
 		ax2.fill_between(R, Vrad-eVrad, Vrad+eVrad, color = "#c73412", alpha = 0.3, linewidth = 0)
 		ax2.scatter(R,Vrad,s=7,marker='s',c='#c73412',edgecolor='k',lw=0.3,zorder=10)
-	
-	if vmode == "bisymmetric":
 
+	if vmode == "vertical":
+		ax2.plot(R,Vrad, color = "#b47b50",linestyle='-', alpha = 0.6, linewidth=0.8, label = "$\mathrm{V_{z}}$")
+		ax2.fill_between(R, Vrad-eVrad, Vrad+eVrad, color = "#b47b50", alpha = 0.3, linewidth = 0)
+		ax2.scatter(R,Vrad,s=7,marker='s',c='#b47b50',edgecolor='k',lw=0.3,zorder=10)
+			
+	if vmode == "bisymmetric":
 		ax2.plot(R,Vrad, color = "#c73412",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{2,r}}$")
 		ax2.fill_between(R, Vrad-eVrad, Vrad+eVrad, color = "#c73412", alpha = 0.3, linewidth = 0)
 		ax2.scatter(R,Vrad,s=7,marker='s',c='#c73412',edgecolor='k',lw=0.3,zorder=10)
@@ -122,8 +126,6 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 		ax2.plot(R,Vtan, color = "#2fa7ce",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{2,t}}$")
 		ax2.fill_between(R, Vtan-eVtan, Vtan+eVtan, color = "#2fa7ce", alpha = 0.3, linewidth = 0)
 		ax2.scatter(R,Vtan,s=7,marker='s',c='#2fa7ce',edgecolor='k',lw=0.3,zorder=10)
-
-
 
 	#bbox_to_anchor =(x0, y0, width, height)
 	ax2.legend(loc = "center", fontsize = 10, bbox_to_anchor = (0, 1, 1, 0.2), ncol = 4, frameon = False, labelspacing=0.1, handlelength=1, handletextpad=0.3,columnspacing=0.8)
@@ -152,15 +154,30 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 		ax2.set_ylim(-30*(min_vel//30)-30,30*(max_vel//30)+40)			   
 	ax2.yaxis.set_major_locator(MultipleLocator(M))
 
-
 	ax2.plot([0,np.nanmax(R)],[0,0],color = "k",linestyle='-', alpha = 0.6,linewidth = 0.3)
 	ax2.set_xlabel(f'r ({rlabel})',fontsize=10,labelpad = 2)
 	ax2.set_ylabel('$\mathrm{V_{rot}~(km~s^{-1})}$',fontsize=10,labelpad = 2)
 
 	cb(im0,ax0,orientation = "horizontal", colormap = cmap, bbox= (2.07,0.5,0.45,1),width = "100%", height = "5%",label_pad = -23, label = "$V/\mathrm{km~s^{-1}}$",labelsize=8, ticksfontsize = 8, ticks = [0,velmax])
 	cb(im1,ax1,orientation = "horizontal", colormap = cmap, bbox= (1.07,0.1,0.45,1),width = "100%", height = "5%",label_pad = -23, label = "$\sigma/\mathrm{km~s^{-1}}$",labelsize=8, ticksfontsize = 8)
-	#ax2.grid(visible = True, which = "major", axis = "both", color='w', linestyle='-', linewidth=0.5, zorder = 1, alpha = 0.5)
 
+	"""
+	# plot PSF ellipse ?
+	config_general = config['general']	
+	eline=config_general.getfloat('eline')	
+	specres=config_general.getfloat('fwhm_inst',None)
+	
+	if specres	is not None:
+		specres_kms=(specres/eline)*__c__
+		fwhm_kms=specres_kms/2.354
+	else:
+		fwhm_kms=hdr_info.cdelt3_kms
+
+	fwhm_kms=fwhm_kms*np.sin(INC*np.pi/180)
+	x0,y0=np.nanmax(R)*0.05, max_vel*0.8
+	ax2.errorbar(x0, y0, yerr=fwhm_kms,fmt ='s',lw=0.5,color='k', ms=1)
+    """
+            		
 	plt.savefig("%sfigures/kin_%s_disp_%s.png"%(out,vmode,galaxy))
 	#plt.clf()
 	plt.close()	

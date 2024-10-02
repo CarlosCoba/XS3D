@@ -20,7 +20,7 @@ def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 			data[3][:] = e_Disp
 			data[4][:] = e_Vrot
 
-	if vmode == "radial":
+	if vmode == "radial" or vmode == 'vertical':
 			data = np.zeros((7,n))
 			data[0][:] = R
 			data[1][:] = Disp
@@ -52,9 +52,7 @@ def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 			hdu.header['NAME1'] = 'intrinsic dispersion (km/s)'			
 			hdu.header['NAME2'] = 'circular velocity (km/s)'
 			hdu.header['NAME3'] = 'error velocity dispersion (km/s)'
-			hdu.header['NAME4'] = 'error circular velocity (km/s)'
-
-						
+			hdu.header['NAME4'] = 'error circular velocity (km/s)'					
 		if vmode == "radial":
 			hdu.header['NAME0'] = 'deprojected distance (arcsec)'
 			hdu.header['NAME1'] = 'intrinsic dispersion (km/s)'			
@@ -63,6 +61,14 @@ def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 			hdu.header['NAME4'] = 'error velocity dispersion (km/s)'
 			hdu.header['NAME5'] = 'error circular velocity (km/s)'
 			hdu.header['NAME6'] = 'error radial velocity (km/s)'
+		if vmode == "vertical":
+			hdu.header['NAME0'] = 'deprojected distance (arcsec)'
+			hdu.header['NAME1'] = 'intrinsic dispersion (km/s)'			
+			hdu.header['NAME2'] = 'circular velocity (km/s)'
+			hdu.header['NAME3'] = 'vertical velocity (km/s)'
+			hdu.header['NAME4'] = 'error velocity dispersion (km/s)'
+			hdu.header['NAME5'] = 'error circular velocity (km/s)'
+			hdu.header['NAME6'] = 'error vertical velocity (km/s)'			
 		if vmode == "bisymmetric":
 			hdu.header['NAME0'] = 'deprojected distance (arcsec)'
 			hdu.header['NAME1'] = 'intrinsic dispersion (km/s)'			

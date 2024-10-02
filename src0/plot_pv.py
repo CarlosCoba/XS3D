@@ -151,7 +151,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	broadband=np.nansum(datacube,axis=0)*msk
 	broadband[broadband==0]=np.nan
 	vmin,vmax=vmin_vmax(broadband)
-	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	
+	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	 if vmax > 1 else colors.Normalize(vmin=vmin, vmax=vmax)
 	im2=ax2.imshow(broadband,norm=norm,cmap=cmap_mom0,aspect='auto',origin='lower',extent=extimg)
 	ax2.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 1,zorder=10,extent=extimg)
 	ax2.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 1,zorder=10,extent=extimg)		

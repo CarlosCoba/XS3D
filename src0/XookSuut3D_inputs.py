@@ -56,11 +56,11 @@ class input_params:
 		#pixel_scale = float(sys.argv[4])
 
 		# Geometrical parameters
-		PA = float(sys.argv[4])
-		INC =float(sys.argv[5])
-		if 0<INC<1: INC=eps_2_inc(INC)*180/np.pi
-		X0 = float(sys.argv[6])
-		Y0 = float(sys.argv[7])
+		PA = sys.argv[4]
+		INC = sys.argv[5]
+		#if 0<INC<1: INC=eps_2_inc(INC)*180/np.pi
+		X0 = sys.argv[6]
+		Y0 = sys.argv[7]
 		VSYS = sys.argv[8]
 		vary_PA = bool(float(sys.argv[9]))
 		vary_INC = bool(float(sys.argv[10]))
@@ -96,14 +96,14 @@ class input_params:
 			config_file = CONFIG_PATH
 			print("XookSuut: No config file has been passed. Using default configuration file ..")
 
-		if VSYS not in osi: VSYS = eval(sys.argv[8])
+
 		if delta in osi:
 			delta = ring_space/2. 
 		else:
 			delta = float(delta)
 
 		if r_bar_min_max in osi: r_bar_min_max = np.inf
-		if vmode not in ["circular","radial","bisymmetric"] and "hrm_" not in vmode: print("XookSuut: choose a proper kinematic model !"); quit()
+		if vmode not in ["circular","radial","bisymmetric","vertical"] and "hrm_" not in vmode: print("XookSuut: choose a proper kinematic model !"); quit()
 	
 
 		if type(r_bar_min_max)  == tuple:
@@ -128,11 +128,11 @@ class input_params:
 		config_const = input_config['constant_params']
 		config_general = input_config['general']
 
-		PA = config_const.getfloat('PA', PA)
-		INC = config_const.getfloat('INC', INC)
-		X0 = config_const.getfloat('X0', X0)
-		Y0 = config_const.getfloat('Y0', Y0)
-		VSYS = config_const.getfloat('VSYS', VSYS)
+		PA = config_const.get('PA', PA)
+		INC = config_const.get('INC', INC)
+		X0 = config_const.get('X0', X0)
+		Y0 = config_const.get('Y0', Y0)
+		VSYS = config_const.get('VSYS', VSYS)
 		PHI_BAR = config_const.getfloat('PHI_BAR', 45)
 
 		vary_PA = config_const.getboolean('FIT_PA', vary_PA)

@@ -117,7 +117,7 @@ class Least_square_fit:
 		interp_model = np.zeros((self.ny,self.nx))
 		self.index_v0 = 123456
 		if vmode == "circular": self.Vk = 1+1
-		if vmode == "radial": self.Vk = 2+1
+		if vmode == "radial" or vmode == 'vertical': self.Vk = 2+1
 		if vmode == "bisymmetric": self.Vk = 3+1
 		
 
@@ -171,19 +171,6 @@ class Least_square_fit:
 		if not self.vary_disp and self.fwhm_inst_A is not None:
 			self.sig0=np.ones_like(self.sig0)*self.sigma_inst_kms					
 		
-		try:
-			self.bmaj=self.h['BMAJ']
-			self.bmin=self.h['BMIN']
-			self.bpa=self.h['BPA']
-		except(KeyError):		
-			self.fwhm_psf_arc=config_general.getfloat('psf_fwhm',None)
-			self.bpa=config_general.getfloat('bpa',0)
-			self.bmaj=config_general.getfloat('bmaj',self.fwhm_psf_arc)
-			self.bmin=config_general.getfloat('bmin',self.fwhm_psf_arc)
-			
-
-		self.psf2d=gkernel(self.mom0.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin,pixel_scale=self.pixel_scale)	if self.fwhm_psf_arc is not None else None
-				
 
 		# Rename to capital letters
 		self.PA = self.pa0
@@ -211,7 +198,7 @@ class Config_params(Least_square_fit):
 
 		def tune_velocities(self,pars,iy):
 				if "hrm" not in self.vmode:
-					if self.vmode == "radial":
+					if self.vmode == "radial" or self.vmode == "vertical":
 						if self.vrad0[iy] == 0:
 							self.vary_vrad = False
 						else:
@@ -243,7 +230,7 @@ class Config_params(Least_square_fit):
 					#	self.vary_vrad = False
 					#	self.vary_vtan = False
 										
-					if self.vmode == "radial":
+					if self.vmode == "radial" or self.vmode == "vertical":
 						self.tune_velocities(pars,iy)
 						pars.add('Vrad_%i' % (iy), value=self.vrad0[iy], vary = self.vary_vrad, min = self.Vmin, max = self.Vmax)
 
@@ -295,15 +282,17 @@ class Models(Config_params):
 							pars["Vrot_%i" % (self.index_v0)] = self.v_center
 						
 				
-				# Dispersion is always extrapolated
+				# Dispersion and Vz are  always extrapolated
 				s1, s2 = pars["Sig_0"], pars["Sig_1"]
 				s_int =  v_interp(0, r2, r1, s2, s1 )
 				pars["Sig_%i" % (self.index_v0)] = s_int
+				if self.vmode == 'vertical':	
+					vz1, vz2 = pars["Vrad_0"], pars["Vrad_1"]
+					vz_int =  v_interp(0, r2, r1, vz2, vz1 )
+					pars["Vrad_%i" % (self.index_v0)] = vz_int
 						
 				if  "hrm" in self.vmode and self.v_center == "extrapolate":
-
 					for k in range(1,self.m_hrm+1) :
-
 						v1, v2 = pars['C%s_%i'% (k,0)], pars['C%s_%i'% (k,1)]
 						v_int =  v_interp(0, r2, r1, v2, v1 )
 						pars["C%s_%i" % (k, self.index_v0)] = v_int
@@ -326,7 +315,7 @@ class Models(Config_params):
 					modl1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
 					return modl0,modl1
 																								
-				if self.vmode == "radial":
+				if self.vmode == "radial" or self.vmode == 'vertical':
 					Vrad = pars['Vrad_%i'% i]
 					v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)																								
 					v2 = (SIGMA_MODEL(xy_mesh,Vrad,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)					
@@ -501,7 +490,14 @@ class Fit_kin_mdls(Models):
 				vr*=np.sin(inc)*sin				
 				velsum=vt+vr
 				msk=velsum!=0
-				velmap=velsum+msk*Vsys				
+				velmap=velsum+msk*Vsys
+			if self.vmode=='vertical':
+				[vt,vz]=interp_model
+				vt*=np.sin(inc)*cos
+				vz*=np.cos(inc)			
+				velsum=vt+vz
+				msk=velsum!=0
+				velmap=velsum+msk*Vsys									
 			if self.vmode=='bisymmetric':
 				phi_b = pars['phi_b'] % (2*np.pi)
 				[vt,v2r,v2t]=interp_model
@@ -599,8 +595,6 @@ class Fit_kin_mdls(Models):
 				self.V_k_std[-1] = [ best["%s_%s"%('Sig',iy)].stderr for iy in range(self.nrings) ]
 				if None in self.V_k_std[-1] :  self.V_k_std[-1] = len(self.V_k[-1])*[1e-3]				
 														
-
-
 			for k in range(self.Vk):
 				self.V_k[k] = np.asarray(self.V_k[k])
 				self.V_k_std[k] = np.asarray(self.V_k_std[k])

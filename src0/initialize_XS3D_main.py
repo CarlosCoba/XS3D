@@ -8,7 +8,8 @@ from os import path
 import time
 from time import gmtime,strftime
 
-from src0.kinematic_centre_vsys import KC
+from src0.kinematic_centre_vsys import kincenter as  KC
+from src0.geometric_moments import geom_moms
 from src0.cbar import colorbar as cb
 from src0.write_table import write
 from src0.circular_mode import Circular_model
@@ -85,8 +86,8 @@ class Run_models:
 		rms3d,self.rms_cube,vpeak2D=mask_cube(self.datacube,config,self.hdr_info,msk_user=self.msk2d_cube)
 		self.datacube=self.datacube*rms3d
 		self.h['RMS_CUBE']=self.rms_cube
-
-		#cube class
+		
+		# cube class
 		cube_class=Cube_creation(self.datacube,self.h,[1]*3,config)
 				
 		# create error cube
@@ -100,9 +101,9 @@ class Run_models:
 				
 		[self.mom0,self.mom1,self.mom2]=self.momaps
 		if vpeak2D is not None: self.mom1=vpeak2D
-		
 		# create temporary error moment maps
 		self.emoms=[np.ones_like(self.mom0),np.ones_like(self.mom1),np.ones_like(self.mom2)]
+
 		
 		self.vel_map=self.mom1
 		self.pixel_scale=self.hdr_info.scale
@@ -114,8 +115,23 @@ class Run_models:
 		self.survey = survey
 		self.m_hrm = 3
 		self.config=config
+
+		geom=[PA,INC,X0,Y0]
+		# estimate geometric moments with dispersion map.
+		geom_start=geom_moms(self.mom2)
+							
+		for j,p in enumerate(geom):
+			if p in osi:
+				geom[j]=geom_start[j]
+			else:
+				geom[j]=eval(p)
+		# disk geometry		
+		[PA,INC,X0,Y0]=geom
+		if 0<INC<1: INC=eps_2_inc(INC)*180/np.pi		
 		if VSYS in osi :
-			X0,Y0,VSYS,self.eVSYS = KC(self.vel_map,X0,Y0,self.pixel_scale)
+			VSYS = KC(self.vel_map,X0,Y0)
+		else:
+			VSYS=eval(VSYS)
 
 		guess0 = guess_vals(PA,INC,X0,Y0,VSYS,PHI_B )
 		vary = np.array( [vary_PA,vary_INC,vary_XC,vary_YC,vary_VSYS,vary_PHI] )
@@ -177,7 +193,7 @@ class XS_out(Run_models):
 		## Write output into a table
 		#
 
-		if self.vmode == "circular" or self.vmode == "radial" or "hrm" in self.vmode:
+		if self.vmode in ["circular","radial","vertical"] or "hrm" in self.vmode:
 			# write header of table
 			if not path.exists(self.kin_params_table):
 				hdr = ["object", "X0", "eX0", "Y0", "eY0", "PA_disk","ePA_disk", "INC", "eINC", "VSYS", "eVSYS", "redchi" ]
@@ -217,7 +233,7 @@ class XS_out(Run_models):
 			
 		# plot 1d models
 		if "hrm" not in self.vmode:
-			plot_kin_models(self.galaxy,self.vmode,self.kin_3D_mdls,self.R,self.Disp,e_Disp,self.Vrot,e_Vrot,self.Vrad,e_Vrad,self.Vtan,e_Vtan,self.VSYS,self.ext,out=self.outdir)
+			plot_kin_models(self.galaxy,self.vmode,self.kin_3D_mdls,self.R,self.Disp,e_Disp,self.Vrot,e_Vrot,self.Vrad,e_Vrad,self.Vtan,e_Vtan,self.VSYS,self.INC,self.ext,self.hdr_info,self.config,out=self.outdir)
 		if "hrm" in self.vmode:
 			plot_kin_models_h(self.galaxy,self.vmode,self.kin_3D_mdls,self.R,self.Disp,e_Disp,self.Ck,self.Sk,e_Ck,e_Sk,self.VSYS,self.ext,self.m_hrm,out=self.outdir)
 

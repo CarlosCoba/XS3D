@@ -55,7 +55,6 @@ def trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode="radial",pixel_s
 		w_rot = np.ones_like(cos)
 		return np.ravel(w_rot)
 
-
 	if vmode == "circular":
 		w_rot = np.sin(inc)*cos
 		return np.ravel(w_rot)
@@ -65,6 +64,11 @@ def trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode="radial",pixel_s
 		w_rad = np.sin(inc)*sin
 		return np.ravel(w_rot), np.ravel(w_rad)
 
+	if vmode == "vertical":
+		w_rot = np.sin(inc)*cos
+		w_z = np.cos(inc)*np.ones_like(cos)
+		return np.ravel(w_rot), np.ravel(w_z)
+
 	if vmode == "bisymmetric":
 
 		theta = np.arctan(sin/cos)
@@ -72,12 +76,10 @@ def trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode="radial",pixel_s
 		phi_b = phi_b
 		phi_b = theta - phi_b
 
-
 		w_rot = np.sin(inc)*cos
 		w_rad = -np.sin(inc)*sin*np.sin(2*phi_b)
 		w_tan = -np.sin(inc)*cos*np.cos(2*phi_b)
 		return np.ravel(w_rot), np.ravel(w_rad), np.ravel(w_tan)
-
 
 	if "hrm" in vmode:
 
@@ -98,13 +100,13 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 
 	[ny,nx] = shape
 
-
 	pa = pa*np.pi/180
 	X = np.arange(0, nx, 1)
 	Y = np.arange(0, ny, 1)
 	xy_mesh = np.meshgrid(X,Y)
-	[emom0,emom1,emom2]=emoms
 	[mom0,mom1,mom2]=mommaps
+	#for k in emoms: k = np.ones_like(mom0)	
+	[emom0,emom1,emom2]=emoms
 	vel_val=mom1
 	disp=mom2
 
@@ -112,7 +114,6 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 	weigths_k,weigths_j = np.asarray(weigths_k),np.asarray(weigths_j)
 	
 	# dispersion
-
 	w_rot = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,'dispersion')
 	sigma_v = emom2[mask]
 	x11,x12 = w_rot**2/sigma_v**2,0/sigma_v**2
@@ -134,33 +135,21 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 		x11,x12 = w_rot**2/sigma_v**2,0/sigma_v**2
 		x21,x22 = 0/sigma_v**2,0/sigma_v**2
 
-
 		D = (vel_val[mask])
 		y1 = (w_rot/sigma_v**2)*D
 		y2 = (0/sigma_v**2)*D
 
 		A = np.asarray([[np.nansum(x11),np.nansum(x12)],[np.nansum(x21),np.nansum(x22)]])
 		B= np.asarray([np.nansum(y1),np.nansum(y2)])
-
-
 		vrot,vrad = np.nansum(y1)/np.nansum(x11), 0
-
-
-
+		
 		return dispersion,vrot,vrot*0,vrot*0
-		#"""
-
-
 
 	if vmode == "radial":
-
-
 		w_rot, w_rad = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,vmode)
-
 		sigma_v = emom1[mask]
 		x11,x12 = w_rot**2/sigma_v**2,w_rot*w_rad/sigma_v**2
 		x21,x22 = w_rot*w_rad/sigma_v**2,w_rad**2/sigma_v**2
-
 
 		D = (vel_val[mask])
 		y1 = (w_rot/sigma_v**2)*D
@@ -171,17 +160,41 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 
 		x = np.linalg.solve(A, B)
 		vrot,vrad = abs(x[0]),x[1]
-
+		try:
+			x = np.linalg.solve(A, B)
+			vrot,vrad = abs(x[0]),x[1]
+		except(np.linalg.LinAlgError):
+			vrot,vrad = 0,0
 
 		if np.isfinite(vrot) == False: vrot = 0
 		if np.isfinite(vrad) == False: vrad = 0
-
 		return dispersion,vrot,vrad,vrad*0
 
+
+	if vmode == "vertical":
+		w_rot, w_z = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,vmode)
+		sigma_v = emom1[mask]
+		x11,x12 = w_rot**2/sigma_v**2,w_rot*w_z/sigma_v**2
+		x21,x22 = w_rot*w_z/sigma_v**2,w_z**2/sigma_v**2
+
+		D = (vel_val[mask])
+		y1 = (w_rot/sigma_v**2)*D
+		y2 = (w_z/sigma_v**2)*D
+
+		A = np.asarray([[np.nansum(x11),np.nansum(x12)],[np.nansum(x21),np.nansum(x22)]])
+		B= np.asarray([np.nansum(y1),np.nansum(y2)])
+		try:
+			x = np.linalg.solve(A, B)
+			vrot,vz = abs(x[0]),x[1]
+		except(np.linalg.LinAlgError):
+			vrot,vz = 0,0
+							
+		if np.isfinite(vrot) == False: vrot = 0
+		if np.isfinite(vz) == False: vz = 0
+		return dispersion,vrot,vz,vz*0
+
 	if vmode == "bisymmetric":
-
 		w_rot, w_rad, w_tan = trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode)
-
 		sigma_v = emom1[mask]
 		x11,x12,x13 = w_rot**2/sigma_v**2,w_rot*w_rad/sigma_v**2,w_tan*w_rot/sigma_v**2
 		x21,x22,x23 = w_rot*w_rad/sigma_v**2,w_rad**2/sigma_v**2,w_rad*w_tan/sigma_v**2
@@ -193,10 +206,8 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 		y2 = (w_rad/sigma_v**2)*D
 		y3 = (w_tan/sigma_v**2)*D
 
-
 		A = np.asarray([[np.nansum(x11),np.nansum(x12),np.nansum(x13)],[np.nansum(x21),np.nansum(x22),np.nansum(x23)],[np.nansum(x31),np.nansum(x32),np.nansum(x33)]])
 		B= np.asarray([np.nansum(y1),np.nansum(y2),np.nansum(y3)])
-
 
 		try:
 			x = np.linalg.solve(A, B)
@@ -205,11 +216,9 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 			if np.isfinite(vrad) == False: vrad = 0
 			if np.isfinite(vtan) == False: vtan = 0
 
-		except(TypeError):
+		except(TypeError,np.linalg.LinAlgError):
 			w_sys,w_rot,w_rad,w_tan,vrot,vrad,vsys,vtan =  0,0,0,0,0,0,0,0
-
 		return dispersion,vrot,vrad,vtan
-
 
 
 	if "hrm" in vmode:
@@ -225,9 +234,7 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 				globals()['x_%s%s' % (j,i)] = w[j-1]*w[i-1]/sigma_v**2
 				X.append(globals()['x_%s%s' % (j,i)])
 
-
 		D = (vel_val[mask])
-
 		y = []
 		for j in range(1,m_hrm+1):				
 			globals()['y_c%s' % (j)] = (w_c[j-1]/sigma_v**2)*D
@@ -246,7 +253,6 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 		B = np.zeros(m)
 		for j in range(1,m+1):
 			B[j-1] = np.nansum(y[j-1])	
-
 
 		x = np.linalg.solve(A, B)
 		#x = C, S

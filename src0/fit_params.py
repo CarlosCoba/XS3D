@@ -34,6 +34,7 @@ from src0.momtools import GaussProf,trapecium
 from src0.convolve_cube import Cube_creation,Zeropadding
 from src0.psf_lsf import PsF_LsF
 
+
 from src0.constants import __c__
 from src0.conv import conv2d,gkernel,gkernel1d
 from src0.conv_spec1d import gaussian_filter1d,convolve_sigma
@@ -87,7 +88,7 @@ class Least_square_fit:
 		self.vel_map = self.mommaps_obs[1]
 		self.datacube=datacube
 		self.emoms = emoms
-		[self.emom0,self.emom1,self.emom2]=emoms		
+		[self.emom0,self.emom1,self.emom2]=emoms
 		self.vmode = vmode
 		self.ring_space = ring_space
 		self.fit_method = 'nelder'#'least_squares'
@@ -109,6 +110,7 @@ class Least_square_fit:
 		if self.xc0 % int(self.xc0) == 0 or self.yc0 % int(self.yc0) == 0 : 
 			self.xc0, self.yc0 =  self.xc0 + 1e-5, self.yc0 + 1e-5
 		self.crval3,self.cdelt3,self.pixel_scale=Header_info(self.h,self.config).read_header()
+		self.wave_kms=Header_info(self.h,self.config).wave_kms
 		self.r_n = Rings(self.XY_mesh,self.pa0*np.pi/180,self.eps0,self.xc0,self.yc0,self.pixel_scale)
 		self.r_n = np.asarray(self.r_n, dtype = np.longdouble)
 		self.frac_pixel = frac_pixel
@@ -119,7 +121,7 @@ class Least_square_fit:
 		interp_model = np.zeros((self.ny,self.nx))
 		self.index_v0 = 123456
 		if vmode == "circular": self.Vk = 1+1
-		if vmode == "radial": self.Vk = 2+1
+		if vmode == "radial" or vmode == 'vertical': self.Vk = 2+1
 		if vmode == "bisymmetric": self.Vk = 3+1
 		
 
@@ -172,6 +174,21 @@ class Least_square_fit:
 		if not self.vary_disp and self.fwhm_inst_A is not None:
 			self.sig0=np.ones_like(self.sig0)*self.sigma_inst_kms					
 		
+		"""
+		try:
+			self.bmaj=self.h['BMAJ']
+			self.bmin=self.h['BMIN']
+			self.bpa=self.h['BPA']
+			raise(KeyError)
+		except(KeyError):		
+			self.fwhm_psf_arc=config_general.getfloat('psf_fwhm',None)
+			self.bpa=config_general.getfloat('bpa',0)
+			self.bmaj=config_general.getfloat('bmaj',self.fwhm_psf_arc)
+			self.bmin=config_general.getfloat('bmin',self.fwhm_psf_arc)
+			
+		self.psf2d=gkernel(self.mom0.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin,pixel_scale=self.pixel_scale)	if self.fwhm_psf_arc is not None else None
+		"""		
+
 		# Rename to capital letters
 		self.PA = self.pa0
 		self.EPS =  self.eps0 
@@ -213,7 +230,7 @@ class Config_params(Least_square_fit):
 
 		def tune_velocities(self,pars,iy):
 				if "hrm" not in self.vmode:
-					if self.vmode == "radial":
+					if self.vmode == "radial" or self.vmode == 'vertical':
 						if self.vrad0[iy] == 0:
 							self.vary_vrad = False
 						else:
@@ -239,13 +256,13 @@ class Config_params(Least_square_fit):
 			for iy in range(self.nrings):
 				pars.add('Sig_%i' % (iy),value=self.sig0[iy], vary = self.vary_disp, min = self.min_sig, max = 1000)
 				if "hrm" not in self.vmode:
-					pars.add('Vrot_%i' % (iy),value=self.vrot0[iy], vary = self.vary_vrot, min = self.Vmin, max = self.Vmax)
+					pars.add('Vrot_%i' % (iy),value=self.vrot0[iy], vary = self.vary_vrot, min = 0, max = self.Vmax)
 						
 					#if self.vrad0[iy] == 0 and self.vtan0[iy] ==0:
 					#	self.vary_vrad = False
 					#	self.vary_vtan = False
 										
-					if self.vmode == "radial":
+					if self.vmode == "radial" or self.vmode == 'vertical':
 						self.tune_velocities(pars,iy)
 						pars.add('Vrad_%i' % (iy), value=self.vrad0[iy], vary = self.vary_vrad, min = self.Vmin, max = self.Vmax)
 
@@ -297,15 +314,17 @@ class Models(Config_params):
 							pars["Vrot_%i" % (self.index_v0)] = self.v_center
 						
 				
-				# Dispersion is always extrapolated
+				# Dispersion and Vz are always extrapolated
 				s1, s2 = pars["Sig_0"], pars["Sig_1"]
 				s_int =  v_interp(0, r2, r1, s2, s1 )
 				pars["Sig_%i" % (self.index_v0)] = s_int
+				if self.vmode == 'vertical':	
+					vz1, vz2 = pars["Vrad_0"], pars["Vrad_1"]
+					vz_int =  v_interp(0, r2, r1, vz2, vz1 )
+					pars["Vrad_%i" % (self.index_v0)] = vz_int				
 						
 				if  "hrm" in self.vmode and self.v_center == "extrapolate":
-
 					for k in range(1,self.m_hrm+1) :
-
 						v1, v2 = pars['C%s_%i'% (k,0)], pars['C%s_%i'% (k,1)]
 						v_int =  v_interp(0, r2, r1, v2, v1 )
 						pars["C%s_%i" % (k, self.index_v0)] = v_int
@@ -326,9 +345,8 @@ class Models(Config_params):
 					
 				if self.vmode == "circular":
 					modl1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
-					return modl0,modl1
-																								
-				if self.vmode == "radial":
+					return modl0,modl1																								
+				if self.vmode == "radial" or self.vmode == 'vertical':
 					Vrad = pars['Vrad_%i'% i]
 					v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)																								
 					v2 = (SIGMA_MODEL(xy_mesh,Vrad,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)					
@@ -468,7 +486,6 @@ class Fit_kin_mdls(Models):
 				S_xy_mdl1=VS_xy_mdl1[0]
 				V_xy_mdl1=VS_xy_mdl1[1:]
 				
-
 				for k in range(len(interp_model)):								
 					v_new_1=V_xy_mdl0[k][0]				
 					v_new_2=V_xy_mdl1[k][1]
@@ -503,7 +520,14 @@ class Fit_kin_mdls(Models):
 				vr*=np.sin(inc)*sin				
 				velsum=vt+vr
 				msk=velsum!=0
-				velmap=velsum+msk*Vsys				
+				velmap=velsum+msk*Vsys
+			if self.vmode=='vertical':
+				[vt,vz]=interp_model
+				vt*=np.sin(inc)*cos
+				vz*=np.cos(inc)			
+				velsum=vt+vz
+				msk=velsum!=0
+				velmap=velsum+msk*Vsys									
 			if self.vmode=='bisymmetric':
 				phi_b = pars['phi_b'] % (2*np.pi)
 				[vt,v2r,v2t]=interp_model
@@ -527,11 +551,10 @@ class Fit_kin_mdls(Models):
 			mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl=self.cube_modl.create_cube(velmap,sigmap,self.padded_cube,self.padded_psf,self.cube_slices,pass_cube=self.fit_from_cube)
 			
 			if self.fit_from_cube:
-				residual=(self.datacube-cube_mdl)**2
-				residual=residual[:,None][self.mask_cube[:,None]]
+				residual0=((self.datacube-cube_mdl)/self.ecube)**2
+				residual=residual0[:,None][self.mask_cube[:,None]]
 				n=len(residual)
-				#residual=(np.sum(residual,axis=0))[self.mom0!=0]
-				
+				residual=np.sum(residual0,axis=0)
 			else:		
 
 				if self.vary_disp:
@@ -541,13 +564,13 @@ class Fit_kin_mdls(Models):
 				else:									
 					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta + msk*((self.peakI0-cube_mdl)**2)			
 					n=len(residual)														
-			#residual=np.ravel(residual)
-			#n=len(residual)
 
-			#residual=np.sqrt(residual*residual/n)
-			residual=np.sqrt(residual/n)
-						
-			return residual
+			residual=np.sqrt(residual/n)						
+			if self.fit_from_cube:
+				a = np.array(residual)
+				return a
+			else:			
+				return residual
 
 
 		def reduce_func(res,x):
@@ -660,6 +683,7 @@ class Fit_kin_mdls(Models):
 
 
 			if len(self.V_k) != len(self.V_k_std)  : self.V_k_std = [1e-3]*len(self.V_k)
+						
 			out_data = [N_free, N_nvarys, N_data, bic, aic, red_chi]
 			return mdls_3D, self.V_k, pa, eps , x0, y0, Vsys, phi_b, out_data, errors, self.rings_pos
 

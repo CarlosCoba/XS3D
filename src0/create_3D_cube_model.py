@@ -82,10 +82,15 @@ class best_3d_model:
 				if self.vmode == "circular":
 					self.Vrot[self.index_v0] = self.v_center
 
-		# Dispersion is always extrapolated
+		# Dispersion and Vz are always extrapolated
 		s1, s2 = self.Sig[0], self.Sig[1]
 		s_int =  v_interp(0, r2, r1, s2, s1 )
 		self.Sig[self.index_v0] = s_int
+
+		if self.vmode == 'vertical':	
+			vz1, vz2 = self.Vrad[0], self.Vrad[1]
+			vz_int =  v_interp(0, r2, r1, vz2, vz1 )
+			self.Vrad[self.index_v0] = vz_int		
 
 		Sig = self.Sig[i]
 		modl0 = (SIGMA_MODEL(xy_mesh,Sig,self.pa,self.eps,self.x0,self.y0))*weigths_w(xy_mesh,self.pa,self.eps,self.x0,self.y0,r_2,r_space,pixel_scale=self.pixel_scale)
@@ -110,11 +115,11 @@ class best_3d_model:
 		if self.vmode == "circular":
 			v1 = (SIGMA_MODEL(xy_mesh,Vrot,self.pa,self.eps,self.x0,self.y0))*weigths_w(xy_mesh,self.pa,self.eps,self.x0,self.y0,r_2,r_space,pixel_scale=self.pixel_scale)
 			return modl0,v1		
-		if self.vmode == "radial":
+		if self.vmode == "radial" or self.vmode == 'vertical':
 			Vrad = self.Vrad[i]
 			v1 = (SIGMA_MODEL(xy_mesh,Vrot,self.pa,self.eps,self.x0,self.y0))*weigths_w(xy_mesh,self.pa,self.eps,self.x0,self.y0,r_2,r_space,pixel_scale=self.pixel_scale)			
 			v2 = (SIGMA_MODEL(xy_mesh,Vrad,self.pa,self.eps,self.x0,self.y0))*weigths_w(xy_mesh,self.pa,self.eps,self.x0,self.y0,r_2,r_space,pixel_scale=self.pixel_scale)
-			return modl0,v1,v2		
+			return modl0,v1,v2			
 		if self.vmode == "bisymmetric":
 			Vrad = self.Vrad[i]
 			Vtan = self.Vtan[i]
@@ -159,16 +164,13 @@ class best_3d_model:
 				for k,mdl2d in enumerate(interp_model):						
 					v_new_2 = V_xy_mdl[k][1]
 					mdl2d[mask_inner] = v_new_2
-
 			else:
-
 				r2 = self.rings_pos[0] 		# ring posintion
 				v1_index = self.index_v0	# index of velocity
 				#Velocity and Sigma
 				VS_xy_mdl0 = self.kinmdl_dataset(None, v1_index, (x_r0,y_r0), r_2 = r2, r_space = r_space_0 )
 				S_xy_mdl0=VS_xy_mdl0[0]
 				V_xy_mdl0=VS_xy_mdl0[1:]
-				
 				
 				r1 = 0 					# ring posintion
 				v2_index = 0			# index of velocity
@@ -177,8 +179,6 @@ class best_3d_model:
 				S_xy_mdl1=VS_xy_mdl1[0]
 				V_xy_mdl1=VS_xy_mdl1[1:]
 						
-						
-
 				for k in range(len(interp_model)):								
 					v_new_1=V_xy_mdl0[k][0]				
 					v_new_2=V_xy_mdl1[k][1]
@@ -218,7 +218,14 @@ class best_3d_model:
 				vr*=np.sin(inc)*sin				
 				velsum=vt+vr
 				msk=velsum!=0
-				velmap=velsum+msk*self.Vsys				
+				velmap=velsum+msk*self.Vsys
+			if self.vmode=='vertical':
+				[vt,vz]=interp_model
+				vt*=np.sin(inc)*cos
+				vz*=np.cos(inc)				
+				velsum=vt+vz
+				msk=velsum!=0
+				velmap=velsum+msk*self.Vsys								
 			if self.vmode=='bisymmetric':
 				phi_b = self.phi_b % (2*np.pi)
 				[vt,v2r,v2t]=interp_model
@@ -229,7 +236,6 @@ class best_3d_model:
 				velsum=vt+v2r+v2t
 				msk=velsum!=0
 				velmap=velsum+msk*self.Vsys
-
 			if 'hrm' in self.vmode:
 				velsum=0
 				for k in range(self.m_hrm):
