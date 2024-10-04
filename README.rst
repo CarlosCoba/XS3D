@@ -25,7 +25,7 @@ it makes use of the FFTW library via pyFFTW.
 XS3D is  particularly designed for spectral-line observations on frequency and wavelenght domain, which makes it suitable to 
 model a wide variety of emission-lines from CO, HI, ionized gas and IR lines etc.
 XS3D adopts the same minimization technique as its 2D version, XookSuut, but extended to datacubes.
-XS3D is able to model circular rotation models, axisymmetric radial flows, bisymmetric flows, and a general harmonic decomposition of the LOSV.
+XS3D is able to model circular rotation models, axisymmetric radial flows, bisymmetric flows, vertical flows, and a general harmonic decomposition of the LOSV.
 To derive the best set of parameters on each kinematic model XS3D uses all the information from the datacube. Therefore,
 large dimension cubes could take large CPU time to derive the best model.
 XS3D is designed to take advantage of multicores, so using them through the XS3D configuration file is advisable.
@@ -73,9 +73,9 @@ In addition, XS3D requires guess values for the disk geometry, and parameters de
 Another input is the desired kinematic model, and in the case of non-circular models, the maximum radial extention of the non-circular flows.
 
 
-Example on a Galaxy
+Example on a low redshift galaxy with the MUSE/VLT.
 ===========
-Following are some of the outputs you will obtain from running XS3D on a datacube from MUSE/VLT for the Halpha line.
+Following are some of the outputs you will obtain from running XS3D on a MUSE datacube for the Halpha line (lambda0=6562.68 AA).
 
 Observed and moment cubes
 |mom_muse|
@@ -87,8 +87,18 @@ Position velocity diagram from the model cube along the major and minor axes
 |pvd_muse|
 
 
+Example on a high redshift galaxy (z=7.30) with ALMA.
+===========
+This example is a high redshift object REBELS-25 at z=7.30, observed with ALMA  [CII]  (158mu=1900.537GHz). 
 
-Example on a protoplanetary disk from ALMA
+Observed and model moment maps. Beam shape: BMAJ=0.134arc, BMIN=0.121arc, BPA=82deg.
+|mommaps_highz|
+
+The intrinsic circular velocity and velocity dispersion.
+|disp_rebels|
+
+
+Example on a protoplanetary disk of astronomical unit scales, observed with  ALMA.
 ===========
 
 Observed and model moment maps.
@@ -129,4 +139,15 @@ Also, if you use the XS colormap (red-black-blue) in a different context, I woul
 .. |pvd_proto| image:: /figures/pvd_circular_model_HD163296_v2.png
     :scale: 5 %
     :target: https://github.com/CarlosCoba/XS3D
+
+.. |mommaps_highz| image:: /figures/mommaps_circular_model_rebels.png
+   :scale: 5 %
+   :target: https://github.com/CarlosCoba/XS3D
+
+.. |disp_rebels| image::  /figures/kin_circular_disp_rebels.png
+   :scale: 5 %
+   :target: https://github.com/CarlosCoba/XS3D
+
+
+
 

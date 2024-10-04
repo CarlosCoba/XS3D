@@ -6,7 +6,7 @@ from scipy.integrate import quad
 
 class Angdist:
 
-	def __init__(self, redshift, H0 = 71, Omega_m = 0.27, Omega_l = 0.73, print_res = False):
+	def __init__(self, redshift, H0 = 70, Omega_m = 0.30, Omega_l = 0.70, print_res = False):
 		self.H0 = H0 #71 #km/s/Mpc
 		self.Omega_m = Omega_m
 		self.Omega_l = Omega_l

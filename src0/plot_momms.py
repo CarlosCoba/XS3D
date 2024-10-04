@@ -14,7 +14,7 @@ from src0.colormaps_CLC import vel_map
 from src0.barscale import bscale
 from src0.ellipse import drawellipse
 from src0.psf_lsf import PsF_LsF
-
+from src0.constants import __c__
 #params =   {'text.usetex' : True }
 #plt.rcParams.update(params)
 
@@ -176,7 +176,10 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	
 	
 	[ny,nx]=mom0.shape
-	bar_scale_arc,bar_scale_u,unit=bscale(vsys,nx,pixel)
+	highz=config['high_z']
+	redshift=highz.getfloat('redshift',0)
+	vsysz=vsys + redshift*__c__		
+	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,nx,pixel)
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 	
 	ax0.text(ext[0]*(4/5.+1/10),ext[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	

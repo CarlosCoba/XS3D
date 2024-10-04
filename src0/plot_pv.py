@@ -144,7 +144,10 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 					
 
 	# bar scale
-	bar_scale_arc,bar_scale_u,unit=bscale(vsys,nx,pixel)
+	highz=config['high_z']
+	redshift=highz.getfloat('redshift',0)
+	vsysz=vsys + redshift*__c__	
+	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,nx,pixel)
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 
 	ax2=plt.subplot(gs2[0:-3,0:2])

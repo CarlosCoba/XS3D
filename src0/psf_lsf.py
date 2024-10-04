@@ -27,7 +27,7 @@ class PsF_LsF:
 				self.fit_psf=False
 		
 		
-		self.cdelt3=cube_hdr['CDELT3']
+		self.cdelt3=float(cube_hdr['CDELT3'])
 		self.nz=cube_hdr['NAXIS3']		
 		self.eline_A=config_general.getfloat('eline',None)
 		self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)

@@ -86,7 +86,8 @@ def mask_wave(h,config):
 	
 	h['CRVAL3']=crval3
 	h['CRPIX3']=1
-	h['CDELT3']=cdelt3	
+	h['CDELT3']=cdelt3
+	h['NAXIS3']=len(wave_cover[msk])			
 	return msk,h,True
 
 def mommaps(cube,h,config,rms=0):
