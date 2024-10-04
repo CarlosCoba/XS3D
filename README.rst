@@ -20,7 +20,7 @@ Description
 ===========
 XookSuut3D or XS3D for short, is a python tool developed to model circular and non-circular motions on 3D data cubes like those obtained
 with Integral-Field-Spectroscopy, ALMA, VLA, etc. XS3D models a spectral-line cube obsevation, while corrects for the 
-the observational PSF and spectral broadening (LSF). For this purpose
+the observational Beam/PSF and spectral broadening (LSF). For this purpose
 it makes use of the FFTW library via pyFFTW. 
 XS3D is  particularly designed for spectral-line observations on frequency and wavelenght domain, which makes it suitable to 
 model a wide variety of emission-lines from CO, HI, ionized gas and IR lines etc.
@@ -69,15 +69,13 @@ XS3D is designed to run in command line, although you can easely set-up a python
 This could be usefull in case you want to analyse several objects in parallel.
 Please read the run_example.txt file to see how to run XS3D.
 XS3D requires as input a 3D cube free of continuum emission.
-In addition, XS3D requires guess values for the disk geometry, and parameters describing the ring positions on the galaxy plane.
-Another input is the desired kinematic model, and in the case of non-circular models, the maximum radial extention of the non-circular flows.
 
-
-Example on a low redshift galaxy with the MUSE/VLT.
+Example on a low redshift galaxy with the MUSE/VLT spectrograph
 ===========
 Following are some of the outputs you will obtain from running XS3D on a MUSE datacube for the Halpha line (lambda0=6562.68 AA).
+FWHM=100 km/s.
 
-Observed and moment cubes
+Moment maps obtained from the observed and model datacubes.
 |mom_muse|
 
 Intrinsic velocity and velocity dispersion of the gas.
@@ -87,18 +85,18 @@ Position velocity diagram from the model cube along the major and minor axes
 |pvd_muse|
 
 
-Example on a high redshift galaxy (z=7.30) with ALMA.
+Example on a high redshift galaxy (z=7.30) with ALMA
 ===========
 This example is a high redshift object REBELS-25 at z=7.30, observed with ALMA  [CII]  (158mu=1900.537GHz). 
 
-Observed and model moment maps. Beam shape: BMAJ=0.134arc, BMIN=0.121arc, BPA=82deg.
+Observed and model moment maps from the cubes. Beam shape: BMAJ=0.134arcsec, BMIN=0.121arcsec, BPA=82deg.
 |mommaps_highz|
 
 The intrinsic circular velocity and velocity dispersion.
 |disp_rebels|
 
 
-Example on a protoplanetary disk of astronomical unit scales, observed with  ALMA.
+Example on a protoplanetary disk of astronomical unit scales observed with  ALMA
 ===========
 
 Observed and model moment maps.
