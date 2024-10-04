@@ -43,7 +43,7 @@ class input_params:
 	def __init__(self):
 		if (nargs < 19 or nargs > 22):
 
-			print ("USE: XS3D name cube.fits [mask2D] PA INC X0 Y0 [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]" )
+			print ("USE: XS3D name cube.fits [mask2D] [PA] [INC] [X0] [Y0] [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]" )
 
 			exit()
 

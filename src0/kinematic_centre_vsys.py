@@ -23,6 +23,13 @@ def kincenter(mom1_map,xc,yc):
 	eps=1-bmin/bmaj
 	r=Rings(XY_mesh,0,eps,x0,y0,1)
 	rmax=bmaj/6
-	rsearch=r<rmax
-	vsys=np.nanpercentile(vel_map[rsearch],50)
+	rsearch=(r<rmax) & (vel_map!=0)
+	vsearch=vel_map[rsearch]
+	
+	vsys=np.nanpercentile(np.unique(vsearch),50)
+	if vsys==0:
+		vsys=vsys_x0y0
+		if vsys==0:
+			vsys = np.nanmean(np.unique(vel_map))
+			
 	return vsys
