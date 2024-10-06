@@ -549,28 +549,29 @@ class Fit_kin_mdls(Models):
 																								
 			msk=(velmap!=0) & (self.mom0!=0)					
 			mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl=self.cube_modl.create_cube(velmap,sigmap,self.padded_cube,self.padded_psf,self.cube_slices,pass_cube=self.fit_from_cube)
+			ntotal_d=3*(self.nx*self.ny)
+			neff_d=3*np.sum( np.isfinite(self.mom1) & (self.mom1!=0))
+			neff_m=3*np.sum( np.isfinite(mom1_mdl) & (mom1_mdl!=0))				
 			
 			if self.fit_from_cube:
-				residual0=((self.datacube-cube_mdl)/self.ecube)**2
-				residual=residual0[:,None][self.mask_cube[:,None]]
-				n=len(residual)
-				residual=np.sum(residual0,axis=0)
+				residual_xy=np.sum((self.datacube-cube_mdl)**2,axis=0)
+				residual_xy*=msk
+				del cube_mdl
+				residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta				
 			else:		
 
 				if self.vary_disp:
-					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta + msk*((self.peakI0-cube_mdl)**2)
-					residual = residual[self.mom0!=0]
-					n=len(residual)*3											
+					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta + msk*((self.peakI0-cube_mdl)**2)																
 				else:									
 					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta + msk*((self.peakI0-cube_mdl)**2)			
-					n=len(residual)														
+					#n=len(residual)														
 
-			residual=np.sqrt(residual/n)						
+			#residual=np.sqrt(residual/n)						
 			if self.fit_from_cube:
-				a = np.array(residual)
+				a = np.sqrt( residual_xy*(ntotal_d**2)/(neff_d*neff_m) + residual)				
 				return a
 			else:			
-				return residual
+				return np.sqrt( residual*(ntotal_d**2)/(neff_d*neff_m) )
 
 
 		def reduce_func(res,x):
