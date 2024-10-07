@@ -5,7 +5,7 @@ from astropy.convolution import convolve,convolve_fft
 import matplotlib.pylab as plt
 from src0.constants import __sigma_2_FWHM__,__FWHM_2_sigma__
 
-def gkernel(shape, fwhm, bmaj=None,bmin=None, pa = 0, pixel_scale = 1.):
+def gkernel(shape, fwhm, bmaj=None,bmin=None, pa0 = 0, pixel_scale = 1.):
 	# INPUTS
 	# shape - [ny,nx] shape of the array
 	# bmaj  - major axis of psf in arcsec
@@ -14,7 +14,7 @@ def gkernel(shape, fwhm, bmaj=None,bmin=None, pa = 0, pixel_scale = 1.):
 	# pa	- position angle of the beam in deg.
 	# pixel size in arcsec/pix
 	
-	pa=pa*np.pi/180
+	pa=pa0*np.pi/180
 	if bmaj==None: bmaj=fwhm
 	if bmin==None: bmin=fwhm
 	
@@ -38,14 +38,14 @@ def gkernel(shape, fwhm, bmaj=None,bmin=None, pa = 0, pixel_scale = 1.):
 		sig_pix2=(sig_pix)**2
 		r2=r2/sig_pix2
 
-	
+	'''
 	if fwhm is None:
 		bmin_pix=bmin/pixel_scale
 		rx2= X**2/bmin_pix**2
 		bmaj_pix=bmaj/pixel_scale
 		ry2=(Y/(1-eps))**2/bmaj_pix**2
 		r2=rx2+ry2
-	
+	'''
 	r2=r2.astype(np.float64)
 	kernel = np.exp(-0.5*r2)
 	kernel = kernel/np.sum(kernel)

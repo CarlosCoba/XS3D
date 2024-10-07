@@ -157,7 +157,7 @@ class Least_square_fit:
 		self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)
 		self.sigma_inst_A=self.fwhm_inst_A/(np.sqrt(8*np.log(2))) if self.fwhm_inst_A is not None else None
 		self.sigma_inst_kms=(self.sigma_inst_A/self.eline_A)*__c__ if self.fwhm_inst_A is not None else None
-		#self.sigma_inst_pix=(self.sigma_inst_A/self.cdelt3)*np.ones(self.nz) if self.fwhm_inst_A is not None else None
+
 
 		self.min_sig=0
 		if self.sigma_inst_A is not None:

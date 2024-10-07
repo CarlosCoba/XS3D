@@ -173,22 +173,7 @@ class Least_square_fit:
 		
 		if not self.vary_disp and self.fwhm_inst_A is not None:
 			self.sig0=np.ones_like(self.sig0)*self.sigma_inst_kms					
-		
-		"""
-		try:
-			self.bmaj=self.h['BMAJ']
-			self.bmin=self.h['BMIN']
-			self.bpa=self.h['BPA']
-			raise(KeyError)
-		except(KeyError):		
-			self.fwhm_psf_arc=config_general.getfloat('psf_fwhm',None)
-			self.bpa=config_general.getfloat('bpa',0)
-			self.bmaj=config_general.getfloat('bmaj',self.fwhm_psf_arc)
-			self.bmin=config_general.getfloat('bmin',self.fwhm_psf_arc)
 			
-		self.psf2d=gkernel(self.mom0.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin,pixel_scale=self.pixel_scale)	if self.fwhm_psf_arc is not None else None
-		"""		
-
 		# Rename to capital letters
 		self.PA = self.pa0
 		self.EPS =  self.eps0 

@@ -31,10 +31,14 @@ class PsF_LsF:
 		self.nz=cube_hdr['NAXIS3']		
 		self.eline_A=config_general.getfloat('eline',None)
 		self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)
+		self.fwhm_inst_kms=config_general.getfloat('fwhm_kms',None)		
 		self.sigma_inst_A=self.fwhm_inst_A*__FWHM_2_sigma__ if self.fwhm_inst_A is not None else None
 		self.sigma_inst_kms=(self.sigma_inst_A/self.eline_A)*__c__ if self.fwhm_inst_A is not None else None
 		self.sigma_inst_pix=(self.sigma_inst_A/abs(self.cdelt3))*np.ones(self.nz) if self.fwhm_inst_A is not None else None
-		
+		if self.fwhm_inst_kms is not None:
+			self.sigma_inst_kms=self.fwhm_inst_kms*__FWHM_2_sigma__
+			self.sigma_inst_pix=self.sigma_inst_kms/abs(self.cdelt3)
+			
 		if 'velocity' in self.ctype3:
 			if 'kms' in self.ctype3:
 				self.sigma_inst_kms=self.sigma_inst_A

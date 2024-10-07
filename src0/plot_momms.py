@@ -100,8 +100,8 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 	#moment 2 maps
 	res_mom2=mom2-mom2_mdl
 	vmin,vmax=vmin_vmax(mom2_mdl,5,95,base=base)
-	ax6.imshow(mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
-	im7=ax7.imshow(mom2_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
+	ax6.imshow(mom2,origin='lower',cmap=cmap,extent=ext,vmin=0,vmax=vmax,aspect='auto')
+	im7=ax7.imshow(mom2_mdl,origin='lower',cmap=cmap,extent=ext,vmin=0,vmax=vmax,aspect='auto')
 	vmin,vmax=vmin_vmax(res_mom2,2,98,symmetric=True)
 	im8=ax8.imshow(res_mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
