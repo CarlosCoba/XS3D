@@ -27,7 +27,7 @@ def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pix
 		fpix = pixels(shape,mom1,pa,inc,x0,y0,ring, delta=delta,pixel_scale = pixel_scale)
 		# If the last ring, increase data points
 		#if ring == rings[-1]: delta = 2*delta
-		if fpix > frac_pixel:
+		if fpix >= frac_pixel:
 			if vmode == "bisymmetric":
 				if ring >=  r_bar_min and ring <= r_bar_max:
 					# Create bisymetric model
