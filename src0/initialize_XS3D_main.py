@@ -177,6 +177,7 @@ class Run_models:
 			self.ePHI_BAR_deg = self.econst[5]*180/np.pi
 		self.INC,self.eINC = eps_2_inc(self.EPS)*180/np.pi,e_eps2e_inc(self.EPS,self.eEPS)*180/np.pi
 		self.PHI_BAR_deg = self.PHI_BAR*180/np.pi
+		self.const=[self.PA,self.EPS,self.INC, self.XC,self.YC,self.VSYS,self.PHI_BAR_deg, np.nanmax(self.R)]		
 		self.redchi = self.bic_aic[-1] 
 		self.P.status("Best model found !")
 
@@ -221,7 +222,7 @@ class XS_out(Run_models):
 
 		# plot momment maps and 1D profiles
 		self.P.status("Plotting results")
-		plot_mommaps(self.galaxy,self.kin_3D_mdls,self.momaps,self.VSYS,self.ext,self.vmode,self.h,self.config,self.pixel_scale,out=self.outdir)
+		plot_mommaps(self.galaxy,self.kin_3D_mdls,self.momaps,self.const,self.ext,self.vmode,self.h,self.config,self.pixel_scale,out=self.outdir)
 		self.P.status("Saving 1D & 2D profiles")		
 		if 'hrm' not in self.vmode:
 			# save 1d profiles
@@ -245,7 +246,7 @@ class XS_out(Run_models):
 		out_pvd=pv_array(self.datacube,self.h,self.kin_3D_mdls,self.Vrot,self.R,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.pixel_scale,self.config)
 		pvd_arr=out_pvd[0]
 		# plot pvds 
-		plot_pvd(self.galaxy,out_pvd,self.Vrot,self.R,self.PA,self.INC,self.VSYS,self.vmode,self.rms_cube,self.kin_3D_mdls,self.momaps,self.datacube,self.pixel_scale,self.h,self.hdr_info,self.config,self.outdir)
+		plot_pvd(self.galaxy,out_pvd,self.Vrot,self.R,self.const,self.vmode,self.rms_cube,self.kin_3D_mdls,self.momaps,self.datacube,self.pixel_scale,self.h,self.hdr_info,self.config,self.outdir)
 		# save pvds
 		save_pvds(self.galaxy,self.vmode,out_pvd,self.rms_cube,self.hdr_info,self.outdir)
 

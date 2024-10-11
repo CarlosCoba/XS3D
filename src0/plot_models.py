@@ -79,7 +79,10 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	vmax = (max_vel//25 + 1)*25
 	vmin,vmax=vmin_vmax(sigmap_intr)
 	im1=ax1.imshow(sigmap_intr,origin='lower',cmap=cmap,extent=ext,vmin=0,vmax=vmax,aspect='auto')		
-
+	rat=np.divide(vt,sigmap_intr,where=sigmap_intr!=0,out=np.zeros_like(vt))
+	mean_rat=np.mean(rat,where = ( (rat!=0) & np.isfinite(rat)) )
+	mean_rat=round(mean_rat,0)
+	
 	Vrad[Vrad == 0] = np.nan
 	Vtan[Vtan == 0] = np.nan
 
@@ -98,7 +101,9 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 
 	txt = AnchoredText('$\mathrm{V}_{t}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax0.add_artist(txt)
 	txt = AnchoredText('$\sigma$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax1.add_artist(txt)
-
+	#txt = AnchoredText('$\mathrm{V}_{t}/\sigma=%s$'%(mean_rat), loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax1.add_artist(txt)
+	txt = AnchoredText('$\mathrm{V}_{t}/\sigma=%s$'%(mean_rat),loc='lower left', prop=dict(size=8), frameon=0,bbox_to_anchor=(0.97, 0.8),bbox_transform=ax1.transAxes);ax1.add_artist(txt)
+                       	
 
 	ax2.plot(R,Sigma, color = "#db6d52",linestyle='--', alpha = 1, linewidth=0.8, label = "$\sigma_{intrin}$")
 	ax2.fill_between(R, Sigma-eSigma, Sigma+eSigma, color = "#db6d52", alpha = 0.3, linewidth = 0)

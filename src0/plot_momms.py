@@ -34,12 +34,13 @@ def zero2nan(data):
 cmap = vel_map()
 cmap_mom0 = vel_map('mom0')
 
-def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out):
+def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,out):
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
 	mom0,mom1,mom2=momms_obs
 	mom0,mom1,mom2=zero2nan(mom0),zero2nan(mom1),zero2nan(mom2)
 	mom0_mdl,mom1_mdl,mom2_mdl=zero2nan(mom0_mdl),zero2nan(mom1_mdl),zero2nan(mom2_mdl_kms)
-
+	[pa,eps,inc,xc,yc,vsys,phi_bar,rmax]=const
+	[ny,nx]=mom0.shape
 	
 	mom1_mdl=mom1_mdl-vsys
 	mom1=mom1-vsys
@@ -99,9 +100,9 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 
 	#moment 2 maps
 	res_mom2=mom2-mom2_mdl
-	vmin,vmax=vmin_vmax(mom2_mdl,5,95,base=base)
-	ax6.imshow(mom2,origin='lower',cmap=cmap,extent=ext,vmin=0,vmax=vmax,aspect='auto')
-	im7=ax7.imshow(mom2_mdl,origin='lower',cmap=cmap,extent=ext,vmin=0,vmax=vmax,aspect='auto')
+	vmin,vmax=vmin_vmax(mom2_mdl,2,95,base=base)
+	ax6.imshow(mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
+	im7=ax7.imshow(mom2_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	vmin,vmax=vmin_vmax(res_mom2,2,98,symmetric=True)
 	im8=ax8.imshow(res_mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
@@ -210,19 +211,35 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,vsys,ext,vmode,hdr,config,pixel,out
 		bmin=bmin_arc/rnorm
 			
 	if psf is not None:
-		for axes in [ax0,ax1,ax6]:
-			beam=AnchoredEllipse(axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.4, borderpad=0.5,frameon=True, )
-			axes.add_artist(beam)
+		for Axes in [ax0,ax1,ax6]:
+			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.4, borderpad=0.5,frameon=True, )
+			Axes.add_artist(beam)
       
 	if bmaj_arc is not None and bmin_arc is not None:
-		for axes in [ax0,ax1,ax3,ax4,ax6,ax7]:
-			beam=AnchoredEllipse(axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.4, borderpad=0.5,frameon=True)
+		for Axes in [ax0,ax1,ax3,ax4,ax6,ax7]:
+			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.4, borderpad=0.5,frameon=True)
 			beam.ellipse.set(color='gray')
-			axes.add_artist(beam)
+			Axes.add_artist(beam)
 
+
+	for Axes in [ax0, ax2, ax3, ax5, ax6, ax8]:
+		elipse=drawellipse(xc,yc,bmajor=rmax/pixel,pa_deg=pa,eps=eps)
+		x,y=pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm	
+		Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
+		
+		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax/pixel,pa_deg=pa,eps=1)
+		x,y=pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm		
+		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=0.5)
+
+		elipse_mnr=drawellipse(xc,yc,bmajor=0.5*(1-eps)*rmax/pixel,pa_deg=pa+90,eps=1)
+		x,y=pixel*(elipse_mnr[0]-nx/2)/rnorm,pixel*(elipse_mnr[1]-ny/2)/rnorm		
+		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=0.5)
 
 
 	
+	for Axes in axes:
+		Axes.set_xlim(ext[0],ext[1]) 
+		Axes.set_ylim(ext[2],ext[3]) 	 	
 	  			
 	plt.savefig("%sfigures/mommaps_%s_model_%s.png"%(out,vmode,galaxy))
 	#plt.clf()

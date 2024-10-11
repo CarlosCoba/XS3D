@@ -3,6 +3,7 @@ import matplotlib.pylab as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
+from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,AnchoredSizeBar)
 from astropy.convolution import Gaussian2DKernel
 from astropy.convolution import convolve
 from itertools import product
@@ -52,10 +53,11 @@ new_cmap = truncate_colormap(cmap, 0, 0.6)
 cmap = vel_map()
 cmap_mom0 = vel_map('mom0')
 
-def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacube,pixel,hdr_cube,hdr_info,config,out):
+def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixel,hdr_cube,hdr_info,config,out):
 	pvds,slits,ext=out_pvd
 	slit_major,slit_minor = slits
 	[ext0,ext1,_]=ext
+	[pa,eps,inc,xc,yc,vsys,phi_bar,rmax]=const			
 	
 	ext0[2]=ext0[2]-vsys
 	ext1[2]=ext1[2]-vsys	
@@ -65,7 +67,10 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	mom0,mom1,mom2=momaps
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels = momms_mdls
 	pvd_maj,pvd_min,pvd_maj_mdl,pvd_min_mdl=pvds[0],pvds[1],pvds[2],pvds[3]
-	msk=np.isfinite(mom0*mom0_mdl/mom0)	
+	msk=np.isfinite(mom0*mom0_mdl/mom0)
+	slit_major*=msk
+	slit_minor*=msk	
+	
 	pa_maj = pa % 360
 	pa_min = (pa+90) % 360
 	pa_maj = int(round(pa_maj))
@@ -151,13 +156,13 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 
 	ax2=plt.subplot(gs2[0:-3,0:2])
-	broadband=np.nansum(datacube,axis=0)*msk
+	broadband=np.nansum(datacube,axis=0)
 	broadband[broadband==0]=np.nan
 	vmin,vmax=vmin_vmax(broadband)
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	 if vmax > 1 else colors.Normalize(vmin=vmin, vmax=vmax)
 	im2=ax2.imshow(broadband,norm=norm,cmap=cmap_mom0,aspect='auto',origin='lower',extent=extimg)
-	ax2.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 1,zorder=10,extent=extimg)
-	ax2.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 1,zorder=10,extent=extimg)		
+	ax2.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)
+	ax2.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)		
 	axs(ax2,rotation='horizontal',remove_xyticks=True)		
 	clb=cb(im2, ax2, labelsize=10, colormap = cmap_mom0, bbox=(-0.1, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vmin, vmax], label = "flux", label_pad = -26, colors  = "k",orientation='vertical')
 	clb.text(-1,-0.15,round(vmin,1),transform=clb.transAxes)
@@ -172,8 +177,8 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	if abs(vmin) < 10 or abs(vmax) < 10:
 		vminv,vmaxv=vmin_vmax(mom1,symmetric=True)
 	im3=ax3.imshow(mom1,cmap=cmap,aspect='auto',vmin=vminv,vmax=vmaxv,origin='lower',extent=extimg)
-	ax3.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 1,zorder=10,extent=extimg)
-	ax3.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 1,zorder=10,extent=extimg)		
+	ax3.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)
+	ax3.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)		
 	axs(ax3,rotation='horizontal',remove_yticks=True)
 	clb=cb(im3, ax3, labelsize=10, colormap = cmap, bbox=(-0.1, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vminv, vmaxv], label = "$\mathrm{V_{LOS}}$/km/s", label_pad = -26, colors  = "k",orientation='vertical')
 	clb.text(-2,-0.15,int(vminv),transform=clb.transAxes)
@@ -232,9 +237,9 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 	
 	if specres	is not None:
 		specres_kms=(specres/eline)*__c__
-		fwhm_kms=specres_kms/2.
+		fwhm_kms=specres_kms
 	else:
-		fwhm_kms=hdr_info.cdelt3_kms/2.
+		fwhm_kms=hdr_info.cdelt3_kms
 
 	psf_lsf=PsF_LsF(hdr_cube,config)
 	bmaj_arc=psf_lsf.bmaj 
@@ -249,16 +254,38 @@ def plot_pvd(galaxy,out_pvd,vt,R,pa,inc,vsys,vmode,rms,momms_mdls,momaps,datacub
 		psf=bmaj_arc/rnorm
 	
 	if psf is not None and 	fwhm_kms is not None:
-		x0,y0=ext0[0]*(5/6.),ext0[2]*(5/6)	
-		x,y=drawellipse(x0,y0,fwhm_kms,0,bminor=psf/2.)
-		ax0.plot(x,y,'k-',lw=0.5)
+		for Axes in [ax0, ax1]:
+			#x0,y0=ext0[0]*(5/6.),ext0[2]*(5/6)	
+			#x,y=drawellipse(x0,y0,fwhm_kms,0,bminor=psf/2.)
+			#Axes.plot(x,y,'k-',lw=0.5)
+
+			beam=AnchoredEllipse(Axes.transData, width=psf,height=fwhm_kms, angle=0, loc='lower left',pad=0.4, borderpad=0.5,frameon=True)
+			beam.ellipse.set(color='gray')
+			Axes.add_artist(beam)
+
+
+	for Axes in [ax2, ax3]:
+		elipse=drawellipse(xc,yc,bmajor=rmax/pixel,pa_deg=pa,eps=eps)
+		x,y=pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm	
+		Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
 		
-		x0,y0=ext1[0]*(5/6.),ext1[2]*(5/6)	
-		x,y=drawellipse(x0,y0,fwhm_kms,0,bminor=psf/2.)		
-		ax1.plot(x,y,'k-',lw=0.5)		
+		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax/pixel,pa_deg=pa,eps=1)
+		x,y=pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm		
+		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=0.5)
+
+		elipse_mnr=drawellipse(xc,yc,bmajor=0.5*(1-eps)*rmax/pixel,pa_deg=pa+90,eps=1)
+		x,y=pixel*(elipse_mnr[0]-nx/2)/rnorm,pixel*(elipse_mnr[1]-ny/2)/rnorm		
+		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=0.5)
+
 	
 	ax0.set_xlim(ext0[0],ext0[1])
-	ax1.set_xlim(ext1[0],ext1[1])	
+	ax1.set_xlim(ext1[0],ext1[1])
+
+
+	for Axes in [ax2, ax3]:
+		Axes.set_xlim(extimg[0],extimg[1]) 
+		Axes.set_ylim(extimg[2],extimg[3]) 	 	
+				
 	plt.savefig("%sfigures/pvd_%s_model_%s.png"%(out,vmode,galaxy))
 	#plt.clf()
 	plt.close()
