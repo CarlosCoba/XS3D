@@ -105,6 +105,8 @@ Observed and model moment maps.
 Position velocity diagram
 |pvd_proto|
 
+Channel maps taken from the datacube and model cube
+|channel_proto|
 
 Referencing XookSuut3D
 =================
@@ -143,6 +145,10 @@ Also, if you use the XS colormap (red-black-blue) in a different context, I woul
    :target: https://github.com/CarlosCoba/XS3D
 
 .. |disp_rebels| image::  /figures/kin_circular_disp_rebels.png
+   :scale: 5 %
+   :target: https://github.com/CarlosCoba/XS3D
+
+.. |channel_proto| image::  /figures/channels_cube_circular_model_HD163296_v2.png
    :scale: 5 %
    :target: https://github.com/CarlosCoba/XS3D
 

@@ -26,6 +26,8 @@ from src0.save_fits_mommaps import save_momments,save_rmomments
 from src0.save_fits_pvd import save_pvds
 from src0.plot_momms import plot_mommaps
 from src0.plot_resmoms import plot_rmommaps
+from src0.plot_chann_cube import plot_channels
+from src0.plot_chann_rcube import plot_rchannels
 from src0.create_directories import direc_out
 from src0.read_hdr import Header_info
 from src0.convolve_cube import Cube_creation
@@ -255,24 +257,28 @@ class XS_out(Run_models):
 		rescube=self.datacube-self.kin_3D_mdls[4]
 		rescube[~np.isfinite(rescube)]=0
 		# apply rms cut to the rescube
-		rms3d,rms_cube_res,_=mask_cube(rescube,self.config,self.hdr_info,clip=1,msk_user=self.msk2d_cube)
-		rescube=rescube*rms3d		
-		rcube=Cube_creation(rescube,self.h,[1]*3,self.config)
-		rmomaps=rcube.obs_mommaps()
+		#rms3d,rms_cube_res,_=mask_cube(rescube,self.config,self.hdr_info,clip=1,msk_user=self.msk2d_cube)
+		#rescube=rescube*rms3d		
+		#rcube=Cube_creation(rescube,self.h,[1]*3,self.config)
+		#rmomaps=rcube.obs_mommaps()
 		# remove zeros from moment maps
-		for k,mom in enumerate(rmomaps):
-			mom[mom==0]=np.nan
-			rmomaps[k]=mom		
-		[rmom0,rmom1,rmom2]=rmomaps
+		#for k,mom in enumerate(rmomaps):
+		#	mom[mom==0]=np.nan
+		#	rmomaps[k]=mom		
+		#[rmom0,rmom1,rmom2]=rmomaps
 		
 		# remove zeros from PV diagrams
-		for k,pvds in enumerate(pvd_arr):
-			pvds[pvds==0]=np.nan
-			pvd_arr[k]=pvds
+		#for k,pvds in enumerate(pvd_arr):
+		#	pvds[pvds==0]=np.nan
+		#	pvd_arr[k]=pvds
 
-		self.h['RMS_RESCUBE']=rms_cube_res
-		save_rmomments(self.galaxy,self.vmode,rmomaps,self.h,out=self.outdir)		
-		plot_rmommaps(self.galaxy,self.kin_3D_mdls,rmomaps,self.VSYS,self.ext,self.vmode,self.h,out=self.outdir)
+		#self.h['RMS_RESCUBE']=rms_cube_res
+		#save_rmomments(self.galaxy,self.vmode,rmomaps,self.h,out=self.outdir)		
+		#plot_rmommaps(self.galaxy,self.kin_3D_mdls,rmomaps,self.VSYS,self.ext,self.vmode,self.h,out=self.outdir)
+		
+		plot_channels(self.galaxy,self.datacube,self.kin_3D_mdls,self.const,self.ext,self.vmode,self.h, self.hdr_info,self.config,self.rms_cube,self.pixel_scale,self.outdir)
+		plot_rchannels(self.galaxy,self.datacube,rescube,self.const,self.ext,self.vmode,self.h, self.hdr_info,self.config,self.rms_cube,self.pixel_scale,self.outdir)
+				
 		
 		print("Done!. Check the XS3D directory")
 		end_time=time.time()

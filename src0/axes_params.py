@@ -6,7 +6,7 @@ majorFormatter = FormatStrFormatter("$%g$")
 
 #def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 10, fontsize_yticklabel = 10, fontsize_ticklabels = None,  rotation = "vertical", frame = False, remove_axis_lines = 0 ):
 
-def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 10, fontsize_yticklabel = 10, fontsize_ticklabels = 8,  rotation = "vertical", frame = False, remove_axis_lines = 0 ):
+def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 10, fontsize_yticklabel = 10, fontsize_ticklabels = 8,  rotation = "vertical", frame = False, remove_axis_lines = 0, direction='in' ):
 	
 	fontsize_xticklabel, fontsize_yticklabel = fontsize_ticklabels, fontsize_ticklabels
 	plt.setp(axis.get_yticklabels(), rotation=rotation, fontsize=fontsize_yticklabel)#,visible=False)
@@ -20,8 +20,8 @@ def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks
 		axis.spines['left'].set_color(tickscolor)
 		axis.spines['right'].set_color(tickscolor)
 		axis.minorticks_on()
-		axis.tick_params('both', length=6.5, width=0.3, which='major',direction='in',color=tickscolor,bottom=1, top=1, left=1, right=1)
-		axis.tick_params('both', length=3.5, width=0.3, which='minor',direction='in',color=tickscolor,bottom=1, top=1, left=1, right=1) 
+		axis.tick_params('both', length=6.5, width=0.3, which='major',direction=direction,color=tickscolor,bottom=1, top=1, left=1, right=1)
+		axis.tick_params('both', length=3.5, width=0.3, which='minor',direction=direction,color=tickscolor,bottom=1, top=1, left=1, right=1) 
 
 	else:
 
@@ -31,11 +31,11 @@ def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks
 		axis.spines["bottom"].set_position(("data",0))
 
 		axis.minorticks_on()
-		axis.tick_params('x', length=6.5, width=0.3, which='major',direction='in',color=tickscolor,top=0)
-		axis.tick_params('x', length=3.5, width=0.3, which='minor',direction='in',color=tickscolor,top=0)
+		axis.tick_params('x', length=6.5, width=0.3, which='major',direction=direction,color=tickscolor,top=0)
+		axis.tick_params('x', length=3.5, width=0.3, which='minor',direction=direction,color=tickscolor,top=0)
  
-		axis.tick_params('y', length=6.5, width=0.3, which='major',direction='in',color=tickscolor,right=0)
-		axis.tick_params('y', length=3.5, width=0.3, which='minor',direction='in',color=tickscolor,right=0) 
+		axis.tick_params('y', length=6.5, width=0.3, which='major',direction=direction,color=tickscolor,right=0)
+		axis.tick_params('y', length=3.5, width=0.3, which='minor',direction=direction,color=tickscolor,right=0) 
 
 		plt.setp(axis.get_yticklabels(), rotation=rotation, fontsize=fontsize_yticklabel)#,visible=False)
 		plt.setp(axis.get_xticklabels(), fontsize=fontsize_xticklabel)
@@ -43,7 +43,7 @@ def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks
 
 	axis.tick_params(axis='x', colors='k',pad=3)
 	axis.tick_params(axis='y', colors='k',pad=3)
-	axis.tick_params(axis='both',direction='in',color=tickscolor)
+	axis.tick_params(axis='both',direction=direction,color=tickscolor)
 
 
 	if xlabel != None:
