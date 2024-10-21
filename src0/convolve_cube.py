@@ -55,7 +55,7 @@ class Cube_creation:
 		self.dV=abs(self.cdelt3_kms)		
 		self.ones2d=np.ones((self.ny,self.nx))
 		self.ones3d=np.ones((self.nz,self.ny,self.nx))		
-		self.psf2d=gkernel(self.ones2d.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin,pixel_scale=self.pixel_scale) if self.fit_psf else None
+		self.psf2d=gkernel(self.ones2d.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin, bpa=self.bpa,pixel_scale=self.pixel_scale) if self.fit_psf else None
 		self.mom0,self.mom1,self.mom2=self.obs_mommaps()
 		#self.mask_cube=np.isfinite(self.mom0)			
 		self.nthreads=config_general.getint('nthreads',2)			
@@ -232,7 +232,7 @@ class Zeropadding:
 		self.h=h
 		config_general = config['general']
 		self.vary_disp=config_general.getboolean('fit_dispersion',False)
-		self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)
+		#self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)
 
 		psf_lsf= PsF_LsF(self.h, config)
 		self.fit_psf=psf_lsf.fit_psf
@@ -240,7 +240,7 @@ class Zeropadding:
 		self.bmin=psf_lsf.bmin
 		self.bpa= psf_lsf.bpa
 		self.fwhm_psf_arc=psf_lsf.fwhm_psf_arc						
-
+		self.fwhm_inst_A=psf_lsf.fwhm_inst_A
 
 
 	def create_cube_pad(self):

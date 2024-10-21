@@ -57,7 +57,8 @@ class Print:
 		bmin=psf_lsf.bmin
 		bpa= psf_lsf.bpa
 		psf_fwhm=psf_lsf.fwhm_psf_arc						
-
+		lsf_fwhm=psf_lsf.fwhm_inst_kms					
+		
 		print(self.deli)						
 		if psf_fwhm is not None:
 				psf_fwhm=round(psf_fwhm,3)
@@ -73,7 +74,10 @@ class Print:
 		if fwhm_inst != 0:
 				fwhm_inst=round(fwhm_inst,3)
 				print ('{:<20} {:<15}'.format('Spec. broadening:', f'{fwhm_inst}'))
-				
+		if lsf_fwhm is not None:
+				lsf_fwhm=round(lsf_fwhm,3)
+				print ('{:<20} {:<15}'.format('LSF FWHM:', f'{lsf_fwhm} km/s'))
+						
 		if vpeak:
 			print(self.deli)						
 			print ('{:<20} {:<15}'.format('Vpeak:', f'{vpeak}'))

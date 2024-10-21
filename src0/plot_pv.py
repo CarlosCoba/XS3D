@@ -159,7 +159,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	broadband=np.nansum(datacube,axis=0)
 	broadband[broadband==0]=np.nan
 	vmin,vmax=vmin_vmax(broadband)
-	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	 if vmax > 1 else colors.Normalize(vmin=vmin, vmax=vmax)
+	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	 if (vmax > 1) & (vmin>0) else colors.Normalize(vmin=vmin, vmax=vmax)
 	im2=ax2.imshow(broadband,norm=norm,cmap=cmap_mom0,aspect='auto',origin='lower',extent=extimg)
 	ax2.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)
 	ax2.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)		
@@ -199,9 +199,9 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	txt = AnchoredText(f'PA={pa_maj}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0);ax0.add_artist(txt)	
 	ax0.imshow(pvd_maj,norm=norm,cmap=cmap_mom0,origin = "lower",extent=ext0,aspect='auto')#,vmin=vmin,vmax=vmax)
 	#levels=np.linspace(np.nanmin(pvd_maj_mdl),np.nanmax(pvd_maj_mdl),10)
-	cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors='k', linestyles='solid',zorder=10,extent=ext0,linewidths=1,alpha=1)
+	cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors='#636363', linestyles='solid',zorder=10,extent=ext0,linewidths=1,alpha=1)
 	
-	lines = [Line2D([0], [0], color='k',lw=0.8)];labels=['model']
+	lines = [Line2D([0], [0], color='#636363',lw=0.8)];labels=['model']
 	ax0.legend(lines,labels,loc='upper right',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10)
 	ax0.scatter(R,vt,s=7,marker='s',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)
 	ax0.scatter(-R,-vt,s=7,marker='s',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)	
@@ -218,7 +218,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	txt = AnchoredText(f'PA={pa_min}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0);ax1.add_artist(txt)	
 	ax1.imshow(pvd_min,norm=norm,cmap=cmap_mom0,origin='lower',extent=ext1,aspect='auto')#,vmin=vmin,vmax=vmax)
 	#levels=np.linspace(np.nanmin(pvd_min_mdl),np.nanmax(pvd_min_mdl),10)
-	ax1.contour(pvd_min_mdl,levels=levels,colors='k', linestyles='solid',zorder=10,extent=ext1,linewidths=1,alpha=1)
+	ax1.contour(pvd_min_mdl,levels=levels,colors='#636363', linestyles='solid',zorder=10,extent=ext1,linewidths=1,alpha=1)
 	ax1.plot((ext1[0],ext1[1]),(0,0),"k-",lw=0.5)
 	ax1.plot((0,0),(ext1[2],ext1[3]),"k-",lw=0.5)
 	ax1.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)
@@ -235,17 +235,16 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	eline=config_general.getfloat('eline')	
 	specres=config_general.getfloat('fwhm_inst',None)
 	
-	if specres	is not None:
-		specres_kms=(specres/eline)*__c__
-		fwhm_kms=specres_kms
-	else:
-		fwhm_kms=hdr_info.cdelt3_kms
 
 	psf_lsf=PsF_LsF(hdr_cube,config)
 	bmaj_arc=psf_lsf.bmaj 
 	bmin_arc=psf_lsf.bmin
 	bpa= psf_lsf.bpa
 	psf_arc=psf_lsf.fwhm_psf_arc
+	fwhm_kms=psf_lsf.fwhm_inst_kms
+	if fwhm_kms is None:
+		fwhm_kms=hdr_info.cdelt3_kms
+	
 				
 	psf=None
 	if psf_arc is not None:

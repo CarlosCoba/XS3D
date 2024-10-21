@@ -3,6 +3,7 @@ import matplotlib.pylab as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
 import matplotlib.colors as colors
+from matplotlib.lines import Line2D
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
 from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,AnchoredSizeBar)
 from itertools import product
@@ -15,6 +16,8 @@ from src0.barscale import bscale
 from src0.ellipse import drawellipse
 from src0.psf_lsf import PsF_LsF
 from src0.constants import __c__
+from src0.conv import conv2d,gkernel,gkernel1d
+from src0.conv_fftw import fftconv,data_2N,fftconv_numpy
 #params =   {'text.usetex' : True }
 #plt.rcParams.update(params)
 
@@ -40,8 +43,23 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
 	[pa,eps,inc,xc,yc,vsys,phi_bar,rmax]=const
 	wave_kms=hdr_info.wave_kms	
-	[nz,ny,nx]=cube_mdl.shape	
+	[nz,ny,nx]=cube_mdl.shape
+		
+
+	pixelconv=pixel
+	bmajconv=bminconv=2*pixel
+	tmp=np.isfinite(cube_mdl)
+	tmp_mdl=np.copy(cube_mdl)
+	tmp_mdl[~tmp]=0
+	psf2d=gkernel([ny,nx],fwhm=None,bmaj=bmajconv,bmin=bminconv,pixel_scale=pixelconv)
+	padded_mdl, cube_slices = data_2N(tmp_mdl, axes=[1, 2])
+	psf3d=np.ones_like(cube_mdl)*psf2d	
+	padded_psf, _ = data_2N(psf3d, axes=[1, 2])
+	dft=fftconv(padded_mdl,padded_psf,threads=2,axes = [1,2])
+	cube_mdl_conv=dft.conv_DFT(cube_slices)
+	del tmp_mdl, tmp
 	
+		
 	rnorm=1
 	if np.max(ext)>80:
 		rnorm=60
@@ -79,7 +97,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 	dup = u[c > 1]
 	if len(dup)>0:
 		chanplot=np.arange(ngood)
-		print('duplicated values')
+		print('duplicated channels')
 	chanplot=chanplot.astype(int)
 	
 	vmin=0
@@ -90,10 +108,10 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 		if j<=ngood:
 			kk=channels[k]
 			chanmap=datacube[kk]
-			chanmap_mdl=(cube_mdl[kk])/rms
+			chanmap_mdl=(cube_mdl_conv[kk])/rms
 			axes[j].imshow(chanmap,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
 			levels=2**np.arange(1,7,1,dtype=float)			
-			axes[j].contour(chanmap_mdl,levels=levels,colors='w', linestyles='solid',zorder=1,extent=ext,linewidths=0.4,alpha=1)
+			axes[j].contour(chanmap_mdl,levels=levels,colors='#636363', linestyles='solid',zorder=1,extent=ext,linewidths=0.4,alpha=1)
 			
 			vchan=round(wave_kms[kk],2)
 			txt = AnchoredText(f'{vchan}~km/s', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":5},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)	
@@ -106,6 +124,11 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 		else:
 			axs(Axes,rotation='horizontal', remove_xyticks=True, direction='out')
 		
+
+	lines = [Line2D([0], [0], color='#636363',lw=0.8)];labels=['model']
+	ax_legend=axes[l0-1]
+	ax_legend.legend(lines,labels,loc='lower left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=9, bbox_to_anchor=(0, 1), bbox_transform=ax_legend.transAxes)
+
 
 	rms_int=int(np.log10(rms))
 	rms_round= round(rms/10**rms_int,5)

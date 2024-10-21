@@ -245,7 +245,7 @@ class XS_out(Run_models):
 		# save moment maps and cube model			
 		save_momments(self.galaxy,self.vmode,self.kin_3D_mdls,self.momaps,self.datacube,self.baselcube,self.h,out=self.outdir)		
 		self.P.status("creating PVD maps")				
-		out_pvd=pv_array(self.datacube,self.h,self.kin_3D_mdls,self.Vrot,self.R,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.pixel_scale,self.config)
+		out_pvd=pv_array(self.datacube,self.h,self.kin_3D_mdls,self.Vrot,self.R,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.pixel_scale,self.rms_cube, self.config)
 		pvd_arr=out_pvd[0]
 		# plot pvds 
 		plot_pvd(self.galaxy,out_pvd,self.Vrot,self.R,self.const,self.vmode,self.rms_cube,self.kin_3D_mdls,self.momaps,self.datacube,self.pixel_scale,self.h,self.hdr_info,self.config,self.outdir)

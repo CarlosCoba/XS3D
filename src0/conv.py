@@ -4,51 +4,59 @@ from scipy.signal import convolve2d
 from astropy.convolution import convolve,convolve_fft
 import matplotlib.pylab as plt
 from src0.constants import __sigma_2_FWHM__,__FWHM_2_sigma__
+from src0.ellipse import drawellipse
 
-def gkernel(shape, fwhm, bmaj=None,bmin=None, pa0 = 0, pixel_scale = 1.):
+def gkernel(shape,fwhm,bmaj=None,bmin=None,bpa = 0,pixel_scale = 1.):
 	# INPUTS
 	# shape - [ny,nx] shape of the array
 	# bmaj  - major axis of psf in arcsec
 	# bmin  - minor axis of psf in arcsec
 	# fwhm  - fwhm of the psf in arcsec
-	# pa	- position angle of the beam in deg.
+	# bpa	- position angle of the beam in deg.
 	# pixel size in arcsec/pix
-	
-	pa=pa0*np.pi/180
-	if bmaj==None: bmaj=fwhm
-	if bmin==None: bmin=fwhm
-	
+
+
+	Bpa=bpa*np.pi/180
+	Bmaj = bmaj*__FWHM_2_sigma__ if bmaj is not None else fwhm
+	Bmin = bmin*__FWHM_2_sigma__ if bmin is not None else fwhm
+		
+	#if bmaj==None: bmaj=fwhm*__FWHM_2_sigma__
+	#if bmin==None: bmin=fwhm*__FWHM_2_sigma__
 
 	[ny,nx]=shape
 	x0,y0 = nx/2., ny/2.
 	y, x = np.indices(shape)
 
-	#r2 = np.square(x-x0) + np.square(y-y0)
-	#kernel = np.exp(-0.5 * (r2) / sig_pix**2)
-	q = bmin/bmaj
+	q = Bmin/Bmaj
 	eps = (1-q)
 		
-	X = (- (x-x0)*np.sin(pa) + (y-y0)*np.cos(pa))
-	Y = (- (x-x0)*np.cos(pa) - (y-y0)*np.sin(pa))
+	X = (- (x-x0)*np.sin(Bpa) + (y-y0)*np.cos(Bpa))
+	Y = (- (x-x0)*np.cos(Bpa) - (y-y0)*np.sin(Bpa))
 	r2= (X**2+(Y/(1-eps))**2).astype('float64')
 
+	# if only fwhm is passed.
 	if fwhm is not None:	
-		sigma_arc = fwhm*__FWHM_2_sigma__		
-		sig_pix = sigma_arc/ pixel_scale
+		sigma_arc=fwhm*__FWHM_2_sigma__		
+		sig_pix=sigma_arc/pixel_scale
 		sig_pix2=(sig_pix)**2
-		r2=r2/sig_pix2
-
-	'''
+		r2=(r2/sig_pix2)
+	# if BMAJ and BMIN passed.
 	if fwhm is None:
-		bmin_pix=bmin/pixel_scale
-		rx2= X**2/bmin_pix**2
-		bmaj_pix=bmaj/pixel_scale
-		ry2=(Y/(1-eps))**2/bmaj_pix**2
-		r2=rx2+ry2
-	'''
+		sig_pix2=(Bmaj/pixel_scale)**2		
+		r2=(r2/sig_pix2)
+
 	r2=r2.astype(np.float64)
 	kernel = np.exp(-0.5*r2)
 	kernel = kernel/np.sum(kernel)
+	
+	plot=0
+	if plot:
+		bmjr,bmnr=Bmaj/pixel_scale,Bmin/pixel_scale
+		x,y=drawellipse(x0,y0,bmjr*4,Bpa,bmnr*4)
+		plt.plot(x,y,'k-')
+		x,y=drawellipse(x0,y0,bmjr,Bpa,bmnr)
+		plt.plot(x,y,'r-')			
+		plt.imshow((kernel), origin='lower');plt.show()
 	
 	return kernel
 	

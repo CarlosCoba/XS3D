@@ -19,7 +19,7 @@ def slit(xy,pa,eps,x0,y0,width=5,pixel=1):
 	return msk
 
 
-def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
+def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,rms,config):
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
 	[nz,ny,nx]=datacube.shape
 	extimg=np.dot([-nx/2.,nx/2.,-ny/2.,ny/2.],pixel)
@@ -34,7 +34,27 @@ def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 	if wave_kms[1]-wave_kms[0] < 0: # radio velocities 
 		datacube = datacube[::-1]	
 		cube_mdl = cube_mdl[::-1]			
-		wave_kms= wave_kms[::-1]	
+		wave_kms= wave_kms[::-1]
+
+	#######################################################################
+	# The following is to avoid plotting all channels from the cube.
+	# Otherwise is time consuming and not all channels contain signal.
+	#######################################################################
+	meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]!=0) & (np.isfinite(datacube[k]))) )/rms for k in range(nz)])
+	chan_sig=(meanflux_chan>0.01) & np.isfinite(meanflux_chan)
+	vchan=wave_kms[chan_sig]
+	vmin, vmax=np.min(vchan), np.max(vchan)			
+	chan_msk=(wave_kms>=vmin) & (wave_kms<=vmax)
+	datacube_tmp = np.copy(datacube)
+	cube_mdl_tmp = np.copy(cube_mdl)
+	datacube_tmp = datacube_tmp
+	wave_kms_tmp = wave_kms[chan_msk]
+	cube_mdl_tmp = cube_mdl_tmp[:,None][chan_msk[:,None]]
+	datacube_tmp = datacube_tmp[:,None][chan_msk[:,None]]
+	[nz,ny,nx]=datacube_tmp.shape
+	dv=wave_kms[chan_msk]
+	#######################################################################
+			
 	#dv+=vsys
 	vmin,vmax=np.min(dv),np.max(dv)
 	y,x=np.indices((ny,nx))
@@ -105,8 +125,8 @@ def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 		# Numer of spectra to coadd
 		Npix=np.sum(msk_R*msk_slit_maj)
 		if Npix==0: Npix=1
-		masked_cube_maj_mdl=cube_mdl*(msk_R*m_mjr)
-		masked_cube_maj=datacube*(msk_R*m_mjr)
+		masked_cube_maj_mdl=cube_mdl_tmp*(msk_R*m_mjr)
+		masked_cube_maj=datacube_tmp*(msk_R*m_mjr)
 		# the array[0][0] position contains the most blueshifted point, e.g., vmin-vsys.			
 		pv_array_maj_mdl[:,ind]=np.nansum(np.nansum(masked_cube_maj_mdl,axis=2),axis=1)/Npix						
 		pv_array_maj[:,ind]=np.nansum(np.nansum(masked_cube_maj,axis=2),axis=1)/Npix
@@ -115,8 +135,8 @@ def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,config):
 		Npix=np.sum(msk_R*msk_slit_min)
 		if Npix==0: Npix=1					
 		#msk_R=r_norm_int==rval # already defined above.			
-		masked_cube_min_mdl=cube_mdl*(msk_R*m_mnr)
-		masked_cube_min=datacube*(msk_R*m_mnr)
+		masked_cube_min_mdl=cube_mdl_tmp*(msk_R*m_mnr)
+		masked_cube_min=datacube_tmp*(msk_R*m_mnr)
 		# the array[0][0] position contains the most blueshifted point, e.g., vmin-vsys.
 		pv_array_min_mdl[:,ind]=np.nansum(np.nansum(masked_cube_min_mdl,axis=2),axis=1)/Npix
 		pv_array_min[:,ind]=np.nansum(np.nansum(masked_cube_min,axis=2),axis=1)/Npix
