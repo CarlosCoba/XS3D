@@ -72,7 +72,9 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	axes=[plt.subplot(gs2[j,i]) for j,i in product(np.arange(3),np.arange(3))]
 	[ax0,ax1,ax2,ax3,ax4,ax5,ax6,ax7,ax8]=axes
 
-
+	units_res_mom1='km/s'
+	units_res_mom2='km/s'
+		
 	# moment zero maps:
 	mom0_mdl=abs(mom0_mdl)	
 	res_mom0=mom0-mom0_mdl
@@ -96,6 +98,11 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	ax3.imshow(mom1,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	im4=ax4.imshow(mom1_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')	
 	vmin,vmax=vmin_vmax(res_mom1,base=base,symmetric=True)
+	# if residuals are lower than 1km/s then express them in m/s	
+	if vmax<1:
+		res_mom1*=1000
+		vmin,vmax=vmin*1000,vmax*1000
+		units_res_mom1='m/s'	
 	im5=ax5.imshow(res_mom1,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
 	#moment 2 maps
@@ -104,6 +111,11 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	ax6.imshow(mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	im7=ax7.imshow(mom2_mdl,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	vmin,vmax=vmin_vmax(res_mom2,2,98,symmetric=True)
+	# if residuals are lower than 1km/s then express them in m/s
+	if vmax<1:
+		res_mom2*=1000
+		vmin,vmax=vmin*1000,vmax*1000
+		units_res_mom2='m/s'	
 	im8=ax8.imshow(res_mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
 
@@ -170,17 +182,17 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	cb2=cb(im2,ax2,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=10, ticksfontsize=9,power=True)
 
 	cb(im4,ax3,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=9)
-	cb(im5,ax5,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=9)
+	cb(im5,ax5,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{%s}$"%units_res_mom1,labelsize=10, ticksfontsize=9)
 
 	cb(im7,ax6,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=9)
-	cb(im8,ax8,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=9)
+	cb(im8,ax8,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -24, label = "$\mathrm{%s}$"%units_res_mom2,labelsize=10, ticksfontsize=9)
 	
 	
 	[ny,nx]=mom0.shape
 	highz=config['high_z']
 	redshift=highz.getfloat('redshift',0)
 	vsysz=vsys + redshift*__c__		
-	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,nx,pixel)
+	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,nx,pixel,config)
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 	
 	ax0.text(ext[0]*(4/5.+1/10),ext[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	

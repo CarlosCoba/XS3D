@@ -1,5 +1,8 @@
 import numpy as np
 
+
+__pc_2_au__=206264.806
+__au_2__pc=1/206264.806
 # speed of light in km/s
 __c__ = 299792.458
 # speed of light in Angstrom/s
