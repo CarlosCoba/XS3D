@@ -196,7 +196,7 @@ class XS_out(Run_models):
 		## Write output into a table
 		#
 
-		if self.vmode in ["circular","radial","vertical"] or "hrm" in self.vmode:
+		if self.vmode in ["circular","radial","vertical", "ff"] or "hrm" in self.vmode:
 			# write header of table
 			if not path.exists(self.kin_params_table):
 				hdr = ["object", "X0", "eX0", "Y0", "eY0", "PA_disk","ePA_disk", "INC", "eINC", "VSYS", "eVSYS", "redchi" ]
@@ -245,7 +245,7 @@ class XS_out(Run_models):
 		# save moment maps and cube model			
 		save_momments(self.galaxy,self.vmode,self.kin_3D_mdls,self.momaps,self.datacube,self.baselcube,self.h,out=self.outdir)		
 		self.P.status("creating PVD maps")				
-		out_pvd=pv_array(self.datacube,self.h,self.kin_3D_mdls,self.Vrot,self.R,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.pixel_scale,self.rms_cube, self.config)
+		out_pvd=pv_array(self.datacube,self.h,self.kin_3D_mdls,self.Vrot,self.R,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.pixel_scale,self.rms_cube,self.config)
 		pvd_arr=out_pvd[0]
 		# plot pvds 
 		plot_pvd(self.galaxy,out_pvd,self.Vrot,self.R,self.const,self.vmode,self.rms_cube,self.kin_3D_mdls,self.momaps,self.datacube,self.pixel_scale,self.h,self.hdr_info,self.config,self.outdir)

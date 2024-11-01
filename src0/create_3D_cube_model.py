@@ -33,6 +33,7 @@ class best_3d_model:
 		self.n_annulus = self.nrings - 1
 		self.pixel_scale = pixel_scale
 		self.phi_b = phi_b
+		self.alpha = phi_b
 		self.V = V_k
 		self.m_hrm = m_hrm
 		self.v_center = inner_interp
@@ -119,7 +120,13 @@ class best_3d_model:
 			Vrad = self.Vrad[i]
 			v1 = (SIGMA_MODEL(xy_mesh,Vrot,self.pa,self.eps,self.x0,self.y0))*weigths_w(xy_mesh,self.pa,self.eps,self.x0,self.y0,r_2,r_space,pixel_scale=self.pixel_scale)			
 			v2 = (SIGMA_MODEL(xy_mesh,Vrad,self.pa,self.eps,self.x0,self.y0))*weigths_w(xy_mesh,self.pa,self.eps,self.x0,self.y0,r_2,r_space,pixel_scale=self.pixel_scale)
-			return modl0,v1,v2			
+			return modl0,v1,v2
+		if self.vmode == 'ff':
+			p = self.Vrad[i] !=0
+			Vrad = Vrot*p
+			v1 = (SIGMA_MODEL(xy_mesh,Vrot,self.pa,self.eps,self.x0,self.y0))*weigths_w(xy_mesh,self.pa,self.eps,self.x0,self.y0,r_2,r_space,pixel_scale=self.pixel_scale)			
+			v2 = (SIGMA_MODEL(xy_mesh,Vrad,self.pa,self.eps,self.x0,self.y0))*weigths_w(xy_mesh,self.pa,self.eps,self.x0,self.y0,r_2,r_space,pixel_scale=self.pixel_scale)
+			return modl0,v1,v2					
 		if self.vmode == "bisymmetric":
 			Vrad = self.Vrad[i]
 			Vtan = self.Vtan[i]
@@ -219,6 +226,14 @@ class best_3d_model:
 				velsum=vt+vr
 				msk=velsum!=0
 				velmap=velsum+msk*self.Vsys
+			if self.vmode=='ff':
+				[vt,vr]=interp_model
+				p=np.sqrt(2*(1-self.alpha**2))
+				vt*=np.sin(inc)*cos
+				vr*=-p*np.sin(inc)*sin				
+				velsum=vt+vr
+				msk=velsum!=0
+				velmap=velsum+msk*self.Vsys																		
 			if self.vmode=='vertical':
 				[vt,vz]=interp_model
 				vt*=np.sin(inc)*cos

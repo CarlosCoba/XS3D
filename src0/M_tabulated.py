@@ -59,7 +59,7 @@ def trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode="radial",pixel_s
 		w_rot = np.sin(inc)*cos
 		return np.ravel(w_rot)
 
-	if vmode == "radial":
+	if vmode == "radial" or vmode == 'ff':
 		w_rot = np.sin(inc)*cos
 		w_rad = np.sin(inc)*sin
 		return np.ravel(w_rot), np.ravel(w_rad)
@@ -145,7 +145,7 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 		
 		return dispersion,vrot,vrot*0,vrot*0
 
-	if vmode == "radial":
+	if vmode == "radial" or vmode == 'ff':
 		w_rot, w_rad = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,vmode)
 		sigma_v = emom1[mask]
 		x11,x12 = w_rot**2/sigma_v**2,w_rot*w_rad/sigma_v**2

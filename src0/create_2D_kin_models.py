@@ -95,7 +95,7 @@ class bidi_models:
 
 
 	def interp(self):
-			if self.vmode == "circular":
+			if self.vmode == "circular" or self.vmode == 'ff':
 				Vcirc_2D = self.mdl(self.Vrot, v_t = True)
 				Vrad_2D = 0
 				Vtan_2D = 0

@@ -51,7 +51,7 @@ def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pix
 					R_pos = np.append(R_pos,ring)
 		#return vrot_tab, vrad_tab, vtan_tab, R_pos
 
-			if vmode == "radial" or vmode == 'vertical':
+			if vmode == "radial" or vmode == 'vertical' or vmode == 'ff':
 				if ring >=  r_bar_min and ring <= r_bar_max:
 					# Create radial model
 					disp_k, v_rot_k,v_rad_k,v_tan_k = M_tab(pa,inc,x0,y0,theta_b,ring, delta,index, shape, mommaps2, evel, pixel_scale=pixel_scale,vmode = vmode)

@@ -117,7 +117,7 @@ class Least_square_fit:
 		interp_model = np.zeros((self.ny,self.nx))
 		self.index_v0 = 123456
 		if vmode == "circular": self.Vk = 1+1
-		if vmode == "radial" or vmode == 'vertical': self.Vk = 2+1
+		if vmode == "radial" or vmode == 'vertical' or self.vmode == 'ff': self.Vk = 2+1
 		if vmode == "bisymmetric": self.Vk = 3+1
 		
 
@@ -194,6 +194,8 @@ class Config_params(Least_square_fit):
 			pars.add('y0', value=self.Y0, vary = self.vary_yc, min = self.Y0min, max = self.Y0max)
 			if self.vmode == "bisymmetric":
 				pars.add('phi_b', value=self.PHI_BAR, vary = self.vary_phib)#, min = 0, self.PAbarmin , max = self.PAbarmax)
+			if self.vmode == "ff":
+				pars.add('alpha', value=0, vary = True, min = 0 , max = 1)
 
 
 		def tune_velocities(self,pars,iy):
@@ -320,6 +322,12 @@ class Models(Config_params):
 					v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)																								
 					v2 = (SIGMA_MODEL(xy_mesh,Vrad,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)					
 					return modl0,v1,v2
+				if self.vmode == 'ff':
+					toggle=self.vrad0[i] != 0 if i in range(self.nrings) else 1
+					Vrad=toggle*Vrot
+					v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)																								
+					v2 = (SIGMA_MODEL(xy_mesh,Vrad,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
+					return modl0,v1,v2																			
 				if self.vmode == "bisymmetric":
 					Vrad = pars['Vrad_%i'% i]
 					Vtan = pars['Vtan_%i'% i]
@@ -491,6 +499,15 @@ class Fit_kin_mdls(Models):
 				velsum=vt+vr
 				msk=velsum!=0
 				velmap=velsum+msk*Vsys
+			if self.vmode=='ff':
+				alpha = pars['alpha']			
+				[vt,vr]=interp_model
+				p=np.sqrt(2*(1-alpha**2))
+				vt*=np.sin(inc)*cos
+				vr*=-p*np.sin(inc)*sin				
+				velsum=vt+vr
+				msk=velsum!=0
+				velmap=velsum+msk*Vsys																		
 			if self.vmode=='vertical':
 				[vt,vz]=interp_model
 				vt*=np.sin(inc)*cos
@@ -563,6 +580,9 @@ class Fit_kin_mdls(Models):
 
 			phi_b=best["phi_b"].value if self.vmode=='bisymmetric' else 0
 			std_phi_b=best["phi_b"].stderr if self.vmode=='bisymmetric' else 0
+			alpha=best["alpha"].value if self.vmode=='ff' else 0
+			std_alpha=best["alpha"].stderr if self.vmode=='ff' else 0
+			if self.vmode=='ff': phi_b,std_phi_b=alpha,std_alpha  
 			
 			constant_parms = np.asarray( [best["pa"].value, best["eps"].value, best["x0"].value,best["y0"].value, best["Vsys"].value, phi_b] )
 			e_constant_parms =  [ best["pa"].stderr, best["eps"].stderr, best["x0"].stderr, best["y0"].stderr, best["Vsys"].stderr, std_phi_b] 
@@ -575,7 +595,8 @@ class Fit_kin_mdls(Models):
 
 			if "hrm" not in self.vmode:
 				v_kin = ["Sig", "Vrot","Vrad", "Vtan"]
-				for i in range(self.Vk):
+				nvkin=self.Vk if self.vmode != 'ff' else 2				
+				for i in range(nvkin):
 					self.V_k[i] = [ best["%s_%s"%(v_kin[i],iy)].value for iy in range(self.nrings) ]
 					self.V_k_std[i] = [ best["%s_%s"%(v_kin[i],iy)].stderr for iy in range(self.nrings) ]
 					# In case something goes wrong with errors:

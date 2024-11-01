@@ -103,7 +103,7 @@ class input_params:
 			delta = float(delta)
 
 		if r_bar_min_max in osi: r_bar_min_max = np.inf
-		if vmode not in ["circular","radial","bisymmetric","vertical"] and "hrm_" not in vmode: print("XookSuut: choose a proper kinematic model !"); quit()
+		if vmode not in ["circular","radial","bisymmetric","vertical", "ff"] and "hrm_" not in vmode: print("XookSuut: choose a proper kinematic model !"); quit()
 	
 
 		if type(r_bar_min_max)  == tuple:
