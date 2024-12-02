@@ -31,6 +31,7 @@ class Cube_creation:
 		
 		config_const = config['constant_params']
 		config_general = config['general']
+		config_others = config['others']		
 		self.vary_disp=config_general.getboolean('fit_dispersion',False)
 		
 		self.wmin,self.wmax=config_general.getfloat('wmin',None),config_general.getfloat('wmax',None)												
@@ -56,6 +57,7 @@ class Cube_creation:
 		self.ones2d=np.ones((self.ny,self.nx))
 		self.ones3d=np.ones((self.nz,self.ny,self.nx))		
 		self.psf2d=gkernel(self.ones2d.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin, bpa=self.bpa,pixel_scale=self.pixel_scale) if self.fit_psf else None
+		self.vpeak=config_others.getboolean('vpeak',False)				
 		self.mom0,self.mom1,self.mom2=self.obs_mommaps()
 		#self.mask_cube=np.isfinite(self.mom0)			
 		self.nthreads=config_general.getint('nthreads',2)			
@@ -64,7 +66,7 @@ class Cube_creation:
 		self.x_=self.ones2d*self.wave_cover_kms[:,None,None]
 
 		a=self.vparabola()
-		_,b,_=self.obs_mommaps(vpeak=False)
+		_,b,_=self.obs_mommaps()
 		self.emom1=abs(a-b)
 
 	def vparabola(self):
@@ -90,12 +92,12 @@ class Cube_creation:
 		cube_mod[~np.isfinite(cube_mod)]=0 
 		return cube_mod
 		
-	def obs_mommaps(self, vpeak=False):
+	def obs_mommaps(self):
 		mom0= trapecium3d(self.datacube,self.dV)
 		Fdv=trapecium3d(self.datacube*self.ones2d*self.wave_cover_kms[:,None,None],self.dV)
 		# If the spectral resolution is low ~50 km/s
 		# then compute the mom1 map with paraboloid
-		if vpeak:
+		if self.vpeak:
 			mom1=self.vparabola()*(mom0!=0)
 		else:
 			mom1=np.divide(Fdv,mom0,where=mom0!=0,out=np.zeros_like(mom0))							

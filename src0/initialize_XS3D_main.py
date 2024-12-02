@@ -97,12 +97,12 @@ class Run_models:
 		cube_class.eflux3d=self.errcube
 				
 		#create observed momemnt maps
-		self.momaps=cube_class.obs_mommaps(vpeak=False)		
+		self.momaps=cube_class.obs_mommaps()		
 		# create random moments instead ?
 		#self.momaps=cube_class.obs_mommaps_rnd(individual_run=1)
 				
 		[self.mom0,self.mom1,self.mom2]=self.momaps
-		if vpeak2D is not None: self.mom1=vpeak2D
+		#if vpeak2D is not None: self.mom1=vpeak2D # vpeak from smoothed cube
 		# create temporary error moment maps
 		self.emoms=[np.ones_like(self.mom0),np.ones_like(self.mom1),np.ones_like(self.mom2)]
 
