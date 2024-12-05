@@ -114,7 +114,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 			axes[j].contour(chanmap_mdl,levels=levels,colors='navy', linestyles='solid',zorder=1,extent=ext,linewidths=0.4,alpha=1)
 			
 			vchan=round(wave_kms[kk],2)
-			txt = AnchoredText(f'{vchan}~km/s', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":6},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)	
+			txt = AnchoredText(f'{vchan}', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":6},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)	
 
 			#axs(axes[k],rotation='horizontal', remove_ticks_all=True)
 	
@@ -189,7 +189,8 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=8,labelpad=1)
 	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=8,labelpad=1)
 
-
+	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":6},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-1].add_artist(txt)	
+			
 	plt.savefig("%sfigures/channels_cube_%s_model_%s.png"%(out,vmode,galaxy))
 	#plt.clf()
 	plt.close()

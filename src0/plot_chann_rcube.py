@@ -93,7 +93,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 			#chanmap_mdl/=(chanmap_mdl!=0)
 			axes[j].imshow(chanmap_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto',alpha=0.7)
 			vchan=round(wave_kms[kk],2)
-			txt = AnchoredText(f'{vchan}~km/s', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":6},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)	
+			txt = AnchoredText(f'{vchan}', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":6},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)	
 
 			#axs(axes[k],rotation='horizontal', remove_ticks_all=True)
 	
@@ -163,6 +163,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=8,labelpad=1)
 	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=8,labelpad=1)
 
+	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":6},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-1].add_artist(txt)	
 
 	plt.savefig("%sfigures/channels_rcube_%s_model_%s.png"%(out,vmode,galaxy))
 	#plt.clf()
