@@ -68,7 +68,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 		rlabel='$\'\'$'	
 	ext = ext/rnorm
 				
-	width, height = 14, 12 # width [cm]	
+	width, height = 11, 9 # width [cm]	
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch] 
@@ -86,7 +86,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 
 	l0=int(l0)
 	gs2 = gridspec.GridSpec(l0, l0)
-	gs2.update(left=0.1, right=0.85,top=0.95,bottom=0.1, hspace = 0, wspace = 0)
+	gs2.update(left=0.12, right=0.85,top=0.93,bottom=0.1, hspace = 0, wspace = 0)
 	axes=[plt.subplot(gs2[j,i]) for j,i in product(np.arange(l0),np.arange(l0))]
 
 	
@@ -109,23 +109,23 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 			kk=channels[k]
 			chanmap=datacube[kk]
 			chanmap_mdl=(cube_mdl_conv[kk])/rms
-			axes[j].imshow(chanmap,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
+			axes[j].imshow(chanmap,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto',alpha=0.7)
 			levels=2**np.arange(1,7,1,dtype=float)			
-			axes[j].contour(chanmap_mdl,levels=levels,colors='#636363', linestyles='solid',zorder=1,extent=ext,linewidths=0.4,alpha=1)
+			axes[j].contour(chanmap_mdl,levels=levels,colors='navy', linestyles='solid',zorder=1,extent=ext,linewidths=0.4,alpha=1)
 			
 			vchan=round(wave_kms[kk],2)
-			txt = AnchoredText(f'{vchan}~km/s', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":5},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)	
+			txt = AnchoredText(f'{vchan}~km/s', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":6},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)	
 
 			#axs(axes[k],rotation='horizontal', remove_ticks_all=True)
 	
 	for j,Axes in enumerate(axes):
 		if j==(l0**2-l0):
-			axs(Axes,rotation='horizontal', direction='out')		
+			axs(Axes,rotation='horizontal', direction='out', fontsize_ticklabels=6)		
 		else:
-			axs(Axes,rotation='horizontal', remove_xyticks=True, direction='out')
+			axs(Axes,rotation='horizontal', remove_xyticks=True, direction='out', fontsize_ticklabels=6)
 		
 
-	lines = [Line2D([0], [0], color='#636363',lw=0.8)];labels=['model']
+	lines = [Line2D([0], [0], color='navy',lw=0.8)];labels=['model']
 	ax_legend=axes[l0-1]
 	ax_legend.legend(lines,labels,loc='lower left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=9, bbox_to_anchor=(0, 1), bbox_transform=ax_legend.transAxes)
 
@@ -136,7 +136,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 	from matplotlib.cm import ScalarMappable
 	cmappable = ScalarMappable(colors.Normalize(vmin/rms,vmax/rms), cmap=cmap_mom0)
 	w=int(100*l0)
-	cb(cmappable,axes[-1],orientation = "vertical", colormap = cmap, bbox= (1.1,0,1,1), height = f"{w}%", width = "10%",label_pad = 0, label = "flux/rms",labelsize=10, ticksfontsize=9)
+	cb(cmappable,axes[-1],orientation = "vertical", colormap = cmap, bbox= (1.1,0,1,1), height = f"{w}%", width = "10%",label_pad = 0, label = "flux/rms",labelsize=8, ticksfontsize=6)
 		
 	for Axes in axes:
 		elipse=drawellipse(xc,yc,bmajor=rmax/pixel,pa_deg=pa,eps=eps)
@@ -170,12 +170,13 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 			
 	if psf is not None:
 		for Axes in axes:
-			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0.1,frameon=True, )
+			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0,frameon=True)
+			beam.ellipse.set(color='gray')			
 			Axes.add_artist(beam)
       
 	if bmaj_arc is not None and bmin_arc is not None:
 		for Axes in axes:
-			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0.1,frameon=True)
+			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0,frameon=True)
 			beam.ellipse.set(color='gray')
 			Axes.add_artist(beam)
 
@@ -185,8 +186,8 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 		Axes.set_ylim(ext[2],ext[3]) 	 	
 
 	indx=(l0**2-l0)
-	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=10,labelpad=1)
-	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=10,labelpad=1)
+	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=8,labelpad=1)
+	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=8,labelpad=1)
 
 
 	plt.savefig("%sfigures/channels_cube_%s_model_%s.png"%(out,vmode,galaxy))

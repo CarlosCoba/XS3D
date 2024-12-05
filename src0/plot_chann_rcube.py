@@ -49,7 +49,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 		rlabel='$\'\'$'	
 	ext = ext/rnorm
 				
-	width, height = 14, 12 # width [cm]	
+	width, height = 11, 9 # width [cm]	
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch] 
@@ -91,17 +91,17 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 			kk=channels[k]
 			chanmap_mdl=(cube_mdl[kk])/rms
 			#chanmap_mdl/=(chanmap_mdl!=0)
-			axes[j].imshow(chanmap_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
+			axes[j].imshow(chanmap_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto',alpha=0.7)
 			vchan=round(wave_kms[kk],2)
-			txt = AnchoredText(f'{vchan}~km/s', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":5},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)	
+			txt = AnchoredText(f'{vchan}~km/s', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":6},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)	
 
 			#axs(axes[k],rotation='horizontal', remove_ticks_all=True)
 	
 	for j,Axes in enumerate(axes):
 		if j==(l0**2-l0):
-			axs(Axes,rotation='horizontal', direction='out')		
+			axs(Axes,rotation='horizontal', direction='out', fontsize_ticklabels=6)		
 		else:
-			axs(Axes,rotation='horizontal', remove_xyticks=True, direction='out')
+			axs(Axes,rotation='horizontal', remove_xyticks=True, direction='out', fontsize_ticklabels=6)
 		
 
 	rms_int=int(np.log10(rms))
@@ -110,7 +110,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	from matplotlib.cm import ScalarMappable
 	cmappable = ScalarMappable(colors.Normalize(vmin/rms,vmax/rms), cmap=cmap_mom0)
 	w=int(100*l0)
-	cb(cmappable,axes[-1],orientation = "vertical", colormap = cmap, bbox= (1.1,0,1,1), height = f"{w}%", width = "10%",label_pad = 0, label = "flux/rms",labelsize=10, ticksfontsize=9)
+	cb(cmappable,axes[-1],orientation = "vertical", colormap = cmap, bbox= (1.1,0,1,1), height = f"{w}%", width = "10%",label_pad = 0, label = "flux/rms",labelsize=8, ticksfontsize=9)
 		
 	for Axes in axes:
 		elipse=drawellipse(xc,yc,bmajor=rmax/pixel,pa_deg=pa,eps=eps)
@@ -144,12 +144,13 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 			
 	if psf is not None:
 		for Axes in axes:
-			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0.1,frameon=True, )
+			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0,frameon=True)
+			beam.ellipse.set(color='gray')			
 			Axes.add_artist(beam)
       
 	if bmaj_arc is not None and bmin_arc is not None:
 		for Axes in axes:
-			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0.1,frameon=True)
+			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0,frameon=True)
 			beam.ellipse.set(color='gray')
 			Axes.add_artist(beam)
 
@@ -159,8 +160,8 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 		Axes.set_ylim(ext[2],ext[3]) 	 	
 
 	indx=(l0**2-l0)
-	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=10,labelpad=1)
-	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=10,labelpad=1)
+	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=8,labelpad=1)
+	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=8,labelpad=1)
 
 
 	plt.savefig("%sfigures/channels_rcube_%s_model_%s.png"%(out,vmode,galaxy))

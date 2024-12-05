@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from src0.lum_dist import Angdist
 from src0.constants import __c__, __pc_2_au__
 
@@ -21,8 +22,13 @@ def bscale(vsys,nx,pixel,config,f=4):
 			bar_scale_au = int(bar_scale_arc0)
 			bar_scale_u=int(bar_scale_au*scale_pc_arc)
 			return bar_scale_au,0,'pc'
+
+	if bar_scale_arc0 < 1:
+		round_0=abs(math.floor(np.log10(bar_scale_arc0)))
+		bar_scale_arc0=round(bar_scale_arc0,round_0)
+		bar_scale_arc=bar_scale_arc0
 		
-	if bar_scale_arc0 // 10 == 0:
+	elif bar_scale_arc0 // 10 == 0:
 		round_int=int(abs(np.log10(bar_scale_arc0)))
 		bar_scale_arc=int(round(bar_scale_arc0,round_int))
 	else:	

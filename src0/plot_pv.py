@@ -103,7 +103,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	vmaxv = (max_vel//10 + 1)*10
 
 
-	width, height = 14, 8 # width [cm]
+	width, height = 14, 14*(4./10) # width [cm]
 	#width, height = 3, 15 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
@@ -111,10 +111,16 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
   
 	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
 	#nrows x ncols
-	widths = [0.6,0.6,0.7,1,1]
-	heights = [1,1,0.1,1,1]
-	gs2 = gridspec.GridSpec(5, 5, width_ratios=widths, height_ratios=heights)
-	gs2.update(left=0.1, right=0.97,top=0.98,bottom=0.1, hspace = 0.0, wspace = 0.0)
+	widths = [0.3,0.3,0.7,1,1]
+	heights = [1,1,0.4,1,1]
+	
+	
+	gs1 = fig.add_gridspec(nrows=2, ncols=1, left=0.08, right=0.2, top=0.9, bottom=0.2, wspace=0.2)
+	gs2 = fig.add_gridspec(nrows=1, ncols=2, left=0.3, right=0.99, wspace=0.2, bottom=0.2)
+		
+
+	#gs2 = gridspec.GridSpec(3, 7, width_ratios=widths)#, height_ratios=heights)
+	#gs2.update(left=0.05, right=0.97,top=0.9,bottom=0.15, hspace = 0.0, wspace = 0.0)
 	levels=2**np.arange(1,7,1,dtype=float)
 
 
@@ -155,7 +161,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,nx,pixel,config)
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 
-	ax2=plt.subplot(gs2[0:-3,0:2])
+	ax2=plt.subplot(gs1[0,0])
 	broadband=np.nansum(datacube,axis=0)
 	broadband[broadband==0]=np.nan
 	vmin,vmax=vmin_vmax(broadband)
@@ -164,28 +170,28 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	ax2.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)
 	ax2.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)		
 	axs(ax2,rotation='horizontal',remove_xyticks=True)		
-	clb=cb(im2, ax2, labelsize=10, colormap = cmap_mom0, bbox=(-0.1, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vmin, vmax], label = "flux", label_pad = -26, colors  = "k",orientation='vertical')
-	clb.text(-1,-0.15,round(vmin,1),transform=clb.transAxes)
-	clb.text(-1,1.03,round(vmax,1),transform=clb.transAxes)
+	clb=cb(im2, ax2, labelsize=10, colormap = cmap_mom0, bbox=(-0.25, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vmin, vmax], label = "flux", label_pad = -20, colors  = "k",orientation='vertical')
+	clb.text(-1,-0.2,round(vmin,1),transform=clb.transAxes,fontsize=8)
+	clb.text(-1,1.03,round(vmax,1),transform=clb.transAxes,fontsize=8)
 
-	ax2.text(extimg[0]*(4/5.+1/10),extimg[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
-	ax2.plot([extimg[0]*(4/5.),extimg[0]*(5/6)+bar_scale_arc_norm],[extimg[2]*(5/6),extimg[2]*(5/6)],'k-')
+	ax2.text(extimg[0]*(4/5.+1/10),extimg[3]*(7/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
+	#ax2.plot([extimg[0]*(4/5.),extimg[0]*(5/6)+bar_scale_arc_norm],[extimg[3]*(7/6),extimg[3]*(7/6)],'k-')
 	
 	
-	ax3=plt.subplot(gs2[3:,0:2])
+	ax3=plt.subplot(gs1[1,0])
 	vmin,vmax=vmin_vmax(mom1,base=25)
 	if abs(vmin) < 10 or abs(vmax) < 10:
 		vminv,vmaxv=vmin_vmax(mom1,symmetric=True)
 	im3=ax3.imshow(mom1,cmap=cmap,aspect='auto',vmin=vminv,vmax=vmaxv,origin='lower',extent=extimg)
 	ax3.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)
 	ax3.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)		
-	axs(ax3,rotation='horizontal',remove_yticks=True)
-	clb=cb(im3, ax3, labelsize=10, colormap = cmap, bbox=(-0.1, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vminv, vmaxv], label = "$\mathrm{V_{LOS}}$/km/s", label_pad = -26, colors  = "k",orientation='vertical')
-	clb.text(-2,-0.15,int(vminv),transform=clb.transAxes)
-	clb.text(-2,1.03,int(vmaxv),transform=clb.transAxes)
+	axs(ax3,rotation='horizontal',remove_yticks=True,fontsize_ticklabels=10)
+	clb=cb(im3, ax3, labelsize=10, colormap = cmap, bbox=(-0.25, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vminv, vmaxv], label = "$\mathrm{V_{LOS}}$/km/s", label_pad = -20, colors  = "k",orientation='vertical')
+	clb.text(-2,-0.2,int(vminv),transform=clb.transAxes,fontsize=8)
+	clb.text(-2,1.03,int(vmaxv),transform=clb.transAxes,fontsize=8)
 	ax3.set_xlabel('$\mathrm{\Delta RA}$ (%s)'%rlabel,fontsize=12,labelpad=1)
-	ax3.text(extimg[0]*(4/5.+1/10),extimg[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
-	ax3.plot([extimg[0]*(4/5.),extimg[0]*(5/6)+bar_scale_arc_norm],[extimg[2]*(5/6),extimg[2]*(5/6)],'k-')
+	#ax3.text(extimg[0]*(4/5.+1/10),extimg[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
+	#ax3.plot([extimg[0]*(4/5.),extimg[0]*(5/6)+bar_scale_arc_norm],[extimg[2]*(5/6),extimg[2]*(5/6)],'k-')
 
 		
 
@@ -193,37 +199,38 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	vmin,vmax=vmin_vmax(pvd_maj,pmax=99.5)
 	if vmin<=0: vmin = 1
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	
-	ax0=plt.subplot(gs2[0:-3,3:])
-	axs(ax0,rotation='horizontal',remove_xticks=True)
-	txt = AnchoredText('$\mathrm{PV_{major}}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0.5);ax0.add_artist(txt)	
-	txt = AnchoredText(f'PA={pa_maj}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0);ax0.add_artist(txt)	
-	ax0.imshow(pvd_maj,norm=norm,cmap=cmap_mom0,origin = "lower",extent=ext0,aspect='auto')#,vmin=vmin,vmax=vmax)
+	ax0=plt.subplot(gs2[0,0])
+	axs(ax0,rotation='horizontal',fontsize_ticklabels=10)
+	txt = AnchoredText('$\mathrm{PV_{major}}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4);txt.patch.set_alpha(0.5);ax0.add_artist(txt)	
+	txt = AnchoredText(f'PA:{pa_maj}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax0.transAxes);txt.patch.set_alpha(0);ax0.add_artist(txt)	
+	ax0.imshow(pvd_maj,norm=norm,cmap=cmap_mom0,origin = "lower",extent=ext0,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
 	#levels=np.linspace(np.nanmin(pvd_maj_mdl),np.nanmax(pvd_maj_mdl),10)
-	cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors='#636363', linestyles='solid',zorder=10,extent=ext0,linewidths=1,alpha=1)
+	cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors='navy', linestyles='solid',zorder=10,extent=ext0,linewidths=1,alpha=1)
 	
-	lines = [Line2D([0], [0], color='#636363',lw=0.8)];labels=['model']
-	ax0.legend(lines,labels,loc='upper right',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10)
-	ax0.scatter(R,vt,s=7,marker='s',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)
-	ax0.scatter(-R,-vt,s=7,marker='s',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)	
+	lines = [Line2D([0], [0], color='navy',lw=0.8)];labels=['model']
+	ax0.legend(lines,labels,loc='upper left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False,fontsize=10,bbox_to_anchor=(0, 1.11), bbox_transform=ax0.transAxes)
+	ax0.scatter(R,vt,s=20,marker='s',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)
+	ax0.scatter(-R,-vt,s=20,marker='s',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)	
 	ax0.plot((ext0[0],ext0[1]),(0,0),"k-",lw=0.5)
 	ax0.plot((0,0),(ext0[2],ext0[3]),"k-",lw=0.5)
-	ax0.set_ylabel('$V\mathrm{_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
+	ax0.set_ylabel('$\mathrm{V_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
+	ax0.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)	
 	Nmultiple=50*( (abs(ext1[2])//2) // 50 )
 	if Nmultiple>0: ax0.yaxis.set_major_locator(MultipleLocator(Nmultiple))		
 
 	# PVD minor
-	ax1=plt.subplot(gs2[3:,3:])
-	axs(ax1,rotation='horizontal')
-	txt = AnchoredText('$\mathrm{PV_{minor}}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0.5);ax1.add_artist(txt)	
-	txt = AnchoredText(f'PA={pa_min}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0);ax1.add_artist(txt)	
-	ax1.imshow(pvd_min,norm=norm,cmap=cmap_mom0,origin='lower',extent=ext1,aspect='auto')#,vmin=vmin,vmax=vmax)
+	ax1=plt.subplot(gs2[0,1])
+	axs(ax1,rotation='horizontal',fontsize_ticklabels=10)
+	txt = AnchoredText('$\mathrm{PV_{minor}}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4);txt.patch.set_alpha(0.5);ax1.add_artist(txt)	
+	txt = AnchoredText(f'PA:{pa_min}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax1.transAxes);txt.patch.set_alpha(0);ax1.add_artist(txt)	
+	ax1.imshow(pvd_min,norm=norm,cmap=cmap_mom0,origin='lower',extent=ext1,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
 	#levels=np.linspace(np.nanmin(pvd_min_mdl),np.nanmax(pvd_min_mdl),10)
-	ax1.contour(pvd_min_mdl,levels=levels,colors='#636363', linestyles='solid',zorder=10,extent=ext1,linewidths=1,alpha=1)
+	ax1.contour(pvd_min_mdl,levels=levels,colors='navy', linestyles='solid',zorder=10,extent=ext1,linewidths=1,alpha=1)
 	ax1.plot((ext1[0],ext1[1]),(0,0),"k-",lw=0.5)
 	ax1.plot((0,0),(ext1[2],ext1[3]),"k-",lw=0.5)
 	ax1.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)
-	ax1.set_ylabel('$V\mathrm{_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
-	ax1.legend(lines,labels,loc='upper right',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10)		
+	#ax1.set_ylabel('$V\mathrm{_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
+	ax1.legend(lines,labels,loc='upper left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10,bbox_to_anchor=(0, 1.11), bbox_transform=ax1.transAxes)		
 	if Nmultiple>0: ax1.yaxis.set_major_locator(MultipleLocator(Nmultiple))
 	
 	# plot PSF ellipse ?
@@ -258,7 +265,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 			#x,y=drawellipse(x0,y0,fwhm_kms,0,bminor=psf/2.)
 			#Axes.plot(x,y,'k-',lw=0.5)
 
-			beam=AnchoredEllipse(Axes.transData, width=psf,height=fwhm_kms, angle=0, loc='lower left',pad=0.4, borderpad=0.5,frameon=True)
+			beam=AnchoredEllipse(Axes.transData, width=psf,height=fwhm_kms, angle=0, loc='lower left',pad=0.2, borderpad=0,frameon=True, zorder=30)
 			beam.ellipse.set(color='gray')
 			Axes.add_artist(beam)
 

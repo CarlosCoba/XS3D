@@ -6,7 +6,7 @@ majorFormatter = FormatStrFormatter("$%g$")
 
 #def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 10, fontsize_yticklabel = 10, fontsize_ticklabels = None,  rotation = "vertical", frame = False, remove_axis_lines = 0 ):
 
-def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 10, fontsize_yticklabel = 10, fontsize_ticklabels = 8,  rotation = "vertical", frame = False, remove_axis_lines = 0, direction='in' ):
+def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 11, fontsize_yticklabel = 11, fontsize_ticklabels = 11,  rotation = "vertical", frame = False, remove_axis_lines = 0, direction='in' ):
 	
 	fontsize_xticklabel, fontsize_yticklabel = fontsize_ticklabels, fontsize_ticklabels
 	plt.setp(axis.get_yticklabels(), rotation=rotation, fontsize=fontsize_yticklabel)#,visible=False)

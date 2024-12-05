@@ -100,11 +100,11 @@ def plot_kin_models_h(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Ck,Sk,e_Ck,e_Sk,VSY
 
 	ax3.plot(R,c1, color = "#362a1b",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{c_{1}}$")
 	ax3.fill_between(R, c1-e_c1, c1+e_c1, color = "#362a1b", alpha = 0.3, linewidth = 0)
-	ax3.scatter(R,c1,s=7,marker='s',c='#362a1b',edgecolor='k',lw=0.3,zorder=10)
+	ax3.scatter(R,c1,s=20,marker='s',c='#362a1b',edgecolor='k',lw=0.3,zorder=10)
 		
 	ax3.plot(R,Sigma, color = "#db6d52",linestyle='--', alpha = 1, linewidth=0.8, label = "$\sigma_{intr}$")
 	ax3.fill_between(R, Sigma-eSigma, Sigma+eSigma, color = "#db6d52", alpha = 0.3, linewidth = 0)
-	ax3.scatter(R,Sigma,s=7,marker='s',c='#db6d52',edgecolor='k',lw=0.3,zorder=10)
+	ax3.scatter(R,Sigma,s=20,marker='s',c='#db6d52',edgecolor='k',lw=0.3,zorder=10)
 	
 	ax3.set_ylim(0, 30*(np.max(c1)//30)+40)
 	ax3.set_xlim(0, np.max(R))

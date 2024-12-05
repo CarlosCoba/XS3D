@@ -31,22 +31,20 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
 	vt2D=twoDmodels[0]
 
-	width, height = 9, 10 # width [cm]
+	width, height = 9, 6 # width [cm]
 	#width, height = 3, 15 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
   
 	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
+	gs1 = fig.add_gridspec(nrows=2, ncols=1, left=0.8, right=0.98, top=0.87, bottom=0.13, hspace=0.7)
+	gs2 = fig.add_gridspec(nrows=1, ncols=1, left=0.13, right=0.7, wspace=0.2, bottom=0.14)
 
-	widths = [1,1,1,1,1,0.2]
-	heights = [1.5,1,1,1,1,1]
-	gs2 = gridspec.GridSpec(6, 6,  width_ratios=widths, height_ratios=heights)
-	gs2.update(left=0.15, right=1,top=0.98,bottom=0.08, hspace = 0.0, wspace = 0.0)
-	ax0=plt.subplot(gs2[0:2,0:2])
-	ax1=plt.subplot(gs2[0:2,2:4])
-	ax2=plt.subplot(gs2[3:,0:-1])
-
+	ax0=plt.subplot(gs1[0,0])
+	ax1=plt.subplot(gs1[1,0])
+	ax2=plt.subplot(gs2[0,0])
+				
 	#ax2=plt.subplot(gs2[0,3])
 
 	# is it the axes in arcsec or arcmin ?
@@ -88,49 +86,49 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 
 
 
-	axs(ax0)
-	axs(ax1,remove_yticks=True)
-	axs(ax2, rotation='horizontal')
+	axs(ax0,fontsize_ticklabels=8)
+	axs(ax1,fontsize_ticklabels=8)
+	axs(ax2, rotation='horizontal',fontsize_ticklabels=8)
 
 
 
 	ax0.set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=8,labelpad=1)
-	ax0.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=8,labelpad=1)
+	#ax0.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=8,labelpad=1)
 	ax1.set_xlabel('$\mathrm{ \Delta RA}$ (%s)'%rlabel,fontsize=8,labelpad=1)
-	#ax1.set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=8,labelpad=1)
+	ax1.set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=8,labelpad=1)
 
 	txt = AnchoredText('$\mathrm{V}_{t}$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax0.add_artist(txt)
 	txt = AnchoredText('$\sigma$', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax1.add_artist(txt)
 	#txt = AnchoredText('$\mathrm{V}_{t}/\sigma=%s$'%(mean_rat), loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":11},zorder=1e4);ax1.add_artist(txt)
-	txt = AnchoredText('$\mathrm{V}_{t}/\sigma=%s$'%(mean_rat),loc='lower left', prop=dict(size=8), frameon=0,bbox_to_anchor=(0.97, 0.8),bbox_transform=ax1.transAxes);ax1.add_artist(txt)
+	txt = AnchoredText('$\mathrm{V}_{t}/\sigma=%s$'%(mean_rat),loc='upper left', pad=0.1, borderpad=0, prop=dict(size=10), frameon=0);ax2.add_artist(txt)
                        	
 
 	ax2.plot(R,Sigma, color = "#db6d52",linestyle='--', alpha = 1, linewidth=0.8, label = "$\sigma_{intrin}$")
 	ax2.fill_between(R, Sigma-eSigma, Sigma+eSigma, color = "#db6d52", alpha = 0.3, linewidth = 0)
-	ax2.scatter(R,Sigma,s=7,marker='s',c='#db6d52',edgecolor='k',lw=0.3,zorder=10)
+	ax2.scatter(R,Sigma,s=20,marker='s',c='#db6d52',edgecolor='k',lw=0.3,zorder=10)
 
 	ax2.plot(R,Vrot, color = "#362a1b",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{t}}$")
 	ax2.fill_between(R, Vrot-eVrot, Vrot+eVrot, color = "#362a1b", alpha = 0.3, linewidth = 0)
-	ax2.scatter(R,Vrot,s=7,marker='s',c='#362a1b',edgecolor='k',lw=0.3,zorder=10)
+	ax2.scatter(R,Vrot,s=20,marker='s',c='#362a1b',edgecolor='k',lw=0.3,zorder=10)
 	
 	if vmode == "radial":
 		ax2.plot(R,Vrad, color = "#c73412",linestyle='-', alpha = 0.6, linewidth=0.8, label = "$\mathrm{V_{r}}$")
 		ax2.fill_between(R, Vrad-eVrad, Vrad+eVrad, color = "#c73412", alpha = 0.3, linewidth = 0)
-		ax2.scatter(R,Vrad,s=7,marker='s',c='#c73412',edgecolor='k',lw=0.3,zorder=10)
+		ax2.scatter(R,Vrad,s=20,marker='s',c='#c73412',edgecolor='k',lw=0.3,zorder=10)
 
 	if vmode == "vertical":
 		ax2.plot(R,Vrad, color = "#b47b50",linestyle='-', alpha = 0.6, linewidth=0.8, label = "$\mathrm{V_{z}}$")
 		ax2.fill_between(R, Vrad-eVrad, Vrad+eVrad, color = "#b47b50", alpha = 0.3, linewidth = 0)
-		ax2.scatter(R,Vrad,s=7,marker='s',c='#b47b50',edgecolor='k',lw=0.3,zorder=10)
+		ax2.scatter(R,Vrad,s=20,marker='s',c='#b47b50',edgecolor='k',lw=0.3,zorder=10)
 			
 	if vmode == "bisymmetric":
 		ax2.plot(R,Vrad, color = "#c73412",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{2,r}}$")
 		ax2.fill_between(R, Vrad-eVrad, Vrad+eVrad, color = "#c73412", alpha = 0.3, linewidth = 0)
-		ax2.scatter(R,Vrad,s=7,marker='s',c='#c73412',edgecolor='k',lw=0.3,zorder=10)
+		ax2.scatter(R,Vrad,s=20,marker='s',c='#c73412',edgecolor='k',lw=0.3,zorder=10)
 		
 		ax2.plot(R,Vtan, color = "#2fa7ce",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{V_{2,t}}$")
 		ax2.fill_between(R, Vtan-eVtan, Vtan+eVtan, color = "#2fa7ce", alpha = 0.3, linewidth = 0)
-		ax2.scatter(R,Vtan,s=7,marker='s',c='#2fa7ce',edgecolor='k',lw=0.3,zorder=10)
+		ax2.scatter(R,Vtan,s=20,marker='s',c='#2fa7ce',edgecolor='k',lw=0.3,zorder=10)
 
 	#bbox_to_anchor =(x0, y0, width, height)
 	ax2.legend(loc = "center", fontsize = 10, bbox_to_anchor = (0, 1, 1, 0.2), ncol = 4, frameon = False, labelspacing=0.1, handlelength=1, handletextpad=0.3,columnspacing=0.8)
@@ -161,10 +159,10 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 
 	ax2.plot([0,np.nanmax(R)],[0,0],color = "k",linestyle='-', alpha = 0.6,linewidth = 0.3)
 	ax2.set_xlabel(f'r ({rlabel})',fontsize=10,labelpad = 2)
-	ax2.set_ylabel('$\mathrm{V_{rot}~(km~s^{-1})}$',fontsize=10,labelpad = 2)
+	ax2.set_ylabel('$\mathrm{V_{rot}~(km~s^{-1})}$',fontsize=10,labelpad = 0)
 
-	cb(im0,ax0,orientation = "horizontal", colormap = cmap, bbox= (2.07,0.5,0.45,1),width = "100%", height = "5%",label_pad = -23, label = "$V/\mathrm{km~s^{-1}}$",labelsize=8, ticksfontsize = 8, ticks = [0,velmax])
-	cb(im1,ax1,orientation = "horizontal", colormap = cmap, bbox= (1.07,0.1,0.45,1),width = "100%", height = "5%",label_pad = -23, label = "$\sigma/\mathrm{km~s^{-1}}$",labelsize=8, ticksfontsize = 8)
+	cb(im0,ax0,orientation = "horizontal", colormap = cmap, bbox= (0,1.2,0.65,1),width = "100%", height = "5%",label_pad = -20, label = "$V/\mathrm{km~s^{-1}}$",labelsize=8, ticksfontsize = 8, ticks = [0,velmax])
+	cb(im1,ax1,orientation = "horizontal", colormap = cmap, bbox= (0,1.2,0.65,1),width = "100%", height = "5%",label_pad = -20, label = "$\sigma/\mathrm{km~s^{-1}}$",labelsize=8, ticksfontsize = 8)
 
 	"""
 	# plot PSF ellipse ?
