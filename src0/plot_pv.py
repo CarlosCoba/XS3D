@@ -216,7 +216,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	ax0.set_ylabel('$\mathrm{V_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
 	ax0.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)	
 	Nmultiple=50*( (abs(ext1[2])//2) // 50 )
-	if Nmultiple>0: ax0.yaxis.set_major_locator(MultipleLocator(Nmultiple))		
+
 
 	# PVD minor
 	ax1=plt.subplot(gs2[0,1])
@@ -230,8 +230,8 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	ax1.plot((0,0),(ext1[2],ext1[3]),"k-",lw=0.5)
 	ax1.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)
 	#ax1.set_ylabel('$V\mathrm{_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
-	ax1.legend(lines,labels,loc='upper left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10,bbox_to_anchor=(0, 1.11), bbox_transform=ax1.transAxes)		
-	if Nmultiple>0: ax1.yaxis.set_major_locator(MultipleLocator(Nmultiple))
+	ax1.legend(lines,labels,loc='upper left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10,bbox_to_anchor=(0, 1.11), bbox_transform=ax1.transAxes)
+	
 	
 	# plot PSF ellipse ?
 	"""
@@ -289,8 +289,22 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 
 
 	for Axes in [ax2, ax3]:
-		Axes.set_xlim(extimg[0],extimg[1]) 
-		Axes.set_ylim(extimg[2],extimg[3]) 	 	
+		Axes.set_xlim(extimg[0],extimg[1])		
+		Axes.set_ylim(extimg[2],extimg[3]) 	 
+
+	for Axes in [ax0, ax1]:
+		vmin_max= abs(np.array(ext0[2],ext0[3]))
+		if not np.all(vmin_max<900):
+			vmin=-np.max(vt)*(1+1/3.)
+			vmax= np.max(vt)*(1+1/3.)
+			Nmultiple=50*( (abs(vmax)//2) // 50 )
+			Axes.set_ylim(vmin,vmax) 	 	
+
+
+	if Nmultiple>0: ax0.yaxis.set_major_locator(MultipleLocator(Nmultiple))					
+	if Nmultiple>0: ax1.yaxis.set_major_locator(MultipleLocator(Nmultiple))
+	
+			
 				
 	plt.savefig("%sfigures/pvd_%s_model_%s.png"%(out,vmode,galaxy))
 	#plt.clf()
