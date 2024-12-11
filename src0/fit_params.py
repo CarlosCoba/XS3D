@@ -135,7 +135,7 @@ class Least_square_fit:
 			self.Vk = 2*self.m_hrm+1
 
 		config_const = config['constant_params']
-		self.Vmin, self.Vmax = -450, 450
+		self.Vmin, self.Vmax = -550, 550
 		eps_min, eps_max = 1-np.cos(10*np.pi/180),1-np.cos(80*np.pi/180)
 		self.PAmin,self.PAmax,self.vary_pa = config_const.getfloat('MIN_PA', -360*2), config_const.getfloat('MAX_PA', 360*2),config_const.getboolean('FIT_PA', self.vary_pa)
 		self.INCmin,self.INCmax,self.vary_eps = config_const.getfloat('MIN_INC', eps_min), config_const.getfloat('MAX_INC', eps_max),config_const.getboolean('FIT_INC', self.vary_eps)
