@@ -4,7 +4,6 @@
 XookSuut3D (XS3D)
 *******************************************
 
-|logo|
 
 ![logo](./logo.png)
 
@@ -76,6 +75,8 @@ FWHM=100 km/s.
 
 Moment maps obtained from the observed and model datacubes.
 |mom_muse|
+![mom_muse](/figures/mommaps_circular_model_NGC3351.png)
+
 
 Intrinsic velocity and velocity dispersion of the gas.
 |disp_muse|
