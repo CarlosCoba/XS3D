@@ -98,13 +98,13 @@ Example on a **protoplanetary disk** of astronomical unit scales observed with  
 ===========
 
 Observed and model moment maps.
-[mommaps_proto](/figures/mommaps_circular_model_HD163296_v2.png)
+![mommaps_proto](/figures/mommaps_circular_model_HD163296_v2.png)
 
 Position velocity diagram
-[pvd_proto](/figures/pvd_circular_model_HD163296_v2.png)
+![pvd_proto](/figures/pvd_circular_model_HD163296_v2.png)
 
 Channel maps taken from the datacube and model cube
-[channel_proto](/figures/channels_cube_circular_model_HD163296_v2.png)
+![channel_proto](/figures/channels_cube_circular_model_HD163296_v2.png)
 
 
 XS3D outputs
@@ -120,5 +120,5 @@ Referencing XookSuut3D
 =================
 
 If you are using XS3D in your work, please cite the XS release paper https://ui.adsabs.harvard.edu/abs/2024RMxAA..60...19L/abstract.
-A version for 3D has been submitted.
+A version for 3D has been recently submitted to the ApJ.
 Also, if you use the XS colormap (red-black-blue) in a different context, I would appreciate it, if you include XS in the acknowledgment section.
