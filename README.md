@@ -6,7 +6,7 @@ XookSuut3D (XS3D)
 
 |logo|
 
-[alt text](logo.png)
+![logo](./logo.png)
 
 ====
 
