@@ -24,7 +24,7 @@ the observational Beam/PSF and spectral broadening (LSF). For this purpose
 it makes use of the FFTW library via pyFFTW.
 XS3D is  particularly designed for spectral-line observations on frequency, wavelength and velocity domain, which makes it suitable to
 model a wide variety of spectral-lines from CO, HI, ionized gas and IR lines etc.
-XS3D adopts the same minimization technique as its 2D version, [XookSuut][https://github.com/CarlosCoba/XookSuut-code], but extended to datacubes.
+XS3D adopts the same minimization technique as its 2D version, [XookSuut](https://github.com/CarlosCoba/XookSuut-code), but extended to datacubes.
 Furthermore, XS3D includes a set of noncircular rotation models, such as axisymmetric radial flows, free fall, bar-like flows, vertical flows, and a general harmonic decomposition of the LOSV.
 To derive the best set of parameters on each kinematic model XS3D uses all the information from the datacube. Therefore,
 large dimension cubes could take large CPU time to derive the best model.
