@@ -1,9 +1,8 @@
 
 
-*******************************************
-XookSuut3D (XS3D)
-*******************************************
 
+XookSuut3D (XS3D)
+====
 
 ![logo](./logo.png)
 
@@ -33,10 +32,9 @@ Execution times vary depending on the cube dimensions. It can take from a couple
 Dependencies
 ===========
 
-            * ::
-
+```
                 Python >= 3.8
-
+```
 
 Installation
 ===========
@@ -50,9 +48,9 @@ cd /XS3D/
 3. Try it. Go to any folder and type XS3D
 
 you must get the following ::
-
+```
 USE: XS3D name cube.fits [mask2D] [PA] [INC] [X0] [Y0] [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]
-
+```
 
 
 Uninstall
