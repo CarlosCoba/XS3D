@@ -79,10 +79,10 @@ Moment maps obtained from the observed and model datacubes.
 
 
 Intrinsic velocity and velocity dispersion of the gas.
-!|disp_muse|(/figures/kin_circular_disp_NGC3351.png)
+![disp_muse|(/figures/kin_circular_disp_NGC3351.png)
 
 Position velocity diagram from the model cube along the major and minor axes
-!|pvd_muse|(/figures/pvd_circular_model_NGC3351.png)
+![pvd_muse](/figures/pvd_circular_model_NGC3351.png)
 
 
 Example on a **high redshift galaxy** (z=7.30) with ALMA
@@ -90,23 +90,23 @@ Example on a **high redshift galaxy** (z=7.30) with ALMA
 This example is a high redshift object REBELS-25 at z=7.30, observed with ALMA  [CII]  (158mu=1900.537GHz).
 
 Moment maps extracted from the observed and model cubes. Beam shape: BMAJ=0.134arcsec, BMIN=0.121arcsec, BPA=82deg.
-!|mommaps_highz|(/figures/mommaps_circular_model_rebels.png)
+![mommaps_highz](/figures/mommaps_circular_model_rebels.png)
 
 The intrinsic circular velocity and velocity dispersion.
-!|disp_rebels|(/figures/kin_circular_disp_rebels.png)
+![disp_rebels](/figures/kin_circular_disp_rebels.png)
 
 
 Example on a **protoplanetary disk** of astronomical unit scales observed with  ALMA
 ===========
 
 Observed and model moment maps.
-|mommaps_proto|
+[mommaps_proto](/figures/mommaps_circular_model_HD163296_v2.png)
 
 Position velocity diagram
-|pvd_proto|
+[pvd_proto](/figures/pvd_circular_model_HD163296_v2.png)
 
 Channel maps taken from the datacube and model cube
-|channel_proto|
+[channel_proto](/figures/channels_cube_circular_model_HD163296_v2.png)
 
 
 XS3D outputs
@@ -124,40 +124,3 @@ Referencing XookSuut3D
 If you are using XS3D in your work, please cite the XS release paper https://ui.adsabs.harvard.edu/abs/2024RMxAA..60...19L/abstract.
 A version for 3D has been submitted.
 Also, if you use the XS colormap (red-black-blue) in a different context, I would appreciate it, if you include XS in the acknowledgment section.
-
-
-.. |logo| image:: logo.png
-    :scale: 10 %
-    :target: https://github.com/CarlosCoba/XS3D
-
-.. |mom_muse| image:: /figures/mommaps_circular_model_NGC3351.png
-    :scale: 10 %
-    :target: https://github.com/CarlosCoba/XS3D
-
-.. |disp_muse| image::  /figures/kin_circular_disp_NGC3351.png
-    :scale: 10 %
-    :target: https://github.com/CarlosCoba/XS3D
-
-.. |pvd_muse| image:: /figures/pvd_circular_model_NGC3351.png
-    :scale: 10 %
-    :target: https://github.com/CarlosCoba/XS3D
-
-.. |mommaps_proto| image:: /figures/mommaps_circular_model_HD163296_v2.png
-    :scale: 5 %
-    :target: https://github.com/CarlosCoba/XS3D
-
-.. |pvd_proto| image:: /figures/pvd_circular_model_HD163296_v2.png
-    :scale: 5 %
-    :target: https://github.com/CarlosCoba/XS3D
-
-.. |mommaps_highz| image:: /figures/mommaps_circular_model_rebels.png
-   :scale: 5 %
-   :target: https://github.com/CarlosCoba/XS3D
-
-.. |disp_rebels| image::  /figures/kin_circular_disp_rebels.png
-   :scale: 5 %
-   :target: https://github.com/CarlosCoba/XS3D
-
-.. |channel_proto| image::  /figures/channels_cube_circular_model_HD163296_v2.png
-   :scale: 5 %
-   :target: https://github.com/CarlosCoba/XS3D
