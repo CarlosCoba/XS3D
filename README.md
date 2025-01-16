@@ -79,10 +79,10 @@ Moment maps obtained from the observed and model datacubes.
 
 
 Intrinsic velocity and velocity dispersion of the gas.
-|disp_muse|
+!|disp_muse|(/figures/kin_circular_disp_NGC3351.png)
 
 Position velocity diagram from the model cube along the major and minor axes
-|pvd_muse|
+!|pvd_muse|(/figures/pvd_circular_model_NGC3351.png)
 
 
 Example on a **high redshift galaxy** (z=7.30) with ALMA
@@ -90,10 +90,10 @@ Example on a **high redshift galaxy** (z=7.30) with ALMA
 This example is a high redshift object REBELS-25 at z=7.30, observed with ALMA  [CII]  (158mu=1900.537GHz).
 
 Moment maps extracted from the observed and model cubes. Beam shape: BMAJ=0.134arcsec, BMIN=0.121arcsec, BPA=82deg.
-|mommaps_highz|
+!|mommaps_highz|(/figures/mommaps_circular_model_rebels.png)
 
 The intrinsic circular velocity and velocity dispersion.
-|disp_rebels|
+!|disp_rebels|(/figures/kin_circular_disp_rebels.png)
 
 
 Example on a **protoplanetary disk** of astronomical unit scales observed with  ALMA
