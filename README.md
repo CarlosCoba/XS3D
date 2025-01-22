@@ -119,6 +119,6 @@ The description of theses files is found in the header of each FITS file.
 Referencing XookSuut3D
 =================
 
-If you are using XS3D in your work, please cite it via [zenodo](https://zenodo.org/records/14717254) or the XS release paper https://ui.adsabs.harvard.edu/abs/2024RMxAA..60...19L/abstract.
+If you are using XS3D in your work, please cite it via [zenodo](https://zenodo.org/records/14717635), or use the XS release paper https://ui.adsabs.harvard.edu/abs/2024RMxAA..60...19L/abstract.
 A paper describing XS3D has been recently submitted to the ApJ.
 Also, if you use the XS colormap (red-black-blue) in a different context, I would appreciate it, if you include XS in the acknowledgment section.
