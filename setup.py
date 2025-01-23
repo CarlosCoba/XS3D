@@ -25,7 +25,7 @@ setup(
     url="https://github.com/CarlosCoba/XS3D",
     author="C. Lopez-Coba",
     author_email="calopez@asiaa.sinica.edu.tw",
-	include_package_data=True,
+	package_data={ '': ['*.txt', '*.ini']},
     license="MIT",
     packages=all_packages,
     install_requires=requirements,
