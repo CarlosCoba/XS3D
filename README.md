@@ -8,7 +8,7 @@ XookSuut3D (XS3D)
 
 ====
 
-:Authors: Carlos Lopez Coba
+:Authors: Carlos López-Cobá
 :Contact: carlos.lopezcoba@gmail.com
 
 
@@ -42,8 +42,7 @@ Installation
 1. Go to the XS3D directory
 cd /XS3D/
 
-2.  pip install -e .
--e stands for editable, meaning that you will be able to work on the script and invoke the latest version without need to reinstall.
+2.  pip install .
 
 3. Try it. Go to any folder and type XS3D
 
