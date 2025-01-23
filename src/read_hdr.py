@@ -28,8 +28,8 @@ class Header_info:
 		self.vdoppler=others.get('vdoppler','opt')
 
 		if self.naxis!=3:
-			print(f'The input data is not a datacube!.\n
-			Check your cube dimensions \n
+			print(f'The input data is not a datacube!.\
+			Check your cube dimensions \
 			NAXIS = {self.naxis} != 3')
 			quit()
 		try:
