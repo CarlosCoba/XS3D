@@ -11,14 +11,14 @@ def convolve_3d_same(cube, psf, compute_fourier=True):
 	Convolve a 3D cube with PSF & LSF.
 	PSF can be the PSF data or its Fourier transform.
 	if compute_fourier then compute the fft transform of the PSF.
-	if False then assumes that the fft is given.
+	if False then assumes that the fft is given..
 
 	This convolution has edge effects (and is slower when using numpy than pyfftw).
 
 	cube: The cube we want to convolve
 	psf: The Point Spread Function or its Fast Fourier Transform
 	"""
-	
+
 	# Pad to power of 2
 	padded_cube, cube_slices = padding(cube, axes=[0, 1, 2])
 
@@ -100,8 +100,8 @@ def convolve_1d(data, psf, compute_fourier=True, axis=0):
 	cube_conv = fft_cube[boxcube]
 
 	return cube_conv#, fftpsf
-	
-	
+
+
 def padding(cube, axes=None):
 		"""
 		Computes padding needed for a cube to make sure it has
@@ -143,5 +143,3 @@ def padding(cube, axes=None):
 		cube_padded[cube_slices] = cube.copy()
 		#cube_padded=cube_padded.astype(np.float64)
 		return cube_padded, cube_slices
-		
-	
