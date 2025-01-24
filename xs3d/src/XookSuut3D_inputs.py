@@ -11,7 +11,7 @@ try:
 	config_file=sys.argv[20] if sys.argv[20] not in osi else CONFIG_PATH
 except(IndexError,IOError):
 	config_file=CONFIG_PATH
-	
+
 input_config = configparser.ConfigParser(
 			# allow a variables be set without value
 			allow_no_value=True,
@@ -22,7 +22,7 @@ input_config = configparser.ConfigParser(
 input_config.read(config_file)
 # Shortcuts to the different configuration sections variables.
 config_general = input_config['general']
-nthreads=config_general.getint('nthreads',1) 
+nthreads=config_general.getint('nthreads',1)
 
 from .utils import *
 set_threads(nthreads)
@@ -43,7 +43,7 @@ class input_params:
 	def __init__(self):
 		if (nargs < 19 or nargs > 22):
 
-			print ("USE: XS3D name cube.fits [mask2D] [PA] [INC] [X0] [Y0] [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]" )
+			print ("USE: XS3D name cube.fits [mask2D] [PA] [INC] [X0] [Y0] [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_NC_min,R_NC_max] [config_file] [prefix]" )
 
 			exit()
 
@@ -98,13 +98,13 @@ class input_params:
 
 
 		if delta in osi:
-			delta = ring_space/2. 
+			delta = ring_space/2.
 		else:
 			delta = float(delta)
 
 		if r_bar_min_max in osi: r_bar_min_max = np.inf
 		if vmode not in ["circular","radial","bisymmetric","vertical", "ff"] and "hrm_" not in vmode: print("XookSuut: choose a proper kinematic model !"); quit()
-	
+
 
 		if type(r_bar_min_max)  == tuple:
 			bar_min_max = [r_bar_min_max[0], r_bar_min_max[1] ]
@@ -112,7 +112,7 @@ class input_params:
 
 			bar_min_max = [rstart, r_bar_min_max ]
 
-		if prefix != "": galaxy = "%s-%s"%(galaxy,prefix)	
+		if prefix != "": galaxy = "%s-%s"%(galaxy,prefix)
 
 
 		input_config = configparser.ConfigParser(
@@ -143,11 +143,11 @@ class input_params:
 		vary_PHIB = config_const.getboolean('FIT_PHI_BAR', vary_PHIB)
 
 		n_it=config_general.getint("n_it", 1)
-		v_center = config_general.get("v_center", 0)  
+		v_center = config_general.get("v_center", 0)
 		survey = config_general.get("dataset", "-")
-		
-		
-		
+
+
+
 		try:
 			v_center = float(v_center)
 		except (ValueError): pass
@@ -157,12 +157,10 @@ class input_params:
 			quit()
 
 
-		config = input_config		
+		config = input_config
 
 		x = XS_out(galaxy, vel_map, mask2D, VSYS, PA, INC, X0, Y0, PHI_BAR, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHIB, delta, rstart, rfinal, ring_space, frac_pixel, v_center, bar_min_max, vmode, survey, config, prefix, osi  )
 		out_xs = x()
 
 if __name__ == "__main__":
 	init = input_params()
-
-
