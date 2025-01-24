@@ -18,7 +18,7 @@ with open("requirements.txt", "r") as r:
 all_packages = find_packages()
 setup(
     name="XS3D",
-    version="1.0.2",
+    version="1.0.3",
     description="A Python tool for modeling circular and non-ciruclar motions via emission lines on datacubes.",
     long_description=readme(),
     keywords="kinematics",
@@ -31,7 +31,7 @@ setup(
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'XS3D=src.XookSuut3D_inputs:input_params'
+            'XS3D=xs3d.src.XookSuut3D_inputs:input_params'
         ]
     }
 )
