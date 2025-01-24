@@ -46,7 +46,7 @@ cd /XS3D/
 
 3. Try it. Go to any folder and type XS3D
 
-you must get the following ::
+you must get the following :
 ```
 USE: XS3D name cube.fits [mask2D] [PA] [INC] [X0] [Y0] [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]
 ```
@@ -113,6 +113,10 @@ XS3D produces a series of figures stored in the local XS3D/figures/ directory th
 from the input cube (observed) and the output cube (model).
 Results from XS3D are stored in a series of FITS (Flexible Image Transport System) files found in the local XS3D/models/ directory.
 The description of theses files is found in the header of each FITS file.
+
+XS3D noncircular models
+===========
+Visit my personal [blog](https://carloscoba.github.io/) to see the different noncircular-motion models included in XS3D.
 
 
 Referencing XookSuut3D
