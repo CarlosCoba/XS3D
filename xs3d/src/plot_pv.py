@@ -103,7 +103,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	vmaxv = (max_vel//10 + 1)*10
 
 
-	width, height = 14, 14*(4./10) # width [cm]
+	width, height = 16, 16*(4./10) # width [cm]
 	#width, height = 3, 15 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
@@ -189,7 +189,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	clb=cb(im3, ax3, labelsize=10, colormap = cmap, bbox=(-0.25, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vminv, vmaxv], label = "$\mathrm{V_{LOS}}$/km/s", label_pad = -20, colors  = "k",orientation='vertical')
 	clb.text(-2,-0.2,int(vminv),transform=clb.transAxes,fontsize=8)
 	clb.text(-2,1.03,int(vmaxv),transform=clb.transAxes,fontsize=8)
-	ax3.set_xlabel('$\mathrm{\Delta RA}$ (%s)'%rlabel,fontsize=12,labelpad=1)
+	ax3.set_xlabel('$\mathrm{\Delta RA}$ (%s)'%rlabel,fontsize=13,labelpad=1)
 	#ax3.text(extimg[0]*(4/5.+1/10),extimg[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
 	#ax3.plot([extimg[0]*(4/5.),extimg[0]*(5/6)+bar_scale_arc_norm],[extimg[2]*(5/6),extimg[2]*(5/6)],'k-')
 
@@ -213,8 +213,8 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	ax0.scatter(-R,-vt,s=20,marker='s',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)	
 	ax0.plot((ext0[0],ext0[1]),(0,0),"k-",lw=0.5)
 	ax0.plot((0,0),(ext0[2],ext0[3]),"k-",lw=0.5)
-	ax0.set_ylabel('$\mathrm{V_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
-	ax0.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)	
+	ax0.set_ylabel('$\mathrm{V_{LOS}~(km/s)}$',fontsize=13,labelpad=1)
+	ax0.set_xlabel(f'r ({rlabel})',fontsize=13,labelpad=1)	
 	Nmultiple=50*( (abs(ext1[2])//2) // 50 )
 
 
@@ -228,8 +228,8 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	ax1.contour(pvd_min_mdl,levels=levels,colors='navy', linestyles='solid',zorder=10,extent=ext1,linewidths=1,alpha=1)
 	ax1.plot((ext1[0],ext1[1]),(0,0),"k-",lw=0.5)
 	ax1.plot((0,0),(ext1[2],ext1[3]),"k-",lw=0.5)
-	ax1.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)
-	#ax1.set_ylabel('$V\mathrm{_{LOS}~(km/s)}$',fontsize=12,labelpad=1)
+	ax1.set_xlabel(f'r ({rlabel})',fontsize=13,labelpad=1)
+	#ax1.set_ylabel('$V\mathrm{_{LOS}~(km/s)}$',fontsize=13,labelpad=1)
 	ax1.legend(lines,labels,loc='upper left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10,bbox_to_anchor=(0, 1.11), bbox_transform=ax1.transAxes)
 	
 	
@@ -305,7 +305,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	if Nmultiple>0: ax1.yaxis.set_major_locator(MultipleLocator(Nmultiple))
 	
 			
-				
+	fig.tight_layout()            						
 	plt.savefig("%sfigures/pvd_%s_model_%s.png"%(out,vmode,galaxy))
 	#plt.clf()
 	plt.close()
