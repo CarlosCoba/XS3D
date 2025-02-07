@@ -51,14 +51,16 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	# mask spectra that have low signal (on average)
 	msk_lowSN = (avg2d<p5) & (avg2d!=0)
-	
 	if msk_user!=None:
-		msk_lowSN=get_fits_data(msk_user).astype(bool)
-		
+		msk_usr=get_fits_data(msk_user).astype(bool)
+	else:
+		msk_usr=np.ones((ny,nx)).astype(bool)
+				
 	c=cube*msk_lowSN*np.ones(nz)[:,None,None]
 	msk=c!=0
 	# calculate the rms on the original cube
 	rms_ori=rmse(c[msk])
+	Print().out("Original cube RMS",round(rms_ori,10))				
 
 	#(2) calculate smooted cube
 	# smooth the cube spectrally and spatially by a factor of 2
@@ -78,7 +80,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	rms_sm=rmse(c[msk])
 	clip_level=rms_sm*clip
 
-	Print().out("Cube RMS",round(rms_sm,10))				
+	Print().out("Cleaned cube RMS",round(rms_sm,10))				
 	# if clip is too high, try to reduce it.
 	#if clip_level/p95>0.2:
 	#	logger.warning(f'Clip level of {clip} seems to be high. I will try to reduce it.')
@@ -86,6 +88,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 			
 	msk_cube=np.zeros_like(cube,dtype=bool)
 	msk_cube[cube_smooth>clip_level]=True
+	msk_cube*=msk_usr
 	msk_cube2=np.copy(msk_cube)
 	
 	for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
