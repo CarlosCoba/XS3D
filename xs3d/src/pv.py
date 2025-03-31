@@ -113,7 +113,7 @@ def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,rms,confi
 	ext_arc0=np.array([rmin*pixel_pvd_arc,rmax*pixel_pvd_arc,vmin,vmax]) 	
 	ext_arc1=np.array([rmin*pixel_pvd_arc,rmax*pixel_pvd_arc,vmin,vmax])
 	# Change scale to arcmin if necessary 	
-	if np.max(abs(extimg)) > 80:
+	if np.nanmax(rarc) > 80:
 		ext_arc0[:2]=ext_arc0[:2]/60
 		ext_arc1[:2]=ext_arc1[:2]/60
 	

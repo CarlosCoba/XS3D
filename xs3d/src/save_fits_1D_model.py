@@ -12,14 +12,21 @@ def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 
         
 	if vmode == "circular":
-			#Vrot,e_Vrot = MODELS[0],eMODELS[0]
 			data = np.zeros((5,n))
 			data[0][:] = R
 			data[1][:] = Disp
 			data[2][:] = Vrot
 			data[3][:] = e_Disp
 			data[4][:] = e_Vrot
-
+			
+	if vmode == "ff":
+			data = np.zeros((5,n))
+			data[0][:] = R
+			data[1][:] = Disp
+			data[2][:] = Vrot
+			data[3][:] = e_Disp
+			data[4][:] = e_Vrot
+			
 	if vmode == "radial" or vmode == 'vertical':
 			data = np.zeros((7,n))
 			data[0][:] = R
@@ -43,17 +50,22 @@ def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 			data[8][:] = e_Vtan
 
 
-	if True:
 
-		hdu = fits.PrimaryHDU(data)
+	hdu = fits.PrimaryHDU(data)
 
-		if vmode == "circular":
+	if vmode == "circular":
 			hdu.header['NAME0'] = 'deprojected distance (arcsec)'
 			hdu.header['NAME1'] = 'intrinsic dispersion (km/s)'			
 			hdu.header['NAME2'] = 'circular velocity (km/s)'
 			hdu.header['NAME3'] = 'error velocity dispersion (km/s)'
-			hdu.header['NAME4'] = 'error circular velocity (km/s)'					
-		if vmode == "radial":
+			hdu.header['NAME4'] = 'error circular velocity (km/s)'
+	if vmode == "ff":
+			hdu.header['NAME0'] = 'deprojected distance (arcsec)'
+			hdu.header['NAME1'] = 'intrinsic dispersion (km/s)'			
+			hdu.header['NAME2'] = 'circular velocity (km/s)'
+			hdu.header['NAME3'] = 'error velocity dispersion (km/s)'
+			hdu.header['NAME4'] = 'error circular velocity (km/s)'								
+	if vmode == "radial":
 			hdu.header['NAME0'] = 'deprojected distance (arcsec)'
 			hdu.header['NAME1'] = 'intrinsic dispersion (km/s)'			
 			hdu.header['NAME2'] = 'circular velocity (km/s)'
@@ -61,7 +73,7 @@ def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 			hdu.header['NAME4'] = 'error velocity dispersion (km/s)'
 			hdu.header['NAME5'] = 'error circular velocity (km/s)'
 			hdu.header['NAME6'] = 'error radial velocity (km/s)'
-		if vmode == "vertical":
+	if vmode == "vertical":
 			hdu.header['NAME0'] = 'deprojected distance (arcsec)'
 			hdu.header['NAME1'] = 'intrinsic dispersion (km/s)'			
 			hdu.header['NAME2'] = 'circular velocity (km/s)'
@@ -69,7 +81,7 @@ def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 			hdu.header['NAME4'] = 'error velocity dispersion (km/s)'
 			hdu.header['NAME5'] = 'error circular velocity (km/s)'
 			hdu.header['NAME6'] = 'error vertical velocity (km/s)'			
-		if vmode == "bisymmetric":
+	if vmode == "bisymmetric":
 			hdu.header['NAME0'] = 'deprojected distance (arcsec)'
 			hdu.header['NAME1'] = 'intrinsic dispersion (km/s)'			
 			hdu.header['NAME2'] = 'circular velocity (km/s)'
@@ -80,26 +92,26 @@ def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 			hdu.header['NAME7'] = 'error radial velocity (km/s)'
 			hdu.header['NAME8'] = 'error tangencial velocity (km/s)'
 
-		hdu.header['redchisq'] = redchi
-		hdu.header['Nfree'] = N_free
-		hdu.header['Nvarys'] = N_nvarys
-		hdu.header['Ndata'] = N_data
-		hdu.header['BIC'] = bic
-		hdu.header['AIC'] = aic
-		hdu.header['PA'] = PA
-		hdu.header['e_PA'] = e_PA
-		hdu.header['EPS'] = EPS
-		hdu.header['e_EPS'] = e_EPS
-		hdu.header['INC'] = INC
-		hdu.header['e_INC'] = e_INC
-		hdu.header['VSYS'] = VSYS
-		hdu.header['e_VSYS'] = e_Vsys
-		hdu.header['XC'] = XC
-		hdu.header['e_XC'] = e_XC
-		hdu.header['YC'] = YC
-		hdu.header['e_YC'] = e_YC
+	hdu.header['redchisq'] = redchi
+	hdu.header['Nfree'] = N_free
+	hdu.header['Nvarys'] = N_nvarys
+	hdu.header['Ndata'] = N_data
+	hdu.header['BIC'] = bic
+	hdu.header['AIC'] = aic
+	hdu.header['PA'] = PA
+	hdu.header['e_PA'] = e_PA
+	hdu.header['EPS'] = EPS
+	hdu.header['e_EPS'] = e_EPS
+	hdu.header['INC'] = INC
+	hdu.header['e_INC'] = e_INC
+	hdu.header['VSYS'] = VSYS
+	hdu.header['e_VSYS'] = e_Vsys
+	hdu.header['XC'] = XC
+	hdu.header['e_XC'] = e_XC
+	hdu.header['YC'] = YC
+	hdu.header['e_YC'] = e_YC
 
-		if vmode == "bisymmetric":
+	if vmode == "bisymmetric":
 			hdu.header['HIERARCH PHI_BAR'] = THETA*180/np.pi
 			hdu.header['HIERARCH e_PHI_BAR'] = e_theta*180/np.pi
 			hdu.header['HIERARCH PA_BAR_MAJOR'] = PA_BAR_MAJOR

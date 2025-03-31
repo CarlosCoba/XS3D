@@ -41,18 +41,32 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	mom0_mdl,mom1_mdl,mom2_mdl=zero2nan(mom0_mdl),zero2nan(mom1_mdl),zero2nan(mom2_mdl_kms)
 	[pa,eps,inc,xc,yc,vsys,phi_bar,rmax]=const
 	[ny,nx]=mom0.shape
-	
+	# shift the extent to the kinematic centre
+	ext=np.dot([-xc,nx-xc,-yc,ny-yc],pixel); xc =0; yc =0 
+
+		
 	mom1_mdl=mom1_mdl-vsys
 	mom1=mom1-vsys
 	
 	rnorm=1
-	if np.max(ext)>80:
+	if np.max(rmax)>80:
 		rnorm=60
 		rlabel='$\'$'
 	else:
 		rlabel='$\'\'$'	
 	ext = ext/rnorm
-				
+
+	# Crop the FOV in case the object is too small
+	xlength=nx # in pixels
+	rmax_norm=rmax/rnorm
+	xmin,xmax=ext[0],ext[1]
+	ymin,ymax=ext[2],ext[3]			
+	if np.all(abs(ext[:2])>rmax_norm):
+		xmin,xmax=-rmax_norm*(4/3.),rmax_norm*(4/3.)
+		xlength=2*xmax*rnorm/pixel			
+	if np.all(abs(ext[-2:])>rmax_norm):
+		ymin,ymax=-rmax_norm*(4/3.),rmax_norm*(4/3.)					
+					
 	width, height = 10, 13 # width [cm]
 	width, height = 14, 18 # width [cm]	
 	#width, height = 3, 15 # width [cm]
@@ -65,7 +79,8 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	widths = [1,1,1]
 	heights = [1]
 	gs2 = gridspec.GridSpec(3, 3)
-	gs2.update(left=0.1, right=0.98,top=0.93,bottom=0.06, hspace = 0.3, wspace = 0)
+	#gs2.update(left=0.1, right=0.98,top=0.93,bottom=0.06, hspace = 0.3, wspace = 0)
+	gs2.update(hspace = 0.3, wspace = 0, right=0.98, bottom=0.06, top=0.93 )	
 
 
 
@@ -79,7 +94,7 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	mom0_mdl=abs(mom0_mdl)	
 	res_mom0=mom0-mom0_mdl
 	vmin,vmax=vmin_vmax(mom0_mdl)
-	norm = colors.LogNorm(vmin=vmin, vmax=vmax) if vmax > 1 else colors.Normalize(vmin=vmin, vmax=vmax)
+	norm = colors.LogNorm(vmin=vmin, vmax=vmax) if (vmin>0) & (np.log10(vmax/vmin)>1) else colors.Normalize(vmin=vmin, vmax=vmax)
 	ax0.imshow(mom0,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
 	im1=ax1.imshow(mom0_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')	
 	vmin,vmax=vmin_vmax(res_mom0,2,98,symmetric=True)
@@ -157,6 +172,7 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 
 
 	txt0=['Mom0','Mom1', 'Mom2']
+	#txt0=['$0^\mathrm{th}$M','$1^\mathrm{st}$M', '$2^\mathrm{nd}$M']	
 	txt1=['obs','mdl']
 
 		
@@ -181,10 +197,10 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	cb(im1,ax0,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=11, ticksfontsize=11)
 	cb2=cb(im2,ax2,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=11, ticksfontsize=11,power=True)
 
-	cb(im4,ax3,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=11)
+	cb(im4,ax3,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{km/s}$",labelsize=11, ticksfontsize=11)
 	cb(im5,ax5,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{%s}$"%units_res_mom1,labelsize=11, ticksfontsize=11)
 
-	cb(im7,ax6,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{km/s}$",labelsize=10, ticksfontsize=11)
+	cb(im7,ax6,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{km/s}$",labelsize=11, ticksfontsize=11)
 	cb(im8,ax8,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -26, label = "$\mathrm{%s}$"%units_res_mom2,labelsize=11, ticksfontsize=11)
 	
 	
@@ -192,17 +208,17 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	highz=config['high_z']
 	redshift=highz.getfloat('redshift',0)
 	vsysz=vsys + redshift*__c__		
-	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,nx,pixel,config)
+	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,xlength,pixel,config)
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 	
-	ax0.text(ext[0]*(4/5.+1/10),ext[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=10)	
-	ax0.plot([ext[0]*(4/5.),ext[0]*(4/5.)+bar_scale_arc_norm],[ext[2]*(5/6),ext[2]*(5/6)],'k-')
+	ax0.text(xmin*(4/5.+1/10),ymin*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=10)	
+	ax0.plot([xmin*(4/5.),xmin*(4/5.)+bar_scale_arc_norm],[ymin*(5/6),ymin*(5/6)],'k-')
 
-	ax3.text(ext[0]*(4/5.+1/10),ext[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=10)	
-	ax3.plot([ext[0]*(4/5.),ext[0]*(4/5.)+bar_scale_arc_norm],[ext[2]*(5/6),ext[2]*(5/6)],'k-')
+	ax3.text(xmin*(4/5.+1/10),ymin*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=10)	
+	ax3.plot([xmin*(4/5.),xmin*(4/5.)+bar_scale_arc_norm],[ymin*(5/6),ymin*(5/6)],'k-')
 
-	ax6.text(ext[0]*(4/5.+1/10),ext[2]*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=10)	
-	ax6.plot([ext[0]*(4/5.),ext[0]*(4/5.)+bar_scale_arc_norm],[ext[2]*(5/6),ext[2]*(5/6)],'k-')
+	ax6.text(xmin*(4/5.+1/10),ymin*(5/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=10)	
+	ax6.plot([xmin*(4/5.),xmin*(4/5.)+bar_scale_arc_norm],[ymin*(5/6),ymin*(5/6)],'k-')
 
 
 
@@ -235,25 +251,26 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 
 
 	for Axes in [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8]:
-		elipse=drawellipse(xc,yc,bmajor=rmax/pixel,pa_deg=pa,eps=eps)
-		x,y=pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm	
+		elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
+		x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm	
 		Axes.plot(x, y, '-', color = '#393d42',  lw=1.5)
 		
-		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax/pixel,pa_deg=pa,eps=1)
-		x,y=pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm		
+		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax_norm,pa_deg=pa,eps=1)
+		x,y=elipse_mjr[0],elipse_mjr[1]#pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm		
 		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=1.5)
 
-		elipse_mnr=drawellipse(xc,yc,bmajor=0.5*(1-eps)*rmax/pixel,pa_deg=pa+90,eps=1)
-		x,y=pixel*(elipse_mnr[0]-nx/2)/rnorm,pixel*(elipse_mnr[1]-ny/2)/rnorm		
+		elipse_mnr=drawellipse(xc,yc,bmajor=0.5*(1-eps)*rmax_norm,pa_deg=pa+90,eps=1)
+		x,y=elipse_mnr[0],elipse_mnr[1]#pixel*(elipse_mnr[0]-nx/2)/rnorm,pixel*(elipse_mnr[1]-ny/2)/rnorm		
 		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=1.5)
 
 
 	
 	for Axes in axes:
-		Axes.set_xlim(ext[0],ext[1]) 
-		Axes.set_ylim(ext[2],ext[3]) 	 	
-	  			
-	plt.savefig("%sfigures/mommaps_%s_model_%s.png"%(out,vmode,galaxy))
+			Axes.set_xlim(xmin,xmax) 
+			Axes.set_ylim(ymin,ymax) 	 	
+
+	fig.tight_layout()            							  			
+	plt.savefig("%sfigures/mommaps_%s_model_%s.png"%(out,vmode,galaxy),bbox_extra_artists=cb2)
 	#plt.clf()
 	plt.close()
 

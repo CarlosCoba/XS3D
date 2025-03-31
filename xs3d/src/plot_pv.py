@@ -9,8 +9,8 @@ from astropy.convolution import convolve
 from itertools import product
 import matplotlib.colors as colors
 from matplotlib.lines import Line2D
-
 from matplotlib.offsetbox import AnchoredText
+
 from .axes_params import axes_ambient as axs 
 from .cbar import colorbar as cb
 from .colormaps_CLC import vel_map
@@ -77,8 +77,11 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	pa_min = int(round(pa_min))
 	[ny,nx]=mom0.shape
 	extimg=np.dot([-nx/2.,nx/2.,-ny/2.,ny/2.],pixel)
+	extimg=np.dot([-xc,nx-xc,-yc,ny-yc],pixel); xc =0; yc =0 
 
 	vt=vt*np.sin(inc*np.pi/180)
+	max_vt=np.nanmax(vt)
+		
 	# Upper quadrant if:
 	if np.cos(pa_maj*np.pi/180)>0:
 		s=+1
@@ -86,7 +89,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 		s=-1
 	R*=s
 	rnorm=1
-	if np.max(abs(extimg)) > 80:
+	if rmax > 80:
 		rnorm=60
 		rlabel='$\'$'
 	else:
@@ -152,20 +155,30 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	pvd_maj/=rms	
 	
 	#"""
-					
 
+	# Crop the FOV in case the object is too small
+	xlength=nx # in pixels
+	rmax_norm=rmax/rnorm
+	xmin,xmax=extimg[0],extimg[1]
+	ymin,ymax=extimg[2],extimg[3]			
+	if np.all(abs(extimg[:2])>rmax_norm):
+		xmin,xmax=-rmax_norm*(4/3.),rmax_norm*(4/3.)
+		xlength=2*xmax*rnorm/pixel			
+	if np.all(abs(extimg[-2:])>rmax_norm):
+		ymin,ymax=-rmax_norm*(4/3.),rmax_norm*(4/3.)					
+							
 	# bar scale
 	highz=config['high_z']
 	redshift=highz.getfloat('redshift',0)
 	vsysz=vsys + redshift*__c__	
-	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,nx,pixel,config)
+	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,xlength,pixel,config)
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 
 	ax2=plt.subplot(gs1[0,0])
 	broadband=np.nansum(datacube,axis=0)
 	broadband[broadband==0]=np.nan
 	vmin,vmax=vmin_vmax(broadband)
-	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	 if (vmax > 1) & (vmin>0) else colors.Normalize(vmin=vmin, vmax=vmax)
+	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	 if (vmin>0) & (np.log10(vmax/vmin)>1)  else colors.Normalize(vmin=vmin, vmax=vmax)
 	im2=ax2.imshow(broadband,norm=norm,cmap=cmap_mom0,aspect='auto',origin='lower',extent=extimg)
 	ax2.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)
 	ax2.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)		
@@ -174,7 +187,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	clb.text(-1,-0.2,round(vmin,1),transform=clb.transAxes,fontsize=8)
 	clb.text(-1,1.03,round(vmax,1),transform=clb.transAxes,fontsize=8)
 
-	ax2.text(extimg[0]*(4/5.+1/10),extimg[3]*(7/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
+	ax2.text(xmin*(4/5.+1/10),ymax*(7/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)	
 	#ax2.plot([extimg[0]*(4/5.),extimg[0]*(5/6)+bar_scale_arc_norm],[extimg[3]*(7/6),extimg[3]*(7/6)],'k-')
 	
 	
@@ -215,7 +228,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	ax0.plot((0,0),(ext0[2],ext0[3]),"k-",lw=0.5)
 	ax0.set_ylabel('$\mathrm{V_{LOS}~(km/s)}$',fontsize=13,labelpad=1)
 	ax0.set_xlabel(f'r ({rlabel})',fontsize=13,labelpad=1)	
-	Nmultiple=50*( (abs(ext1[2])//2) // 50 )
+	#Nmultiple=50*( (abs(ext1[2])//2) // 50 )
 
 
 	# PVD minor
@@ -271,38 +284,35 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 
 
 	for Axes in [ax2, ax3]:
-		elipse=drawellipse(xc,yc,bmajor=rmax/pixel,pa_deg=pa,eps=eps)
-		x,y=pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm	
+		elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
+		x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm	
 		Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
 		
-		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax/pixel,pa_deg=pa,eps=1)
-		x,y=pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm		
+		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax_norm,pa_deg=pa,eps=1)
+		x,y=elipse_mjr[0],elipse_mjr[1]#pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm		
 		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=0.5)
 
-		elipse_mnr=drawellipse(xc,yc,bmajor=0.5*(1-eps)*rmax/pixel,pa_deg=pa+90,eps=1)
-		x,y=pixel*(elipse_mnr[0]-nx/2)/rnorm,pixel*(elipse_mnr[1]-ny/2)/rnorm		
+		elipse_mnr=drawellipse(xc,yc,bmajor=0.5*(1-eps)*rmax_norm,pa_deg=pa+90,eps=1)
+		x,y=elipse_mnr[0],elipse_mnr[1]#pixel*(elipse_mnr[0]-nx/2)/rnorm,pixel*(elipse_mnr[1]-ny/2)/rnorm		
 		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=0.5)
 
 	
-	ax0.set_xlim(ext0[0],ext0[1])
-	ax1.set_xlim(ext1[0],ext1[1])
+	#ax0.set_xlim(ext0[0],ext0[1])
+	#ax1.set_xlim(ext1[0],ext1[1])
 
 
 	for Axes in [ax2, ax3]:
-		Axes.set_xlim(extimg[0],extimg[1])		
-		Axes.set_ylim(extimg[2],extimg[3]) 	 
+		Axes.set_xlim(xmin,xmax)		
+		Axes.set_ylim(ymin,ymax) 	 
 
 	for Axes in [ax0, ax1]:
-		vmin_max= abs(np.array(ext0[2],ext0[3]))
-		if not np.all(vmin_max<900):
-			vmin=-np.max(vt)*(1+1/3.)
-			vmax= np.max(vt)*(1+1/3.)
-			Nmultiple=50*( (abs(vmax)//2) // 50 )
+		if np.any( abs(np.array([ext0[2],ext0[3]]))  > max_vt*(4/3.) ):
+			vmin,vmax= -max_vt*(5/3.), max_vt*(5/3.)
 			Axes.set_ylim(vmin,vmax) 	 	
 
 
-	if Nmultiple>0: ax0.yaxis.set_major_locator(MultipleLocator(Nmultiple))					
-	if Nmultiple>0: ax1.yaxis.set_major_locator(MultipleLocator(Nmultiple))
+	#if Nmultiple>0: ax0.yaxis.set_major_locator(MultipleLocator(Nmultiple))					
+	#if Nmultiple>0: ax1.yaxis.set_major_locator(MultipleLocator(Nmultiple))
 	
 			
 	fig.tight_layout()            						
