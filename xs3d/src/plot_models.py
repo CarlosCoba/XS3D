@@ -98,8 +98,8 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	ax2.yaxis.set_major_locator(MultipleLocator(M))
 
 	ax2.plot([0,np.nanmax(R)],[0,0],color = "k",linestyle='-', alpha = 0.6,linewidth = 0.3)
-	ax2.set_xlabel(f'r ({rlabel})',fontsize=20,labelpad = 2)
-	ax2.set_ylabel('$\mathrm{V_{rot}~(km~s^{-1})}$',fontsize=20,labelpad = 0)
+	ax2.set_xlabel(f'r ({rlabel})',fontsize=20)
+	ax2.set_ylabel('$\mathrm{V_{rot}~(km~s^{-1})}$',fontsize=20)
 
 
 	"""
