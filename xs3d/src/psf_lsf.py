@@ -35,23 +35,21 @@ class PsF_LsF:
 		self.sigma_inst_A=self.fwhm_inst_A*__FWHM_2_sigma__ if self.fwhm_inst_A is not None else None
 		self.sigma_inst_kms=(self.sigma_inst_A/self.eline_A)*__c__ if self.fwhm_inst_A is not None else None
 		fwhm_inst_kms=config_general.getfloat('fwhm_kms',None)
-		self.fwhm_inst_kms=fwhm_inst_kms if fwhm_inst_kms is not None else self.sigma_inst_kms*__sigma_2_FWHM__  
+		self.fwhm_inst_kms=fwhm_inst_kms if fwhm_inst_kms is not None else self.sigma_inst_kms*__sigma_2_FWHM__
 
 
 		if 'velocity' in self.ctype3:
 			if 'kms' in self.ctype3:
-				# if not passed fwhm_A then try the config file
-				self.fwhm_inst_kms=self.fwhm_inst_A if self.fwhm_inst_A is not None else  config_general.getfloat('fwhm_kms',None)
 				# start fwhm_A
 				self.fwhm_inst_A=self.fwhm_inst_kms
 				self.sigma_inst_kms=(self.fwhm_inst_kms*__FWHM_2_sigma__) if self.fwhm_inst_A is not None else None
-				self.sigma_inst_A=1e3*self.fwhm_inst_kms*__FWHM_2_sigma__
+				# sigma_inst_A must be in native units !
+				self.sigma_inst_A=self.fwhm_inst_kms*__FWHM_2_sigma__
 			elif 'ms' in self.ctype3:
-				# if not passed fwhm_A then try the config file
-				self.fwhm_inst_kms=self.fwhm_inst_A/1e3 if self.fwhm_inst_A is not None else  config_general.getfloat('fwhm_kms',None)
 				# start fwhm_A
-				self.fwhm_inst_A=self.fwhm_inst_kms*1e3
+				self.fwhm_inst_A=self.fwhm_inst_kms
 				self.sigma_inst_kms=(self.fwhm_inst_kms*__FWHM_2_sigma__) if self.fwhm_inst_A is not None else None
+				# sigma_inst_A must be in native units !
 				self.sigma_inst_A=1e3*self.fwhm_inst_kms*__FWHM_2_sigma__
 			else:
 				print('XS3D: Not recognized velocity units in CTYPE3')
