@@ -45,9 +45,6 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	# select spectra with low signal
 	avg2d=np.nanmean(cube, axis=0)
 	p5=np.nanpercentile(np.unique(avg2d),f)
-	# just for comparason
-	p95=np.nanpercentile(np.unique(avg2d),95)
-	#print('p5/p95',p5/p95)
 
 	# mask spectra that have low signal (on average)
 	msk_lowSN = (avg2d<p5) & (avg2d!=0)
@@ -91,7 +88,12 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 
 	#calculate rms of the clean cube
-	rms_clean=rmse(cube[msk_cube2])
+	# option 1 based on the noise
+	rms_clean_1=rmse(cube[(cube<0) & (msk_cube2)])
+	# option 2 based on low SN data	
+	rms_clean_2=rmse(cube[msk])
+		
+	rms_clean=rms_clean_1 if rms_clean_1 !=0 else rms_clean_2
 
 	Print().out("Cleaned cube RMS",round(rms_clean,10))				
 
