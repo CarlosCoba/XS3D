@@ -40,6 +40,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	[pa,eps,inc,xc,yc,vsys,phi_bar,rmax]=const
 	wave_kms=hdr_info.wave_kms
 	[nz,ny,nx]=datacube.shape
+	ext=np.dot([-xc,nx-xc,-yc,ny-yc],pixel); xc =0; yc =0
 
 	rnorm=1
 	if np.max(ext)>80:
@@ -48,6 +49,18 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	else:
 		rlabel='$\'\'$'
 	ext = ext/rnorm
+
+	# Crop the FOV in case the object is too small
+	xlength=nx # in pixels
+	rmax_norm=rmax/rnorm
+	xmin,xmax=ext[0],ext[1]
+	ymin,ymax=ext[2],ext[3]
+	if np.all(abs(ext[:2])>rmax_norm):
+		xmin,xmax=-rmax_norm*(4/3.),rmax_norm*(4/3.)
+		xlength=2*xmax*rnorm/pixel
+	if np.all(abs(ext[-2:])>rmax_norm):
+		ymin,ymax=-rmax_norm*(4/3.),rmax_norm*(4/3.)
+
 
 	width, height = 11, 9 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
@@ -113,17 +126,23 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	cb(cmappable,axes[-1],orientation = "vertical", colormap = cmap, bbox= (1.1,0,1,1), height = f"{w}%", width = "10%",label_pad = 0, label = "flux/rms",labelsize=8, ticksfontsize=6)
 
 	for Axes in axes:
-		elipse=drawellipse(xc,yc,bmajor=rmax/pixel,pa_deg=pa,eps=eps)
-		x,y=pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
+		elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
+		x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
 		Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
 
-		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax/pixel,pa_deg=pa,eps=1)
-		x,y=pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm
+		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax_norm,pa_deg=pa,eps=1)
+		x,y=elipse_mjr[0],elipse_mjr[1]#pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm
 		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=0.5)
 
-		elipse_mnr=drawellipse(xc,yc,bmajor=0.5*(1-eps)*rmax/pixel,pa_deg=pa+90,eps=1)
-		x,y=pixel*(elipse_mnr[0]-nx/2)/rnorm,pixel*(elipse_mnr[1]-ny/2)/rnorm
+		elipse_mnr=drawellipse(xc,yc,bmajor=0.5*(1-eps)*rmax_norm,pa_deg=pa+90,eps=1)
+		x,y=elipse_mnr[0],elipse_mnr[1]#pixel*(elipse_mnr[0]-nx/2)/rnorm,pixel*(elipse_mnr[1]-ny/2)/rnorm
 		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=0.5)
+
+
+
+	for Axes in axes:
+			Axes.set_xlim(xmin,xmax)
+			Axes.set_ylim(ymin,ymax)
 
 
 	# plot PSF ellipse ?
@@ -154,10 +173,6 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 			beam.ellipse.set(color='gray')
 			Axes.add_artist(beam)
 
-
-	for Axes in axes:
-		Axes.set_xlim(ext[0],ext[1])
-		Axes.set_ylim(ext[2],ext[3])
 
 	indx=(l0**2-l0)
 	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=8,labelpad=1)
