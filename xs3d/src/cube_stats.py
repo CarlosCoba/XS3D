@@ -90,12 +90,13 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	#calculate rms of the clean cube
 	# option 1 based on the noise
 	rms_clean_1=rmse(cube[(cube<0) & (msk_cube2)])
-	# option 2 based on low SN data	
+	rms_clean_1=rms_clean_1 if np.isfinite(rms_clean_1) else 0
+	# option 2 based on low SN data
 	rms_clean_2=rmse(cube[msk])
-		
+
 	rms_clean=rms_clean_1 if rms_clean_1 !=0 else rms_clean_2
 
-	Print().out("Cleaned cube RMS",round(rms_clean,10))				
+	Print().out("Cleaned cube RMS",round(rms_clean,10))
 
 	# calculate the peak velocity using the smoothed cube
 	vpeak=config_others.getboolean('vpeak',False)
