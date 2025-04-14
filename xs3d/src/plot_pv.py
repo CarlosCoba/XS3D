@@ -46,7 +46,6 @@ def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
     return new_cmap
 
 arr = np.linspace(0, 50, 100).reshape((10, 10))
-fig, ax = plt.subplots(ncols=2)
 
 cmap = plt.get_cmap('magma_r')
 new_cmap = truncate_colormap(cmap, 0, 0.6)
