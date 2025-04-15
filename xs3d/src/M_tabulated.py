@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pylab as plt
 from .pixel_params import Rings,eps_2_inc
- 
+
 
 
 def weigths_w(xy_mesh,shape,pa,eps,x0,y0,ring,delta,k,pixel_scale):
@@ -10,7 +10,7 @@ def weigths_w(xy_mesh,shape,pa,eps,x0,y0,ring,delta,k,pixel_scale):
 	a_k = ring
 
 
-	mask = np.where( (r_n >= a_k - delta) & (r_n < a_k + delta) ) 
+	mask = np.where( (r_n >= a_k - delta) & (r_n < a_k + delta) )
 	r_n = r_n[mask]
 
 	w_k_n = (1 - (r_n -a_k)/delta)
@@ -72,7 +72,7 @@ def trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode="radial",pixel_s
 	if vmode == "bisymmetric":
 
 		theta = np.arctan(sin/cos)
-		theta = myatan(sin,cos)		
+		theta = myatan(sin,cos)
 		phi_b = phi_b
 		phi_b = theta - phi_b
 
@@ -83,8 +83,8 @@ def trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode="radial",pixel_s
 
 	if "hrm" in vmode:
 
-		theta_c = np.arccos(cos) 
-		theta_s = np.arcsin(sin) 
+		theta_c = np.arccos(cos)
+		theta_s = np.arcsin(sin)
 		c, s = [], []
 		for i in range(1,m_hrm+1):
 			globals()['w_cc%s' % i] = np.sin(inc)*np.cos(i*theta_c)
@@ -105,17 +105,19 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 	Y = np.arange(0, ny, 1)
 	xy_mesh = np.meshgrid(X,Y)
 	[mom0,mom1,mom2]=mommaps
-	#for k in emoms: k = np.ones_like(mom0)	
+	#for k in emoms: k = np.ones_like(mom0)
 	[emom0,emom1,emom2]=emoms
 	vel_val=mom1
 	disp=mom2
 
 	weigths_k,weigths_j,mask = weigths_w(xy_mesh,shape,pa,eps,x0,y0,rings,delta,k,pixel_scale =pixel_scale)
 	weigths_k,weigths_j = np.asarray(weigths_k),np.asarray(weigths_j)
-	
+
 	# dispersion
 	w_rot = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,'dispersion')
 	sigma_v = emom2[mask]
+	#make zeros to nan to avoid infinites !
+	sigma_v[sigma_v==0]=np.nan
 	x11,x12 = w_rot**2/sigma_v**2,0/sigma_v**2
 	x21,x22 = 0/sigma_v**2,0/sigma_v**2
 
@@ -127,11 +129,12 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 	dispersion=np.nansum(y1)/np.nansum(x11)
 	dispersion=abs(dispersion)
 
+	sigma_v = emom1[mask]
+	#make zeros to nan to avoid infinites !
+	sigma_v[sigma_v==0]=np.nan
 	if vmode == "circular":
 
 		w_rot = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,vmode)
-
-		sigma_v = emom1[mask]
 		x11,x12 = w_rot**2/sigma_v**2,0/sigma_v**2
 		x21,x22 = 0/sigma_v**2,0/sigma_v**2
 
@@ -142,12 +145,11 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 		A = np.asarray([[np.nansum(x11),np.nansum(x12)],[np.nansum(x21),np.nansum(x22)]])
 		B= np.asarray([np.nansum(y1),np.nansum(y2)])
 		vrot,vrad = np.nansum(y1)/np.nansum(x11), 0
-		
+
 		return dispersion,vrot,vrot*0,vrot*0
 
 	if vmode == "radial" or vmode == 'ff':
 		w_rot, w_rad = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,vmode)
-		sigma_v = emom1[mask]
 		x11,x12 = w_rot**2/sigma_v**2,w_rot*w_rad/sigma_v**2
 		x21,x22 = w_rot*w_rad/sigma_v**2,w_rad**2/sigma_v**2
 
@@ -173,7 +175,6 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 
 	if vmode == "vertical":
 		w_rot, w_z = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,vmode)
-		sigma_v = emom1[mask]
 		x11,x12 = w_rot**2/sigma_v**2,w_rot*w_z/sigma_v**2
 		x21,x22 = w_rot*w_z/sigma_v**2,w_z**2/sigma_v**2
 
@@ -188,14 +189,13 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 			vrot,vz = abs(x[0]),x[1]
 		except(np.linalg.LinAlgError):
 			vrot,vz = 0,0
-							
+
 		if np.isfinite(vrot) == False: vrot = 0
 		if np.isfinite(vz) == False: vz = 0
 		return dispersion,vrot,vz,vz*0
 
 	if vmode == "bisymmetric":
 		w_rot, w_rad, w_tan = trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode)
-		sigma_v = emom1[mask]
 		x11,x12,x13 = w_rot**2/sigma_v**2,w_rot*w_rad/sigma_v**2,w_tan*w_rot/sigma_v**2
 		x21,x22,x23 = w_rot*w_rad/sigma_v**2,w_rad**2/sigma_v**2,w_rad*w_tan/sigma_v**2
 		x31,x32,x33 = w_rot*w_tan/sigma_v**2,w_rad*w_tan/sigma_v**2,w_tan**2/sigma_v**2
@@ -227,19 +227,18 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 		w = w_c + w_s
 
 		m = 2*m_hrm
-		sigma_v = emom1[mask]
 		X = []
 		for j in range(1,m+1):
-			for i in range(1,m+1):				
+			for i in range(1,m+1):
 				globals()['x_%s%s' % (j,i)] = w[j-1]*w[i-1]/sigma_v**2
 				X.append(globals()['x_%s%s' % (j,i)])
 
 		D = (vel_val[mask])
 		y = []
-		for j in range(1,m_hrm+1):				
+		for j in range(1,m_hrm+1):
 			globals()['y_c%s' % (j)] = (w_c[j-1]/sigma_v**2)*D
 			y.append(globals()['y_c%s' % (j)])
-		for j in range(1,m_hrm+1):				
+		for j in range(1,m_hrm+1):
 			globals()['y_s%s' % (j)] = (w_s[j-1]/sigma_v**2)*D
 			y.append(globals()['y_s%s' % (j)])
 
@@ -248,17 +247,13 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 		for j in range(1,m+1):
 			for i in range(1,m+1):
 				A[j-1][i-1] = np.nansum(X[k])
-				k = k + 1				
+				k = k + 1
 
 		B = np.zeros(m)
 		for j in range(1,m+1):
-			B[j-1] = np.nansum(y[j-1])	
+			B[j-1] = np.nansum(y[j-1])
 
 		x = np.linalg.solve(A, B)
 		#x = C, S
 		C, S = x[:m_hrm],x[m_hrm:]
 		return dispersion,C, S
-
-
-
-
