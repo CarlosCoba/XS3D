@@ -22,6 +22,7 @@ from .save_fits_1D_model_harmonic import save_model_h
 from .plot_models_harmonic import plot_kin_models_h
 from .plot_models import plot_kin_models
 from .save_fits_1D_model import save_model
+from .save_fits_table import save_table
 from .save_fits_mommaps import save_momments,save_rmomments
 from .save_fits_pvd import save_pvds
 from .plot_momms import plot_mommaps
@@ -46,13 +47,13 @@ def guess_vals(PA,INC,X0,Y0,VSYS,PHI_B ):
 class Run_models:
 
 	def __init__(self, galaxy, datacube, msk_cube, VSYS, PA, INC, X0, Y0, PHI_B, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHI, delta, rstart, rfinal, ring_space, frac_pixel, inner_interp, bar_min_max, vmode, survey, config, prefix, osi):
-	
+
 		#set time
 		self.start_time = time.time()
-					
+
 		# print start messenge
 		P=Print(); P()
-		
+
 		self.P=P
 		self.outdir = direc_out(config)
 		self.vmode = vmode
@@ -62,13 +63,13 @@ class Run_models:
 		if 'CRPIX3' not in self.h: self.h['CRPIX3']=1
 		# Read header information
 		self.hdr_info=Header_info(self.h,config)
-		self.P.cubehdr(self.hdr_info)				
-		# Print 
-		self.P.out('V Doppler',self.hdr_info.vdoppler)	
-		self.P.configprint(self.h,config)	
+		self.P.cubehdr(self.hdr_info)
+		# Print
+		self.P.out('V Doppler',self.hdr_info.vdoppler)
+		self.P.configprint(self.h,config)
 		# remove NaN values
 		self.datacube[~np.isfinite(self.datacube)]=0
-		
+
 		#if cut wavelenghts apply here
 		msk_w,h_tmp,cut_spec=mask_wave(self.h,config)
 		if cut_spec:
@@ -78,38 +79,38 @@ class Run_models:
 			# update
 			self.hdr_info=Header_info(self.h,config)
 
-		#baseline correction		
+		#baseline correction
 		self.datacube,self.baselcube=baselinecor(self.datacube,config)
 
 
 		# apply rms-based-mask to the cube
 		if msk_cube in osi: msk_cube=None
-		self.msk2d_cube=msk_cube		
+		self.msk2d_cube=msk_cube
 		rms3d,self.rms_cube,vpeak2D=mask_cube(self.datacube,config,self.hdr_info,msk_user=self.msk2d_cube)
 		self.datacube=self.datacube*rms3d
 		self.h['RMS_CUBE']=self.rms_cube
-		
+
 		# cube class
 		cube_class=Cube_creation(self.datacube,self.h,[1]*3,config)
-				
+
 		# create error cube
 		self.errcube=ecube(self.datacube,self.rms_cube)
 		cube_class.eflux3d=self.errcube
-				
+
 		#create observed momemnt maps
-		self.momaps=cube_class.obs_mommaps()		
+		self.momaps=cube_class.obs_mommaps()
 		# create random moments instead ?
 		#self.momaps=cube_class.obs_mommaps_rnd(individual_run=1)
-				
+
 		[self.mom0,self.mom1,self.mom2]=self.momaps
 		#if vpeak2D is not None: self.mom1=vpeak2D # vpeak from smoothed cube
 		# create temporary error moment maps
 		self.emoms=[np.ones_like(self.mom0),np.ones_like(self.mom1),np.ones_like(self.mom2)]
 
-		
+
 		self.vel_map=self.mom1
 		self.pixel_scale=self.hdr_info.scale
-		
+
 		[ny,nx] = [self.hdr_info.ny,self.hdr_info.nx]
 		self.e_ISM = 0
 
@@ -121,15 +122,15 @@ class Run_models:
 		geom=[PA,INC,X0,Y0]
 		# estimate geometric moments with dispersion map.
 		geom_start=geom_moms(self.mom2)
-							
+
 		for j,p in enumerate(geom):
 			if p in osi:
 				geom[j]=geom_start[j]
 			else:
 				geom[j]=eval(p)
-		# disk geometry		
+		# disk geometry
 		[PA,INC,X0,Y0]=geom
-		if 0<INC<1: INC=eps_2_inc(INC)*180/np.pi		
+		if 0<INC<1: INC=eps_2_inc(INC)*180/np.pi
 		if VSYS in osi :
 			VSYS = KC(self.vel_map,X0,Y0)
 		else:
@@ -153,7 +154,7 @@ class Run_models:
 		if "hrm_" in vmode:
 			try:
 				self.m_hrm = int(vmode[4:])
-				if self.m_hrm == 0 : 
+				if self.m_hrm == 0 :
 					raise ValueError
 			except(ValueError):
 				print("XookSuut: provide a proper harmonic number different from zero, for example hrm_2")
@@ -165,22 +166,22 @@ class Run_models:
 
 
 		self.P.status("Starting Least Squares analysis",line=True)
-		if "hrm" not in self.vmode: 
+		if "hrm" not in self.vmode:
 			circ = Circular_model(self.vmode, galaxy, self.datacube, self.errcube, self.h, self.momaps, self.emoms, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.outdir,cube_class)
 			self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.PHI_BAR,self.R,self.Disp,self.Vrot,self.Vrad,self.Vtan, self.kin_3D_mdls,self.PA_bar_mjr,self.PA_bar_mnr,self.bic_aic,self.errors_fit = circ()
 		if "hrm" in self.vmode:
 			hrm = Harmonic_model(galaxy, self.datacube, self.errcube, self.h, self.momaps, self.emoms, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.m_hrm, self.outdir,cube_class)
 			self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.R,self.Disp,self.Ck,self.Sk,self.kin_3D_mdls,self.bic_aic,self.errors_fit = hrm()
 			self.Vrot=self.Ck[0]
-		
+
 		self.ekin,self.econst = self.errors_fit
 		self.ePA,self.eEPS,self.eXC,self.eYC,self.eVSYS = self.econst[:5]
 		if self.vmode == "bisymmetric":
 			self.ePHI_BAR_deg = self.econst[5]*180/np.pi
 		self.INC,self.eINC = eps_2_inc(self.EPS)*180/np.pi,e_eps2e_inc(self.EPS,self.eEPS)*180/np.pi
 		self.PHI_BAR_deg = self.PHI_BAR*180/np.pi
-		self.const=[self.PA,self.EPS,self.INC, self.XC,self.YC,self.VSYS,self.PHI_BAR_deg, np.nanmax(self.R)]		
-		self.redchi = self.bic_aic[-1] 
+		self.const=[self.PA,self.EPS,self.INC, self.XC,self.YC,self.VSYS,self.PHI_BAR_deg, np.nanmax(self.R)]
+		self.redchi = self.bic_aic[-1]
 		self.P.status("Best model found !")
 
 
@@ -195,7 +196,7 @@ class XS_out(Run_models):
 		#
 		## Write output into a table
 		#
-
+		save_table(self.galaxy, self.vmode,self.R,self.Disp,self.Vrot,self.Vrad,self.Vtan,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.PHI_BAR,self.PA_bar_mjr,self.PA_bar_mnr,self.errors_fit,self.bic_aic, self.e_ISM,out=self.outdir)
 		if self.vmode in ["circular","radial","vertical", "ff"] or "hrm" in self.vmode:
 			# write header of table
 			if not path.exists(self.kin_params_table):
@@ -225,7 +226,7 @@ class XS_out(Run_models):
 		# plot momment maps and 1D profiles
 		self.P.status("Plotting results")
 		plot_mommaps(self.galaxy,self.kin_3D_mdls,self.momaps,self.const,self.ext,self.vmode,self.h,self.config,self.pixel_scale,out=self.outdir)
-		self.P.status("Saving 1D & 2D profiles")		
+		self.P.status("Saving 1D & 2D profiles")
 		if 'hrm' not in self.vmode:
 			# save 1d profiles
 			s = save_model(self.galaxy, self.vmode,self.R,self.Disp,self.Vrot,self.Vrad,self.Vtan,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.PHI_BAR,self.PA_bar_mjr,self.PA_bar_mnr,self.errors_fit,self.bic_aic, self.e_ISM,out=self.outdir)
@@ -233,7 +234,7 @@ class XS_out(Run_models):
 			s = save_model_h(self.galaxy, self.vmode,self.R,self.Disp,e_Disp,self.Ck,self.Sk,e_Ck,e_Sk,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.m_hrm,self.errors_fit,self.bic_aic,self.e_ISM,out=self.outdir)
 
 		save_2d_models(self.galaxy,self.vmode,self.kin_3D_mdls,self.PA,self.INC,self.XC,self.YC,self.VSYS,self.m_hrm,out=self.outdir)
-			
+
 		# plot 1d models
 		if "hrm" not in self.vmode:
 			plot_kin_models(self.galaxy,self.vmode,self.kin_3D_mdls,self.R,self.Disp,e_Disp,self.Vrot,e_Vrot,self.Vrad,e_Vrad,self.Vtan,e_Vtan,self.VSYS,self.INC,self.ext,self.hdr_info,self.config,out=self.outdir)
@@ -241,45 +242,45 @@ class XS_out(Run_models):
 			plot_kin_models_h(self.galaxy,self.vmode,self.kin_3D_mdls,self.R,self.Disp,e_Disp,self.Ck,self.Sk,e_Ck,e_Sk,self.VSYS,self.ext,self.m_hrm,out=self.outdir)
 
 
-		self.P.status("Creating 0th, 1st and 2nd momment maps")		
-		# save moment maps and cube model			
-		save_momments(self.galaxy,self.vmode,self.kin_3D_mdls,self.momaps,self.datacube,self.baselcube,self.h,out=self.outdir)		
-		self.P.status("creating PVD maps")				
+		self.P.status("Creating 0th, 1st and 2nd momment maps")
+		# save moment maps and cube model
+		save_momments(self.galaxy,self.vmode,self.kin_3D_mdls,self.momaps,self.datacube,self.baselcube,self.h,out=self.outdir)
+		self.P.status("creating PVD maps")
 		out_pvd=pv_array(self.datacube,self.h,self.kin_3D_mdls,self.Vrot,self.R,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.pixel_scale,self.rms_cube,self.config)
 		pvd_arr=out_pvd[0]
-		# plot pvds 
+		# plot pvds
 		plot_pvd(self.galaxy,out_pvd,self.Vrot,self.R,self.const,self.vmode,self.rms_cube,self.kin_3D_mdls,self.momaps,self.datacube,self.pixel_scale,self.h,self.hdr_info,self.config,self.outdir)
 		# save pvds
 		save_pvds(self.galaxy,self.vmode,out_pvd,self.rms_cube,self.hdr_info,self.outdir)
 
-		self.P.status("creating residual cube")							
+		self.P.status("creating residual cube")
 		#create residual cube momement maps
 		rescube=self.datacube-self.kin_3D_mdls[4]
 		rescube[~np.isfinite(rescube)]=0
 		# apply rms cut to the rescube
 		#rms3d,rms_cube_res,_=mask_cube(rescube,self.config,self.hdr_info,clip=1,msk_user=self.msk2d_cube)
-		#rescube=rescube*rms3d		
+		#rescube=rescube*rms3d
 		#rcube=Cube_creation(rescube,self.h,[1]*3,self.config)
 		#rmomaps=rcube.obs_mommaps()
 		# remove zeros from moment maps
 		#for k,mom in enumerate(rmomaps):
 		#	mom[mom==0]=np.nan
-		#	rmomaps[k]=mom		
+		#	rmomaps[k]=mom
 		#[rmom0,rmom1,rmom2]=rmomaps
-		
+
 		# remove zeros from PV diagrams
 		#for k,pvds in enumerate(pvd_arr):
 		#	pvds[pvds==0]=np.nan
 		#	pvd_arr[k]=pvds
 
 		#self.h['RMS_RESCUBE']=rms_cube_res
-		#save_rmomments(self.galaxy,self.vmode,rmomaps,self.h,out=self.outdir)		
+		#save_rmomments(self.galaxy,self.vmode,rmomaps,self.h,out=self.outdir)
 		#plot_rmommaps(self.galaxy,self.kin_3D_mdls,rmomaps,self.VSYS,self.ext,self.vmode,self.h,out=self.outdir)
-		
+
 		plot_channels(self.galaxy,self.datacube,self.kin_3D_mdls,self.const,self.ext,self.vmode,self.h, self.hdr_info,self.config,self.rms_cube,self.pixel_scale,self.outdir)
 		plot_rchannels(self.galaxy,self.datacube,rescube,self.const,self.ext,self.vmode,self.h, self.hdr_info,self.config,self.rms_cube,self.pixel_scale,self.outdir)
-				
-		
+
+
 		print("Done!. Check the XS3D directory")
 		end_time=time.time()
 		total_time=end_time-self.start_time
@@ -292,8 +293,3 @@ class XS_out(Run_models):
 	def __call__(self):
 		run = self.results()
 		#return self.results()
-
-
-
-
-
