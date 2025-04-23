@@ -6,7 +6,7 @@ import matplotlib.pylab as plt
 from .constants import __sigma_2_FWHM__,__FWHM_2_sigma__
 from .ellipse import drawellipse
 
-def gkernel(shape,fwhm,bmaj=None,bmin=None,bpa = 0,pixel_scale = 1.):
+def gkernel(shape,fwhm,bmaj=None,bmin=None,bpa = 0,pixel_scale = 1., norm=True):
 	# INPUTS
 	# shape - [ny,nx] shape of the array
 	# bmaj  - major axis of psf in arcsec
@@ -47,7 +47,7 @@ def gkernel(shape,fwhm,bmaj=None,bmin=None,bpa = 0,pixel_scale = 1.):
 
 	r2=r2.astype(np.float64)
 	kernel = np.exp(-0.5*r2)
-	kernel = kernel/np.sum(kernel)
+	kerneln = kernel/np.sum(kernel)
 	
 	plot=0
 	if plot:
@@ -58,7 +58,11 @@ def gkernel(shape,fwhm,bmaj=None,bmin=None,bpa = 0,pixel_scale = 1.):
 		plt.plot(x,y,'r-')			
 		plt.imshow((kernel), origin='lower');plt.show()
 	
-	return kernel
+	if norm:
+		return kerneln
+	else:
+		return kernel
+
 	
 
 
@@ -107,7 +111,7 @@ def gaussian(x, mu, sigma):
 
 	
 	
-def gkernel1d(nz,sigma_pix=None,fwhm_pix=None):
+def gkernel1d(nz,sigma_pix=None,fwhm_pix=None, norm=True):
 	# Std deviation from FWHM
 
 	if sigma_pix is not None:
@@ -122,7 +126,11 @@ def gkernel1d(nz,sigma_pix=None,fwhm_pix=None):
 	# Compute gaussian (we assume peak is at 0, ie. µ=0)
 	lsf_1d = gaussian(z_range, 0, sigma)
 	# Normalize and serve
-	return lsf_1d / lsf_1d.sum()
+	lsf_1dn = lsf_1d / lsf_1d.sum()
+	if norm:
+		return lsf_1dn
+	else:
+		return lsf_1d 
 	
 	
 

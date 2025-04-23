@@ -23,7 +23,6 @@ def rmse(data_array):
 	return root_ms
 
 
-
 def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	Print().status("Estimating RMS")
 	config_general = config['general']
@@ -43,7 +42,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	isnan=np.isfinite(cube)
 	cube[~isnan]=0
 	iszero=cube!=0
-	noise_cube=cube<0
+	noise_msk=cube<0
 	[nz,ny,nx]=cube.shape
 
 	# select spectra with low signal
@@ -57,16 +56,26 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		msk_usr=np.ones((ny,nx)).astype(bool)
 
 
-	noise=cube*noise_cube
+	noise=cube*noise_msk.astype(float)
+	noisep=abs(noise)
+	noise_flat=noisep[noise_msk]	
+	noisep[noisep==0]=np.nan
+
+	
+	#median absolute deviation from the mean on the noise cube
+	mad_map=abs(noisep-np.nanpercentile(noisep,50,axis=0))
+	mad_map*=(1/noise_msk)
+	#noise per spectrum
+	sigma_map=np.nanpercentile(mad_map,50,axis=0)*1.4826
+
+	mad_global=abs(noise_flat-np.nanpercentile(noise_flat,50,axis=0))
+	rms_global=np.nanpercentile(mad_global,50,axis=0)*1.4826
+
 	# calculate the rms on each channel of the original cube
 	rms_channels=np.array([rmse(cube[k]) for k in range(nz) ])
-	# calculate the rms on each channel of the noise cube
-	rms_channels_neg=np.array([rmse(noise[k]) for k in range(nz) ])
 
-	rms_cube=np.mean(rms_channels)
-	rms_cube_noise=np.mean(rms_channels_neg)
-	rms_ori = rms_cube_noise if rms_cube_noise !=0 else rms_cube
-
+	rms_cube=np.median(rms_channels)
+	rms_ori = rms_global if rms_global !=0 else rms_cube
 	Print().out("Original cube RMS",round(rms_ori,10))
 
 	#(2) calculate smooted cube
@@ -83,50 +92,57 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	dft=fftconv(padded_cube,padded_psf,threads=nthreads)
 	cube_smooth=dft.conv_DFT(cube_slices)
-
 	#Do not forget to recover the zeros
 	cube_smooth*=iszero
 
-
-	# Does the cube have high SN ?
-	#int_spec=np.sum(cube_smooth,axis=1).sum(axis=1)
 
 	msk_neg=cube_smooth<0
 	#rms per channel on the smoothed cube
 	cube_smooth_neg=cube_smooth*msk_neg
 	rms_channels=np.array([rmse(cube_smooth_neg[k]) for k in range(nz) ])
 	#avg rms
-	rms_channel=np.max(rms_channels)
+	rms_channel=np.median(rms_channels)
+
+
+
+	noisep=abs(cube_smooth_neg)
+	noisep=noisep[noisep!=0]
+	
+	#median absolute deviation from the mean on the smooth cube	
+	mad_sm=abs(noisep-np.nanpercentile(noisep,50,axis=0))
+	sigma_sm=np.nanpercentile(mad_sm,50,axis=0)*1.4826
+	Print().out("Smoothed cube RMS",round(sigma_sm,10))
 
 	#the rms on the smoothed cube:
-	global_rmse=rms_channel
+	global_rmse=sigma_sm
+	
+	msk_rms=(cube_smooth) > global_rmse*clip
 
-	broad_img=np.sum(cube_smooth,axis=0) > global_rmse
-	msk_rms=(cube_smooth*broad_img) > global_rmse*clip
-
-
-	#xc,yc=235,243
-	#ori=cube[:,yc,xc]
-	#sm=cube_smooth[:,yc,xc]
-	#ori_msk=(cube*(msk_rms))[:,yc,xc]
-	#plt.plot(np.arange(nz), ori_msk , 'r-', lw =5)
-	#plt.plot(np.arange(nz), sm , 'y-', lw =5)
-	#plt.plot(np.arange(nz), sm*(sm<0) , 'b-', lw =3)
-	#plt.plot(np.arange(nz), ori , 'k-', lw = 0.5);plt.show()
-
-	# apply the user mask and the SN msk
-	msk_rms*=(msk_usr*msk_signal)
 	msk_cube=np.copy(msk_rms)
-
 	for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
-		if msk_rms[k,j,i]:
+		if msk_rms[k,j,i] :
 			ds=sigma_inst_pix_spat//2
 			dv=sigma_inst_pix_spec//2
 			msk_cube[k-dv:k+dv+1,j-ds:j+ds+1,i-ds:i+ds+1]=True
+			#msk_cube[:,j-ds:j+ds+1,i-ds:i+ds+1]=True			
 
+	# apply the user mask and the SN msk
+	msk_cube*=(msk_usr)
 
+	plot=0
+	if plot:
+		fig,ax=plt.subplots(1,1)
+		xc,yc=26,52		
+		ori=cube[:,yc,xc]
+		sm=cube_smooth[:,yc,xc]
+		ori_msk=(cube*(msk_cube))[:,yc,xc]
+		ax.plot(np.arange(nz), np.ones(nz)*(global_rmse*clip) , 'g--', lw =2, label = 'rms*clip')	
+		ax.plot(np.arange(nz), np.ones(nz)*sigma_map[yc][xc] , 'k--', lw =3, label='local noise')			
+		ax.plot(np.arange(nz), sm , 'y-', lw =5, label = 'smoothed')
+		ax.plot(np.arange(nz), sm*(sm<0) , 'b-', lw =5, label = 'smooth -')
+		ax.plot(np.arange(nz), ori_msk , 'r-', lw =5, label='observed-msked')		
+		ax.plot(np.arange(nz), ori , 'k-', lw = 1, label = 'observed');ax.legend();plt.show()
 
-	rms_clean=global_rmse
 
 	# calculate the peak velocity using the smoothed cube
 	vpeak=config_others.getboolean('vpeak',False)
@@ -135,7 +151,8 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		vpeak2D=vparabola3D(cube*msk_cube,wave_cover_kms)
 	else:
 		vpeak2D=None
-	return msk_cube,rms_clean,vpeak2D
+	return msk_cube,rms_cube,vpeak2D
+
 
 
 
@@ -144,20 +161,26 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 
 def ecube(cube,rms,box=5):
+	[nz,ny,nx]=cube.shape
 	# estimate the error in every channel based on the
 	# negative values on the spectra along the spectral axis.
 
-	neg_msk=cube<0
-	neg_cube=abs(cube*neg_msk)
+	noise_cube=cube<0
+	noise=cube*noise_cube
+	# calculate the rms on each channel of the original cube
+	rms_channels=np.array([rmse(cube[k]) for k in range(nz) ])
+	# calculate the rms on each channel of the noise cube
+	rms_channels_neg=np.array([rmse(noise[k]) for k in range(nz) ])
+	msk=rms_channels_neg==0
+	
+	rms_vz = rms_channels_neg
+	rms_vz[msk]=rms_channels[msk]
 
-	errorcube=np.zeros_like(cube)
-	error2D = np.mean(neg_cube, axis = 0, where = neg_cube!=0)
-	#for k in range(cube.shape[0]):
-	#	rms_channel=rmse(neg_cube[k])
-	#	errorcube[k]=rms_channel if rms_channel !=0 else 0
-
-	errorcube=np.sqrt(rms**2 + error2D**2) + errorcube
+	errorcube=np.ones_like(cube)*(rms_vz[:,None,None])
+	#errorcube=np.sqrt(rms**2 + error2D**2) + errorcube
+	
 	return 	errorcube
+
 
 
 

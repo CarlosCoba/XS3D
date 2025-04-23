@@ -42,11 +42,6 @@ class Cube_creation:
 		self.bmin=psf_lsf.bmin
 		self.bpa= psf_lsf.bpa
 		self.fwhm_psf_arc=psf_lsf.fwhm_psf_arc
-				
-		self.eline_A=psf_lsf.eline_A
-		self.fwhm_inst_A=psf_lsf.fwhm_inst_A
-		self.sigma_inst_A=psf_lsf.sigma_inst_A
-		self.sigma_inst_kms=psf_lsf.sigma_inst_kms
 		self.sigma_inst_pix=psf_lsf.sigma_inst_pix
 		
 		
@@ -56,7 +51,7 @@ class Cube_creation:
 		self.dV=abs(self.cdelt3_kms)		
 		self.ones2d=np.ones((self.ny,self.nx))
 		self.ones3d=np.ones((self.nz,self.ny,self.nx))		
-		self.psf2d=gkernel(self.ones2d.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin, bpa=self.bpa,pixel_scale=self.pixel_scale) if self.fit_psf else None
+		self.psf2d=gkernel(self.ones2d.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin, bpa=self.bpa,pixel_scale=self.pixel_scale, norm=True) if self.fit_psf else None
 		self.vpeak=config_others.getboolean('vpeak',False)				
 		self.mom0,self.mom1,self.mom2=self.obs_mommaps()
 		#self.mask_cube=np.isfinite(self.mom0)			
@@ -114,11 +109,8 @@ class Cube_creation:
 		for k in runs:
 			np.random.seed()
 			# randomly draw a sample of the observed spectrum
-			newfluxcube=self.datacube+np.random.randn(self.nz,self.ny,self.nx)*self.eflux3d
+			newfluxcube=self.datacube+(np.random.randn(self.nz)[:,None,None])*self.eflux3d
 			newspectral=self.wave_cover_kms[:,None,None]# +np.random.randn(self.ny,self.nx)*self.emom1
-			#for i,j in product(np.arange(self.nx),np.arange(self.ny)):
-			#	fi = interpolate.interp1d(newspectral[:,j,i],newfluxcube[:,j,i],fill_value='extrapolate')	
-			#	newfluxcube[:,j,i]=fi(self.wave_cover_kms)            				
 						
 			#newcube=newcube0	            				
 			mom0= trapecium3d(newfluxcube,self.dV)
@@ -167,11 +159,16 @@ class Cube_creation:
 		
 	def create_cube(self,velmap,sigmap,padded_cube=None,padded_psf=None,cube_slices=None, pass_cube=True, fit_cube=False):
 		cube_mod=self.gaussian_cube(velmap,sigmap,f0=1)
-
-		#(2) LSF convolution only.
-		if self.fwhm_inst_A is not None and not self.fit_psf:			
-			lsf3d=np.ones_like(velmap)*gkernel1d(self.nz,sigma_pix=self.sigma_inst_pix[0])[:,None,None]
-			#cube_mod_conv=convolve_1d(cube_mod,lsf3d)
+		msk_zero=cube_mod!=0
+		#(case 0) No PSF and LSF broadening but fit observed dispersion.
+		if self.sigma_inst_pix is None and not self.fit_psf and self.vary_disp:
+			#print('(case 0) No PSF and LSF broadening but fit observed dispersion.')						
+			cube_mod_conv=cube_mod
+			
+		# (case 1) LSF convolution only.
+		if self.sigma_inst_pix is not None and not self.fit_psf:
+			#print('(case 1) LSF convolution only.')				
+			lsf3d=np.ones_like(velmap)*gkernel1d(self.nz,sigma_pix=self.sigma_inst_pix,norm=True)[:,None,None]
 			
 			padded_cube, cube_slices = data_2N(cube_mod, axes=[0])
 			padded_lsf, psf_slices = data_2N(lsf3d, axes=[0])
@@ -179,9 +176,9 @@ class Cube_creation:
 			dft=fftconv(padded_cube,padded_lsf,self.nthreads,axes=[0])
 			cube_mod_conv=dft.conv_DFT(cube_slices)
 		
-		# fit PSF and fixed broadening
-		if 	self.fit_psf and self.fwhm_inst_A is None or self.vary_disp==False:
-			# spatial convolution py the PSF in each channel
+		# (case 2) fit PSF and fixed broadening
+		if 	self.fit_psf and self.vary_disp==False:
+			#print('(case 2) fit PSF and fixed broadening')				
 			psf3d=self.psf2d*np.ones(self.nz)[:,None,None]
 
 			if padded_cube is not None:
@@ -194,9 +191,10 @@ class Cube_creation:
 			dft=fftconv(padded_cube,padded_psf,self.nthreads,axes=[1,2])
 			cube_mod_conv=dft.conv_DFT(cube_slices)
 
-		#(3) fit PSF and LSF											
-		if 	self.fit_psf and self.vary_disp and self.fwhm_inst_A is not None :	
-			lsf1d=gkernel1d(self.nz,sigma_pix=self.sigma_inst_pix[0])
+		#(case 3) fit PSF and LSF											
+		if 	self.fit_psf and self.vary_disp and self.sigma_inst_pix is not None :
+			#print('(case 3) fit PSF and LSF')		
+			lsf1d=gkernel1d(self.nz,sigma_pix=self.sigma_inst_pix,norm=True)
 			psf3d_1 = self.psf2d * lsf1d[:, None, None]
 			
 			if padded_cube is not None:
@@ -209,7 +207,7 @@ class Cube_creation:
 			dft=fftconv(padded_cube,padded_psf,self.nthreads)
 			cube_mod_conv=dft.conv_DFT(cube_slices)
 
-
+		cube_mod_conv*=msk_zero
 		mom0,mom1_kms,mom2_kms,cube_mod_psf_norm=self.cube_convolved(cube_mod_conv, norm=True)
 		msk_mdl = (velmap!=0) & (self.mom0!=0)
 		msk_mom0=(self.mom0!=0)	
@@ -238,21 +236,20 @@ class Zeropadding:
 
 		psf_lsf= PsF_LsF(self.h, config)
 		self.fit_psf=psf_lsf.fit_psf
-		self.bmaj=psf_lsf.bmaj 
-		self.bmin=psf_lsf.bmin
-		self.bpa= psf_lsf.bpa
-		self.fwhm_psf_arc=psf_lsf.fwhm_psf_arc						
-		self.fwhm_inst_A=psf_lsf.fwhm_inst_A
-
+		self.sigma_inst_pix=psf_lsf.sigma_inst_pix
 
 	def create_cube_pad(self):
-		if self.fwhm_inst_A is not None and not self.fit_psf:
+		# (case 0)					
+		if self.sigma_inst_pix is None and not self.fit_psf and self.vary_disp:
+			return self.datacube,self.datacube
+		# (case 1)				
+		if self.sigma_inst_pix is not None and not self.fit_psf:
 			padded_cube, cube_slices = data_2N(self.datacube, axes=[0])
-
-		if 	self.fit_psf and self.fwhm_inst_A is None or self.vary_disp==False:			
+		# (case 2)	
+		if 	self.fit_psf and self.vary_disp==False:
 			padded_cube, cube_slices = data_2N(self.datacube, axes=[1,2])
-			
-		if 	self.fit_psf and self.vary_disp and self.fwhm_inst_A is not None :	
+		# (case 3)	
+		if 	self.fit_psf and self.vary_disp and self.sigma_inst_pix is not None :
 			padded_cube, cube_slices = data_2N(self.datacube, axes=[0, 1, 2])
 
 		padded_cube*=0

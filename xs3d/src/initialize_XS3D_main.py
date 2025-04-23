@@ -120,12 +120,15 @@ class Run_models:
 		self.config=config
 
 		geom=[PA,INC,X0,Y0]
-		# estimate geometric moments with dispersion map.
-		geom_start=geom_moms(self.mom2)
+		# estimate geometric moments with m0 map.
+		geom_start=geom_moms(self.mom0,self.pixel_scale,binary=True)
 
 		for j,p in enumerate(geom):
 			if p in osi:
-				geom[j]=geom_start[j]
+				if geom[0]==geom[1]==p:
+					sma=geom_start[-1]
+					rfinal=rfinal if rfinal < sma else sma
+				geom[j]=geom_start[j]					
 			else:
 				geom[j]=eval(p)
 		# disk geometry

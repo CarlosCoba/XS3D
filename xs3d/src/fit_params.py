@@ -157,22 +157,28 @@ class Least_square_fit:
 
 		self.vary_disp=config_general.getboolean('fit_dispersion',False)
 		psf_lsf= PsF_LsF(self.h, config)		
-		self.fwhm_inst_A=psf_lsf.fwhm_inst_A
-		self.sigma_inst_A=psf_lsf.sigma_inst_A
 		self.sigma_inst_kms=psf_lsf.sigma_inst_kms
-
+		self.sigma_inst_pix=psf_lsf.sigma_inst_pix
 
 		self.min_sig=0
-		if self.sigma_inst_A is not None:
+		if self.sigma_inst_pix is not None:
 			sig0 = np.sqrt(self.sig0**2-self.sigma_inst_kms**2)
-			#if donomitated by instrumental the sig0 is NaN:
-			msk_inst=~np.isfinite(sig0)
-			sig0[msk_inst]=self.sig0[msk_inst]
-			self.sig0=sig0
-			self.min_sig=0#self.sigma_inst_kms*1
+			
+			#check if there are nans
+			nan_sigmas=~np.all(np.isfinite(sig0))
+			if nan_sigmas:
+				# if only some values are nan
+				if np.nanmean(sig0)!=0:				
+					msk_inst=~np.isfinite(sig0)
+					sig0[msk_inst]=np.nanmean(sig0)
+				# if all values are nan					
+				else:
+					sig0=np.ones_like(sig0)	
+			self.sig0=sig0					
+
 		
-		if not self.vary_disp and self.fwhm_inst_A is not None:
-			self.sig0=np.ones_like(self.sig0)*self.sigma_inst_kms					
+		if not self.vary_disp and self.sigma_inst_pix is not None:
+			self.sig0=np.ones_like(self.sig0)*self.sigma_inst_kms
 			
 		# Rename to capital letters
 		self.PA = self.pa0
