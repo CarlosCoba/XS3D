@@ -19,7 +19,7 @@ class Circular_model:
 
 		self.galaxy=galaxy
 		self.datacube=datacube
-		self.edatacube=edatacube		
+		self.edatacube=edatacube
 		self.h=header
 		self.mommaps=mommaps
 		self.vel_copy=np.copy(self.mommaps[1])
@@ -37,7 +37,7 @@ class Circular_model:
 		self.bar_min_max=bar_min_max
 		self.config=config
 		self.pixel_scale=Header_info(self.h,config).scale
-				
+
 		if self.n_it == 0: self.n_it =1
 
 
@@ -71,17 +71,17 @@ class Circular_model:
 
 
 		config_boots = config['bootstrap']
-		config_general = config['general']		
+		config_general = config['general']
 		self.n_boot = config_boots.getint('Nboots', 0)
 
 		self.bootstrap_contstant_prms = np.zeros((self.n_boot, 6))
 		self.bootstrap_kin = 0
 
-		
+
 		self.cube_class=cube_class
 		self.outdir = outdir
 		self.momscube=0
-		self.emomscube=0		
+		self.emomscube=0
 		self.nthreads=config_general.getint('nthreads',1)
 		"""
 
@@ -99,31 +99,31 @@ class Circular_model:
 			# Here we create the tabulated model
 			disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.emoms, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
 			vrot_tab[abs(vrot_tab) > 400] = np.nanmedian(vrot_tab)
-			
+
 			# Try to correct the PA if velocities are negative
 			if np.nanmean(vrot_tab) < 0 :
 				self.pa0 = self.pa0 + 180
-				vrot_tab*=-1						
-				
+				vrot_tab*=-1
+
 			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 			if it == 0: first_guess_it = guess
-			
+
 			# Minimization
 			fitting = fit_routine(self.datacube, self.edatacube, self.h, self.mommaps, self.emoms, guess, self.vary, self.vmode, self.config, R_pos, self.ring_space, self.frac_pixel, self.inner_interp,N_it=self.n_it0)
 			# outs
 			kin_3D_modls, Vk , self.pa0, self.eps0, self.x0, self.y0, self.vsys0, self.theta_b, out_data, Errors, true_rings = fitting.results()
 			xi_sq = out_data[-1]
-			#Unpack velocities 
+			#Unpack velocities
 			disp, vrot, vrad, vtan = Vk
-			self.disp, self.vrot, self.vrad, self.vtan=disp, vrot, vrad, vtan 
+			self.disp, self.vrot, self.vrad, self.vtan=disp, vrot, vrad, vtan
 
-			# Keep the best fit 
+			# Keep the best fit
 			if xi_sq < self.chisq_global:
 				self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.THETA = self.pa0, self.eps0, self.x0, self.y0,self.vsys0,self.theta_b
 				self.Vrot = np.asarray(vrot);self.n_circ = len(vrot)
 				self.Vrad = np.asarray(vrad)
-				self.Vtan = np.asarray(vtan)				
-				self.Disp = np.asarray(disp)				
+				self.Vtan = np.asarray(vtan)
+				self.Disp = np.asarray(disp)
 				self.chisq_global = xi_sq
 				self.aic_bic = out_data
 				self.best_kin_3D_models = kin_3D_modls
@@ -140,20 +140,20 @@ class Circular_model:
 
 	def boots(self,individual_run=0):
 		self.frac_pixel = 0
-		self.n_it,self.n_it0 = 1, 1			
+		self.n_it,self.n_it0 = 1, 1
 		runs = [individual_run]
 		[mom0_cube,mom1_cube,mom2_cube]=self.momscube
-		[emom0,emom1,emom2]=self.emomscube		
-		
+		[emom0,emom1,emom2]=self.emomscube
+
 		for k in runs:
 			mommaps=[mom0_cube[k],mom1_cube[k],mom2_cube[k]]
-			emommaps=[emom0,emom1,emom2]			
-		
+			emommaps=[emom0,emom1,emom2]
+
 			self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b = self.GUESS[-6:]
 			np.random.seed()
 			pa = self.pa0 + 5*np.random.normal()
 			inc= eps_2_inc(self.eps0) + (5*np.pi/180)*np.random.normal() # rad
-			eps=inc_2_eps(inc*180/np.pi) 
+			eps=inc_2_eps(inc*180/np.pi)
 			# setting chisq to -inf will preserve the leastsquare results
 			self.chisq_global = -np.inf
 			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
@@ -161,7 +161,7 @@ class Circular_model:
 			vels=list(disp_tab)+list(vrot_tab)+list(vrad_tab)+list(vtan_tab)
 			#self.bootstrap_kin[k,:len(vels)] = np.asarray(vels)
 
-			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]			
+			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 			# Minimization
 			fitting = fit_boots(None, self.h, mommaps, emommaps, guess, self.vary, self.vmode, self.config, self.Rings, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
 			# outs
@@ -169,9 +169,9 @@ class Circular_model:
 			# convert PA to rad:
 			pa0=pa0*np.pi/180
 			#self.bootstrap_contstant_prms[k,:] = np.array ([ pa0, eps0, x0, y0, vsys0, theta_b ] )
-						
-			return([[ pa0, eps0, x0, y0, vsys0, theta_b ], np.concatenate([vrot_tab, vrad_tab, vtan_tab, disp_tab])])
-									
+
+			return([[ pa0, eps0, x0, y0, vsys0, theta_b ], np.concatenate([disp_tab, vrot_tab, vrad_tab, vtan_tab])])
+
 	def run_boost_para(self):
 		ncpu = self.nthreads
 		with Pool(ncpu) as pool:
@@ -182,24 +182,24 @@ class Circular_model:
 
 		p = np.nanpercentile(self.bootstrap_kin,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_kin[0])))
 		d=np.diff(p,axis=0)
-		std_kin=0.5 * np.sum(d,axis=0)	
-		
+		std_kin=0.5 * np.sum(d,axis=0)
+
 		p=np.nanpercentile(self.bootstrap_contstant_prms,[15.865, 50, 84.135],axis=0).reshape((3,6))
-		d=np.diff(p,axis=0)	
+		d=np.diff(p,axis=0)
 		std_const= 0.5 * np.sum(d,axis=0)
 		std_pa=abs(circstd(self.bootstrap_contstant_prms[:,0]))*180/np.pi # rad ---> deg
 		std_phi_bar=abs(circstd(self.bootstrap_contstant_prms[:,-1])) # rad
 		std_const[0],std_const[-1]=std_pa,std_phi_bar
-		self.std_errors = [np.array_split(std_kin,4),std_const]		
+		self.std_errors = [np.array_split(std_kin,4),std_const]
 
 	def output(self):
 		#least
 		ecovar = self.lsq()
 		#bootstrap
 		if self.n_boot>0:
-			print("------------------------------------")			
+			print("------------------------------------")
 			print("starting bootstrap analysis ..")
-			print("------------------------------------")						
+			print("------------------------------------")
 			self.emomscube,self.momscube=(self.cube_class).obs_emommaps_boots(self.n_boot)
 			eboots= self.run_boost_para()
 
@@ -208,6 +208,5 @@ class Circular_model:
 		out = self.output()
 		# Get sky bar PA
 		PA_bar_major = pa_bar_sky(self.PA,self.EPS,self.THETA)
-		PA_bar_minor = pa_bar_sky(self.PA,self.EPS,self.THETA-np.pi/2)		
+		PA_bar_minor = pa_bar_sky(self.PA,self.EPS,self.THETA-np.pi/2)
 		return self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.THETA,self.Rings,self.Disp,self.Vrot,self.Vrad,self.Vtan,self.best_kin_3D_models,PA_bar_major,PA_bar_minor,self.aic_bic,self.std_errors
-

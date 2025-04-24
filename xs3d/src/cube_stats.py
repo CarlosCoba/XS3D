@@ -58,10 +58,10 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	noise=cube*noise_msk.astype(float)
 	noisep=abs(noise)
-	noise_flat=noisep[noise_msk]	
+	noise_flat=noisep[noise_msk]
 	noisep[noisep==0]=np.nan
 
-	
+
 	#median absolute deviation from the mean on the noise cube
 	mad_map=abs(noisep-np.nanpercentile(noisep,50,axis=0))
 	mad_map*=(1/noise_msk)
@@ -74,57 +74,74 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	# calculate the rms on each channel of the original cube
 	rms_channels=np.array([rmse(cube[k]) for k in range(nz) ])
 
-	rms_cube=np.median(rms_channels)
-	rms_ori = rms_global if rms_global !=0 else rms_cube
-	Print().out("Original cube RMS",round(rms_ori,10))
+	rms_mean=np.median(rms_channels)
+	rms_cube = rms_global if rms_global !=0 else rms_mean
+	Print().out("Original cube RMS",round(rms_cube,10))
 
 	#(2) calculate smooted cube
 	# smooth the cube spectrally and spatially by dv and ds pixels
 	sigma_inst_pix_spec=dv
 	sigma_inst_pix_spat=ds
 
-	lsf1d=gkernel1d(nz,sigma_pix=sigma_inst_pix_spec)
-	psf2d=gkernel((ny,nx),sigma_inst_pix_spat,pixel_scale=1)
-	psf3d_1 = psf2d * lsf1d[:, None, None]
+	if dv!=0 or ds!=0:
+		psd2d=np.ones((ny,nx))
+		lsf1d=np.ones(nz)
+		if dv!=0:
+			lsf1d=gkernel1d(nz,sigma_pix=sigma_inst_pix_spec)
+		if ds!=0:
+			psf2d=gkernel((ny,nx),sigma_inst_pix_spat,pixel_scale=1)
 
-	padded_cube, cube_slices = data_2N(cube, axes=[0, 1, 2])
-	padded_psf, psf_slices = data_2N(psf3d_1, axes=[0, 1, 2])
+		psf3d_1 = psf2d * lsf1d[:, None, None]
+		if dv!=0 and ds !=0:
+			axes=[0,1,2]
+		if dv!=0 and ds==0:
+			axes=[0]
+		if dv==0 and ds!=0:
+			axes=[1,2]
 
-	dft=fftconv(padded_cube,padded_psf,threads=nthreads)
-	cube_smooth=dft.conv_DFT(cube_slices)
-	#Do not forget to recover the zeros
-	cube_smooth*=iszero
+		padded_cube, cube_slices = data_2N(cube, axes=axes)
+		padded_psf, psf_slices = data_2N(psf3d_1, axes=axes)
+
+		dft=fftconv(padded_cube,padded_psf,threads=nthreads)
+		cube_smooth=dft.conv_DFT(cube_slices)
+		#Do not forget to recover the zeros
+		cube_smooth*=iszero
 
 
-	msk_neg=cube_smooth<0
-	#rms per channel on the smoothed cube
-	cube_smooth_neg=cube_smooth*msk_neg
-	rms_channels=np.array([rmse(cube_smooth_neg[k]) for k in range(nz) ])
-	#avg rms
-	rms_channel=np.median(rms_channels)
+		msk_neg=cube_smooth<0
+		#rms per channel on the smoothed cube
+		cube_smooth_neg=cube_smooth*msk_neg
+		rms_channels=np.array([rmse(cube_smooth_neg[k]) for k in range(nz) ])
+		#avg rms
+		rms_channel=np.median(rms_channels)
 
 
 
-	noisep=abs(cube_smooth_neg)
-	noisep=noisep[noisep!=0]
-	
-	#median absolute deviation from the mean on the smooth cube	
-	mad_sm=abs(noisep-np.nanpercentile(noisep,50,axis=0))
-	sigma_sm=np.nanpercentile(mad_sm,50,axis=0)*1.4826
-	Print().out("Smoothed cube RMS",round(sigma_sm,10))
+		noisep=abs(cube_smooth_neg)
+		noisep=noisep[noisep!=0]
 
-	#the rms on the smoothed cube:
-	global_rmse=sigma_sm
-	
-	msk_rms=(cube_smooth) > global_rmse*clip
+		#median absolute deviation from the mean on the smooth cube
+		mad_sm=abs(noisep-np.nanpercentile(noisep,50,axis=0))
+		sigma_sm=np.nanpercentile(mad_sm,50,axis=0)*1.4826
+		Print().out("Smoothed cube RMS",round(sigma_sm,10))
 
-	msk_cube=np.copy(msk_rms)
-	for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
-		if msk_rms[k,j,i] :
-			ds=sigma_inst_pix_spat//2
-			dv=sigma_inst_pix_spec//2
-			msk_cube[k-dv:k+dv+1,j-ds:j+ds+1,i-ds:i+ds+1]=True
-			#msk_cube[:,j-ds:j+ds+1,i-ds:i+ds+1]=True			
+		#the rms on the smoothed cube:
+		global_rmse=sigma_sm
+		#the rms that will be passed
+		rms_cube = global_rmse*clip
+
+		msk_rms=(cube_smooth) > global_rmse*clip
+
+		msk_cube=np.copy(msk_rms)
+		if ds!=0 and dv!=0:
+			for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
+				if msk_rms[k,j,i] :
+					dS=sigma_inst_pix_spat//2
+					dV=sigma_inst_pix_spec//2
+					msk_cube[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1]=True
+
+	else:
+		msk_cube=cube > rms_cube*clip
 
 	# apply the user mask and the SN msk
 	msk_cube*=(msk_usr)
@@ -132,15 +149,15 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	plot=0
 	if plot:
 		fig,ax=plt.subplots(1,1)
-		xc,yc=26,52		
+		xc,yc=26,52
 		ori=cube[:,yc,xc]
 		sm=cube_smooth[:,yc,xc]
 		ori_msk=(cube*(msk_cube))[:,yc,xc]
-		ax.plot(np.arange(nz), np.ones(nz)*(global_rmse*clip) , 'g--', lw =2, label = 'rms*clip')	
-		ax.plot(np.arange(nz), np.ones(nz)*sigma_map[yc][xc] , 'k--', lw =3, label='local noise')			
+		ax.plot(np.arange(nz), np.ones(nz)*(global_rmse*clip) , 'g--', lw =2, label = 'rms*clip')
+		ax.plot(np.arange(nz), np.ones(nz)*sigma_map[yc][xc] , 'k--', lw =3, label='local noise')
 		ax.plot(np.arange(nz), sm , 'y-', lw =5, label = 'smoothed')
 		ax.plot(np.arange(nz), sm*(sm<0) , 'b-', lw =5, label = 'smooth -')
-		ax.plot(np.arange(nz), ori_msk , 'r-', lw =5, label='observed-msked')		
+		ax.plot(np.arange(nz), ori_msk , 'r-', lw =5, label='observed-msked')
 		ax.plot(np.arange(nz), ori , 'k-', lw = 1, label = 'observed');ax.legend();plt.show()
 
 
@@ -172,13 +189,13 @@ def ecube(cube,rms,box=5):
 	# calculate the rms on each channel of the noise cube
 	rms_channels_neg=np.array([rmse(noise[k]) for k in range(nz) ])
 	msk=rms_channels_neg==0
-	
+
 	rms_vz = rms_channels_neg
 	rms_vz[msk]=rms_channels[msk]
 
 	errorcube=np.ones_like(cube)*(rms_vz[:,None,None])
 	#errorcube=np.sqrt(rms**2 + error2D**2) + errorcube
-	
+
 	return 	errorcube
 
 

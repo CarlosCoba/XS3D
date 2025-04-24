@@ -19,7 +19,7 @@ class Harmonic_model:
 
 		self.galaxy=galaxy
 		self.datacube=datacube
-		self.edatacube=edatacube		
+		self.edatacube=edatacube
 		self.h=header
 		self.mommaps=mommaps
 		self.vel_copy=np.copy(self.mommaps[1])
@@ -74,12 +74,12 @@ class Harmonic_model:
 
 
 		config_boots = config['bootstrap']
-		config_general = config['general']	
+		config_general = config['general']
 		self.n_boot = config_boots.getint('Nboots', 0)
 
 
 		self.bootstrap_contstant_prms = np.zeros((self.n_boot, 6))
-		self.bootstrap_kin_c, self.bootstrap_kin_s = 0, 0 
+		self.bootstrap_kin_c, self.bootstrap_kin_s = 0, 0
 
 		self.cube_class=cube_class
 		self.outdir = outdir
@@ -102,13 +102,13 @@ class Harmonic_model:
 		c1_tab_it, c3_tab_it, s1_tab_it, s3_tab_it = np.zeros(self.nrings,), np.zeros(self.nrings,), np.zeros(self.nrings,),np.zeros(self.nrings,)
 		for it in np.arange(self.n_it):
 			# Here we create the tabulated model
-			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.emoms, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)			
+			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.emoms, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)
 			c1_tab = c_tab[0]
 			c1_tab[abs(c1_tab) > 400] = np.nanmedian(c1_tab)
 			# Try to correct the PA if velocities are negative
 			if np.nanmean(c1_tab) < 0 :
-				self.pa0 = self.pa0 + 180			
-				c_tab[0]=-1*c_tab[0]							
+				self.pa0 = self.pa0 + 180
+				c_tab[0]=-1*c_tab[0]
 			# convert arrays to list
 			c_tab=[list(c_tab[k]) for k in range(self.m_hrm)]
 			s_tab=[list(s_tab[k]) for k in range(self.m_hrm)]
@@ -118,19 +118,19 @@ class Harmonic_model:
 			fitting = fit_routine(self.datacube, self.edatacube, self.h, self.mommaps, self.emoms, guess, self.vary, self.vmode, self.config, R_pos, self.ring_space, self.frac_pixel, self.inner_interp, self.m_hrm, N_it=self.n_it0)
 			kin_3D_modls, Vk , self.pa0, self.eps0, self.x0, self.y0, self.vsys0, self.theta_b, out_data, Errors, true_rings = fitting.results()
 			xi_sq = out_data[-1]
-			
+
 			disp, c_k, s_k = Vk[-1], Vk[0:self.m_hrm],Vk[self.m_hrm:]
 			self.c_k, self.s_k = c_k, s_k
 			# The first circular and first radial components
 			c1 = c_k[0]
 			s1 = s_k[0]
 
-			# Keep the best fit 
+			# Keep the best fit
 			if xi_sq < self.chisq_global:
 
 				self.PA,self.EPS,self.XC,self.YC,self.VSYS = self.pa0, self.eps0, self.x0, self.y0, self.vsys0
 				self.C_k, self.S_k = c_k, s_k
-				self.Disp = np.asarray(disp)				 
+				self.Disp = np.asarray(disp)
 				self.chisq_global = xi_sq
 				self.aic_bic = out_data
 				self.best_kin_3D_models = kin_3D_modls
@@ -145,30 +145,30 @@ class Harmonic_model:
 	"""
 
 
-	
+
 	def boots(self,individual_run=0):
 		self.frac_pixel = 0
-		self.n_it,self.n_it0 = 1, 1			
+		self.n_it,self.n_it0 = 1, 1
 		runs = [individual_run]
 		[mom0_cube,mom1_cube,mom2_cube]=self.momscube
-		[emom0,emom1,emom2]=self.emomscube		
-				
+		[emom0,emom1,emom2]=self.emomscube
+
 		for k in runs:
 			mommaps=[mom0_cube[k],mom1_cube[k],mom2_cube[k]]
-			emommaps=[emom0,emom1,emom2]			
-			
+			emommaps=[emom0,emom1,emom2]
+
 			self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b = self.GUESS[-6:]
 			np.random.seed()
 			pa = self.pa0 + 5*np.random.normal()
 			inc= eps_2_inc(self.eps0) + (5*np.pi/180)*np.random.normal() # rad
-			eps=inc_2_eps(inc*180/np.pi) 
+			eps=inc_2_eps(inc*180/np.pi)
 			# setting chisq to -inf will preserve the leastsquare results
 			self.chisq_global = -np.inf
 			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
-								
-			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.Rings,mommaps, emommaps,pa,eps,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)			
+
+			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.Rings,mommaps, emommaps,pa,eps,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)
 			c_tab=[list(c_tab[j]) for j in range(self.m_hrm)]
-			s_tab=[list(s_tab[j]) for j in range(self.m_hrm)]			
+			s_tab=[list(s_tab[j]) for j in range(self.m_hrm)]
 			kin=[c_tab, s_tab, disp_tab]
 			vels=list(chain(*kin))
 			#self.bootstrap_kin[k,:] = np.hstack(vels)
@@ -181,7 +181,7 @@ class Harmonic_model:
 			# convert PA to rad:
 			pa0=pa0*np.pi/180
 			#self.bootstrap_contstant_prms[k,:] = np.array ([ pa0, eps0, x0, y0, vsys0, theta_b ] )
-				
+
 			return([[ pa0, eps0, x0, y0, vsys0, theta_b ], np.hstack(vels)])
 
 	def run_boost_para(self):
@@ -194,27 +194,27 @@ class Harmonic_model:
 
 		p = np.nanpercentile(self.bootstrap_kin,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_kin[0])))
 		d=np.diff(p,axis=0)
-		std_kin=0.5 * np.sum(d,axis=0)	
+		std_kin=0.5 * np.sum(d,axis=0)
 		eCSSig=np.array_split(std_kin,2*self.m_hrm+1)
 		eCSS= [eCSSig[0:self.m_hrm],eCSSig[self.m_hrm:-1],eCSSig[-1]]
-		
+
 		p=np.nanpercentile(self.bootstrap_contstant_prms,[15.865, 50, 84.135],axis=0).reshape((3,6))
-		d=np.diff(p,axis=0)	
+		d=np.diff(p,axis=0)
 		std_const= 0.5 * np.sum(d,axis=0)# abs(sigma1u + sigma1l)
 		std_pa=abs(circstd(self.bootstrap_contstant_prms[:,0]))*180/np.pi # rad ---> deg
 		std_phi_bar=abs(circstd(self.bootstrap_contstant_prms[:,-1])) # rad
 		std_const[0],std_const[-1]=std_pa,std_phi_bar
-		
-		self.std_errors = [eCSS,std_const]		
-			
+
+		self.std_errors = [eCSS,std_const]
+
 	def output(self):
 		#least
 		ecovar = self.lsq()
 		#bootstrap
 		if self.n_boot>0:
-			print("------------------------------------")			
+			print("------------------------------------")
 			print("starting bootstrap analysis ..")
-			print("------------------------------------")								
+			print("------------------------------------")
 			self.emomscube,self.momscube=(self.cube_class).obs_emommaps_boots(self.n_boot)
 			eboots=self.run_boost_para()
 
@@ -223,6 +223,3 @@ class Harmonic_model:
 	def __call__(self):
 		out = self.output()
 		return self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.Rings,self.Disp,self.C_k,self.S_k,self.best_kin_3D_models,self.aic_bic,self.std_errors
-
-
-

@@ -72,7 +72,11 @@ class input_params:
 		# Rings configuration
 		ring_space = float(sys.argv[14])
 		delta = sys.argv[15]
-		rstart, rfinal =  eval(sys.argv[16])
+		#rstart, rfinal =  eval(sys.argv[16])
+		rstart_rfinal =  sys.argv[16]
+		rstart_rfinal = rstart_rfinal.split(',')
+		rstart,rfinal =	rstart_rfinal
+		rstart = eval(rstart)	
 		frac_pixel = eval(sys.argv[17])
 
 		# Kinematic model, minimization method and iterations

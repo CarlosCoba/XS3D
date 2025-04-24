@@ -6,7 +6,7 @@ from .pixel_params import eps_2_inc,e_eps2e_inc
 def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR_MAJOR,PA_BAR_MINOR,errors_fit,bic_aic, e_ISM, out):
 	n = len(Vrot)
 	e_PA,e_EPS,e_XC,e_YC,e_Vsys,e_theta  = errors_fit[1]
-	e_Vrot,e_Vrad,e_Vtan,e_Disp  = errors_fit[0]
+	e_Disp,e_Vrot,e_Vrad,e_Vtan  = errors_fit[0]
 	INC, e_INC = eps_2_inc(EPS)*180/np.pi,e_eps2e_inc(EPS,e_EPS)*180/np.pi
 	N_free, N_nvarys, N_data, bic, aic, redchi = bic_aic
 
