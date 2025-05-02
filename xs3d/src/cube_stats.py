@@ -125,6 +125,11 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		sigma_sm=np.nanpercentile(mad_sm,50,axis=0)*1.4826
 		Print().out("Smoothed cube RMS",round(sigma_sm,10))
 
+		if ~np.isfinite(sigma_sm) or sigma_sm==0:
+			Print().status("The input cube does not contain a proper noise ?")
+			sigma_sm=rms_cube
+			Print().status("Changing RMS to original cube value")
+
 		#the rms on the smoothed cube:
 		global_rmse=sigma_sm
 		#the rms that will be passed
