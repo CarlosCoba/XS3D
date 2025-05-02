@@ -160,10 +160,14 @@ class Least_square_fit:
 		self.sigma_inst_kms=psf_lsf.sigma_inst_kms
 		self.sigma_inst_pix=psf_lsf.sigma_inst_pix
 
-		self.min_sig=0
-		if self.sigma_inst_pix is not None:
-			sig0 = np.sqrt(self.sig0**2-self.sigma_inst_kms**2)
+		# if there are mom2[y][x] < sigma_inst, then assign the instrumental
+		mom2_msk=((self.mom2<self.sigma_inst_kms) & (self.mom0!=0)) if self.sigma_inst_kms is not None else np.zeros_like(self.mom2)
+		self.mom2[mom2_msk]=self.sigma_inst_kms
 
+		self.min_sig=0.1
+		if self.sigma_inst_pix is not None:
+			#remove the instrumental dispersion
+			sig0 = np.sqrt(self.sig0**2-self.sigma_inst_kms**2)
 			#check if there are nans
 			nan_sigmas=~np.all(np.isfinite(sig0))
 			if nan_sigmas:
