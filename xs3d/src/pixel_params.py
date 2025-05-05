@@ -47,55 +47,55 @@ def ring_pixels(xy_mesh,pa,eps,x0,y0,ring,delta,pixel_scale):
 	a_k = ring
 
 
-	mask = np.where( (r_n >= a_k - delta) & (r_n < a_k + delta) ) 
+	mask = np.where( (r_n >= a_k - delta) & (r_n < a_k + delta) )
 	r_n = r_n[mask]
 
 	return mask
 
 
-def pixels(shape,vel,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
+def pixels(shape,velmap,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 
 	[ny,nx] = shape
-
-
 	x = np.arange(0, nx, 1)
 	y = np.arange(0, ny, 1)
 
 	XY_mesh = np.meshgrid(x,y,sparse=True)
-	r_pixels_mask = ring_pixels(XY_mesh,pa,eps,x0,y0,ring,delta,pixel_scale)	
-	XY_mesh0 = np.meshgrid(np.arange(0, 2*nx, 1),np.arange(0, 2*ny, 1),sparse=True)	
-	r_pixels_mask0 = ring_pixels(XY_mesh0,pa,eps,nx,ny,ring,delta,pixel_scale)
-	mask = r_pixels_mask
+	rxy_pixels_mask = ring_pixels(XY_mesh,pa,eps,x0,y0,ring,delta,pixel_scale)
+
+	#
+	# Assuming a window twice the original ?
+	#
+	#XY_mesh0 = np.meshgrid(np.arange(0, 2*nx, 1),np.arange(0, 2*ny, 1),sparse=True)
+	#rxy_pixels_mask_twice = ring_pixels(XY_mesh0,pa,eps,nx,ny,ring,delta,pixel_scale)
+
+
 
 	indices = np.indices((ny,nx))
-
-
 	pix_y=  indices[0]
 	pix_x=  indices[1]
 
-	pix_x = pix_x[mask]
-	pix_y = pix_y[mask]
+	pix_x = pix_x[rxy_pixels_mask]
+	pix_y = pix_y[rxy_pixels_mask]
 
 
 
-	vel_pixesl = vel[mask]	
-	pix_y =  np.asarray(pix_y)
-	pix_x = np.asarray(pix_x)
-	#npix_exp = len(pix_x)
-	npix_exp=len(r_pixels_mask0[0])
+	vel_pixesl = velmap[rxy_pixels_mask]
+	npix_exp = len(pix_x)
+	#npix_exp=len(rxy_pixels_mask_twice[0])
 
 
-	mask = np.isfinite(vel_pixesl) == True
-	mask = (np.isfinite(vel_pixesl)) & (vel_pixesl !=0)
-	vel_val = vel_pixesl[mask]
+	valid_vels = (np.isfinite(vel_pixesl)) & (vel_pixesl !=0)
+	vel_val = vel_pixesl[valid_vels]
 	len_vel = len(vel_val)
 
 
-	"""
-	plt.imshow(vel, origin = "lower")
-	plt.plot(pix_x,pix_y,"ko")
-	plt.show()
-	"""
+	plot=0
+	if plot:
+		print('f_pixel =', len(vel_val)/(1.0*npix_exp))
+		plt.imshow(velmap, origin = "lower")
+		plt.scatter(pix_x,pix_y, s=3, color = 'k', marker = 'x')
+		plt.show()
+
 	if npix_exp >0 and len_vel >0 :
 		f_pixel = len(vel_val)/(1.0*npix_exp)
 	else:
@@ -103,10 +103,3 @@ def pixels(shape,vel,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 
 
 	return f_pixel
-
-
-
-
-
-
-

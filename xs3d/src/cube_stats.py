@@ -12,6 +12,7 @@ from .conv_fftw import fftconv,data_2N
 from .start_messenge import Print
 from .tools_fits import get_fits_data
 from .utils import vparabola3D
+from .nan_percentile import nan_percentile # this is much faster than nunmpy
 
 def rmse(data_array):
 	data=data_array[np.isfinite(data_array) & (data_array!=0)]
@@ -63,13 +64,18 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 
 	#median absolute deviation from the mean on the noise cube
-	mad_map=abs(noisep-np.nanpercentile(noisep,50,axis=0))
+	#mad_map=abs(noisep-np.nanpercentile(noisep,50,axis=0))
+	mad_map=abs(noisep-nan_percentile(noisep,50))
 	mad_map*=(1/noise_msk)
 	#noise per spectrum
-	sigma_map=np.nanpercentile(mad_map,50,axis=0)*1.4826
+	#sigma_map=np.nanpercentile(mad_map,50,axis=0)*1.4826
+	sigma_map=nan_percentile(mad_map,50)*1.4826
 
-	mad_global=abs(noise_flat-np.nanpercentile(noise_flat,50,axis=0))
-	rms_global=np.nanpercentile(mad_global,50,axis=0)*1.4826
+
+	#mad_global=abs(noise_flat-np.nanpercentile(noise_flat,50,axis=0))
+	mad_global=abs(noise_flat-nan_percentile(noise_flat,50))
+	#rms_global=np.nanpercentile(mad_global,50,axis=0)*1.4826
+	rms_global=nan_percentile(mad_global,50)*1.4826
 
 	# calculate the rms on each channel of the original cube
 	rms_channels=np.array([rmse(cube[k]) for k in range(nz) ])
@@ -121,8 +127,10 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		noisep=noisep[noisep!=0]
 
 		#median absolute deviation from the mean on the smooth cube
-		mad_sm=abs(noisep-np.nanpercentile(noisep,50,axis=0))
-		sigma_sm=np.nanpercentile(mad_sm,50,axis=0)*1.4826
+		#mad_sm=abs(noisep-np.nanpercentile(noisep,50,axis=0))
+		mad_sm=abs(noisep-nan_percentile(noisep,50))
+		#sigma_sm=np.nanpercentile(mad_sm,50,axis=0)*1.4826
+		sigma_sm=nan_percentile(mad_sm,50)*1.4826
 		Print().out("Smoothed cube RMS",round(sigma_sm,10))
 
 		if ~np.isfinite(sigma_sm) or sigma_sm==0:
