@@ -58,17 +58,8 @@ def pixels(shape,velmap,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 	[ny,nx] = shape
 	x = np.arange(0, nx, 1)
 	y = np.arange(0, ny, 1)
-
 	XY_mesh = np.meshgrid(x,y,sparse=True)
 	rxy_pixels_mask = ring_pixels(XY_mesh,pa,eps,x0,y0,ring,delta,pixel_scale)
-
-	#
-	# Assuming a window twice the original ?
-	#
-	#XY_mesh0 = np.meshgrid(np.arange(0, 2*nx, 1),np.arange(0, 2*ny, 1),sparse=True)
-	#rxy_pixels_mask_twice = ring_pixels(XY_mesh0,pa,eps,nx,ny,ring,delta,pixel_scale)
-
-
 
 	indices = np.indices((ny,nx))
 	pix_y=  indices[0]
@@ -78,28 +69,40 @@ def pixels(shape,velmap,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 	pix_y = pix_y[rxy_pixels_mask]
 
 
+	####################################################
+	# Now extract the same ring in a double size window
+	####################################################
+	nx2=nx*2
+	ny2=ny*2
+	XY_mesh0 = np.meshgrid(np.arange(0, nx2, 1),np.arange(0, ny2, 1),sparse=True)
+	rxy_pixels_mask_twice = ring_pixels(XY_mesh0,pa,eps,nx2//2,ny2//2,ring,delta,pixel_scale)
 
+
+
+	#pixels in the original image
 	vel_pixesl = velmap[rxy_pixels_mask]
-	npix_exp = len(pix_x)
-	#npix_exp=len(rxy_pixels_mask_twice[0])
+	#npix_exp = len(pix_x)
+
+	#pixels in the new image
+	npix_exp=len(rxy_pixels_mask_twice[0])
 
 
-	valid_vels = (np.isfinite(vel_pixesl)) & (vel_pixesl !=0)
-	vel_val = vel_pixesl[valid_vels]
-	len_vel = len(vel_val)
+	good_vels = (np.isfinite(vel_pixesl)) & (vel_pixesl !=0)
+	vel_good = vel_pixesl[good_vels]
+	ngood = len(vel_good)
+
+
+	if npix_exp >0 and ngood >0 :
+		f_pixel = ngood/(1.0*npix_exp)
+	else:
+		f_pixel = 0
 
 
 	plot=0
 	if plot:
-		print('f_pixel =', len(vel_val)/(1.0*npix_exp))
+		print('f_pixel=',f_pixel)
 		plt.imshow(velmap, origin = "lower")
-		plt.scatter(pix_x,pix_y, s=3, color = 'k', marker = 'x')
+		plt.scatter(pix_x,pix_y,s=3, marker = 'x', color = 'k')
 		plt.show()
-
-	if npix_exp >0 and len_vel >0 :
-		f_pixel = len(vel_val)/(1.0*npix_exp)
-	else:
-		f_pixel = 0
-
 
 	return f_pixel

@@ -80,14 +80,14 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	# calculate the rms on each channel of the original cube
 	rms_channels=np.array([rmse(cube[k]) for k in range(nz) ])
 
-	rms_mean=np.median(rms_channels)
-	rms_cube = rms_global if rms_global !=0 else rms_mean
+	rms_mean_all=np.median(rms_channels)
+	rms_cube = rms_global if rms_global !=0 else rms_mean_all
 	Print().out("Original cube RMS",round(rms_cube,10))
 
 	#(2) calculate smooted cube
 	# smooth the cube spectrally and spatially by dv and ds pixels
-	sigma_inst_pix_spec=dv
-	sigma_inst_pix_spat=ds
+	sigma_inst_pix_spec=dv*2
+	sigma_inst_pix_spat=ds*2
 
 	if dv!=0 or ds!=0:
 		psd2d=np.ones((ny,nx))
@@ -138,6 +138,13 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 			sigma_sm=rms_cube
 			Print().status("Changing RMS to original cube value")
 
+		Print().out("Cleaned cube RMS",round(clip*sigma_sm,10))
+		
+		sn_temp=rms_mean_all/sigma_sm
+		if sn_temp > 50:
+			rat=int(sn_temp)
+			print(f'Warning ! Your data does not seem to contain a proper noise, SN_temp = {rat}')
+			print(f'Consider increasing the clipping level if you have not already.')
 		#the rms on the smoothed cube:
 		global_rmse=sigma_sm
 		#the rms that will be passed
@@ -146,11 +153,13 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		msk_rms=(cube_smooth) > global_rmse*clip
 
 		msk_cube=np.copy(msk_rms)
-		if ds!=0 and dv!=0:
+		if ds>1 and dv>1:
 			for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
 				if msk_rms[k,j,i] :
-					dS=sigma_inst_pix_spat//2
-					dV=sigma_inst_pix_spec//2
+					#dS=sigma_inst_pix_spat//2
+					#dV=sigma_inst_pix_spec//2
+					dS=ds//2
+					dV=dv//2
 					msk_cube[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1]=True
 
 	else:
