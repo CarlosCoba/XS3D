@@ -168,8 +168,42 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	# apply the user mask and the SN msk
 	msk_cube*=(msk_usr)
 
+	msk_cube_2d=(msk_cube).sum(axis=0)
+	col, row =np.indices((ny,nx))
+	row=row[msk_cube_2d>0]
+	col=col[msk_cube_2d>0]
+
+	# reject all spectra with 2 peaks or more
+	def find_zero_segments(arr):
+		#
+		# Find zero segments in the spectrum.
+		# If there are more than 2 segments then there are 2+ peaks
+		#
+		segments = []
+		start = -1
+		for i, num in enumerate(arr):
+		    if num == 0:
+		        if start == -1:
+		            start = i
+		    elif start != -1:
+		        segments.append((start, i - 1))
+		        start = -1
+		if start != -1:
+		    segments.append((start, len(arr) - 1))
+		return len(segments)
+
+	mask_peaks=np.ones((ny,nx))
+	for i,j in zip(row,col):
+		arr=msk_cube[:,j,i]
+		peaks=find_zero_segments(arr)
+		if peaks>2:
+			# blank spectrum
+			mask_peaks[j][i]=0
+
+	msk_cube=msk_cube*mask_peaks
 	plot=0
 	if plot:
+		plt.imshow(msk_cube_2d,origin='lower');plt.show()
 		fig,ax=plt.subplots(1,1)
 		xc,yc=26,52
 		ori=cube[:,yc,xc]
