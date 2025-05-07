@@ -5,11 +5,13 @@ from .M_tabulated import M_tab
 def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pixel_scale, vmode, shape, frac_pixel, r_bar_min, r_bar_max, m_hrm = 1):
 
 	mom0,mom1,mom2=mommaps
+	#do not include negative values in m0 in this analysis
+	mom0[mom0<0]=0	
 	msk=mom0/mom0
 	mom0,mom1,mom2=mom0*msk,mom1*msk,mom2*msk
 	mom1=mom1-vsys
 	mommaps2=[mom0,mom1,mom2]
-	
+
 	disp_tab,vrot_tab,vrad_tab,vtan_tab = np.asarray([]),np.asarray([]),np.asarray([]),np.asarray([])
 	c1_tab, c3_tab, s1_tab, s3_tab = np.asarray([]),np.asarray([]),np.asarray([]),np.asarray([])
 
@@ -18,7 +20,7 @@ def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pix
 		globals()['C%s_tab' % (j)] = np.asarray([])
 		globals()['S%s_tab' % (j)] = np.asarray([])
 
-	nrings = len(rings)			
+	nrings = len(rings)
 	R_pos = np.asarray([])
 	index = 0
 	for ring in rings:
@@ -39,7 +41,7 @@ def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pix
 						vtan_tab = np.append(vtan_tab,v_tan_k)
 						R_pos = np.append(R_pos,ring)
 					except(np.linalg.LinAlgError):
-							vrot_tab,vrad_tab,vtan_tab = np.append(vrot_tab,100),np.append(vrad_tab,10),np.append(vtan_tab,10)				
+							vrot_tab,vrad_tab,vtan_tab = np.append(vrot_tab,100),np.append(vrad_tab,10),np.append(vtan_tab,10)
 							R_pos = np.append(R_pos,ring)
 				else:
 					# Create ciruclar model
@@ -68,7 +70,7 @@ def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pix
 					vrad_tab = np.append(vrad_tab,0)
 					vtan_tab = np.append(vtan_tab,0)
 					R_pos = np.append(R_pos,ring)
-										
+
 			if vmode == "circular":
 				disp_k, v_rot_k,v_rad_k,v_tan_k = M_tab(pa,inc,x0,y0,theta_b,ring, delta,index, shape, mommaps2, evel, pixel_scale=pixel_scale,vmode = vmode)
 				disp_tab = np.append(disp_tab,disp_k)
@@ -76,7 +78,7 @@ def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pix
 				vrad_tab = np.append(vrad_tab,0)
 				vtan_tab = np.append(vtan_tab,0)
 				R_pos = np.append(R_pos,ring)
-				
+
 			if "hrm" in vmode:
 				if ring >=  r_bar_min and ring <= r_bar_max:
 					# Create m2 model
@@ -105,6 +107,3 @@ def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pix
 		return disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos
 	else:
 		return disp_tab, [globals()['C%s_tab' % (j)] for j in range(1,m_hrm+1)], [globals()['S%s_tab' % (j)] for j in range(1,m_hrm+1)], R_pos
-
-
-			

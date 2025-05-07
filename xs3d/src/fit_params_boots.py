@@ -545,7 +545,7 @@ class Fit_kin_mdls(Models):
 				velmap=velsum+msk*Vsys
 
 
-			msk=(velmap!=0) & (self.mom0!=0)
+			msk=(velmap!=0) & (self.mom0>0)
 			mom1_mdl,mom2_mdl_kms=velmap,sigmap
 
 			if self.vary_disp:

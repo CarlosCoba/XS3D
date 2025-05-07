@@ -559,7 +559,7 @@ class Fit_kin_mdls(Models):
 				velmap=velsum+msk*Vsys
 
 
-			msk=(velmap!=0) & (self.mom0!=0)
+			msk=(velmap!=0) & (self.mom0>0)
 			mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl=self.cube_modl.create_cube(velmap,sigmap,self.padded_cube,self.padded_psf,self.cube_slices,pass_cube=self.fit_from_cube)
 			ntotal_d=3*(self.nx*self.ny)
 			neff_d=3*np.sum( np.isfinite(self.mom1) & (self.mom1!=0))

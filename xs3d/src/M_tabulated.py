@@ -105,6 +105,10 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 	Y = np.arange(0, ny, 1)
 	xy_mesh = np.meshgrid(X,Y)
 	[mom0,mom1,mom2]=mommaps
+	#do not include negative values in m0 in this analysis
+	mom0_msk= (mom0>0) & np.isfinite(mom0)
+	mom1/=mom0_msk
+	mom2/=mom0_msk
 	#for k in emoms: k = np.ones_like(mom0)
 	[emom0,emom1,emom2]=emoms
 	vel_val=mom1
