@@ -86,8 +86,8 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	#(2) calculate smooted cube
 	# smooth the cube spectrally and spatially by dv and ds pixels
-	sigma_inst_pix_spec=dv*2
-	sigma_inst_pix_spat=ds*2
+	sigma_inst_pix_spec=dv/2.355
+	sigma_inst_pix_spat=ds/2.355
 
 	if dv!=0 or ds!=0:
 		psd2d=np.ones((ny,nx))
@@ -139,7 +139,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 			Print().status("Changing RMS to original cube value")
 
 		Print().out("Cleaned cube RMS",round(clip*sigma_sm,10))
-		
+
 		sn_temp=rms_mean_all/sigma_sm
 		if sn_temp > 50:
 			rat=int(sn_temp)
