@@ -200,7 +200,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 			# blank spectrum
 			mask_peaks[j][i]=0
 
-	msk_cube=msk_cube*mask_peaks
+	msk_cube=msk_cube*mask_peaks*(msk_cube_2d>3)
 	plot=0
 	if plot:
 		plt.imshow(msk_cube_2d,origin='lower');plt.show()
