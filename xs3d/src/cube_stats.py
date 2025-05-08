@@ -153,6 +153,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		msk_rms=(cube_smooth) > global_rmse*clip
 
 		msk_cube=np.copy(msk_rms)
+		msk_cube_2d=(msk_cube).sum(axis=0)
 		if ds>1 and dv>1:
 			for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
 				if msk_rms[k,j,i] :
@@ -168,7 +169,6 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	# apply the user mask and the SN msk
 	msk_cube*=(msk_usr)
 
-	msk_cube_2d=(msk_cube).sum(axis=0)
 	col, row =np.indices((ny,nx))
 	row=row[msk_cube_2d>0]
 	col=col[msk_cube_2d>0]
@@ -200,7 +200,10 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 			# blank spectrum
 			mask_peaks[j][i]=0
 
-	msk_cube=msk_cube*mask_peaks*(msk_cube_2d>3)
+	#choose the minmum number of pixels above threshold to
+	# be considered as a good spectrum.
+	nabove=1
+	msk_cube=msk_cube*mask_peaks*(msk_cube_2d>nabove)
 	plot=0
 	if plot:
 		plt.imshow(msk_cube_2d,origin='lower');plt.show()
