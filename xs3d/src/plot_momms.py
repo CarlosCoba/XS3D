@@ -49,7 +49,7 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	mom1=mom1-vsys
 
 	rnorm=1
-	if np.max(rmax)>80:
+	if np.max(rmax)>80 and np.all(abs(ext)>80):
 		rnorm=60
 		rlabel='$\'$'
 	else:

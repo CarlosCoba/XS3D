@@ -62,7 +62,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 
 
 	rnorm=1
-	if rmax>80:
+	if rmax>80 and np.all(abs(ext)>80):
 		rnorm=60
 		rlabel='$\'$'
 	else:

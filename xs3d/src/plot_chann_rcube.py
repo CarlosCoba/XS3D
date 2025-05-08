@@ -43,7 +43,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	ext=np.dot([-xc,nx-xc,-yc,ny-yc],pixel); xc =0; yc =0
 
 	rnorm=1
-	if np.max(ext)>80:
+	if np.max(ext)>80 and np.all(abs(ext)>80):
 		rnorm=60
 		rlabel='$\'$'
 	else:

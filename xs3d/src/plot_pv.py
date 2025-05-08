@@ -90,13 +90,16 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 		loc_txt_pv='upper right'
 	R*=s
 	rnorm=1
-	if rmax > 80:
+	if rmax > 80 and np.all(abs(extimg)>80):
 		rnorm=60
 		rlabel='$\'$'
 	else:
 		rlabel='$\'\'$'
 	R=R/rnorm
+	# Change scale to arcmin if necessary in the image and PV maps
 	extimg=extimg/rnorm
+	ext0[:2]=ext0[:2]/rnorm
+	ext1[:2]=ext1[:2]/rnorm
 
 	mom1_mdl-=vsys
 	mom1-=vsys
