@@ -176,8 +176,9 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	# reject all spectra with 2 peaks or more
 	def find_zero_segments(arr):
 		#
-		# Find zero segments in the spectrum.
-		# If there are more than 2 segments then there are 2+ peaks
+		# Find zero segments (peaks) in the spectrum:
+		# If there are 2 segments: 00_00 there is only 1 peak in the spectrum.
+		# If there are 3 segments: 00_00_00 there are 2 peaks, and so on.
 		#
 		segments = []
 		start = -1
@@ -196,7 +197,9 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	for i,j in zip(row,col):
 		arr=msk_cube[:,j,i]
 		peaks=find_zero_segments(arr)
-		if peaks>2:
+		#I will allow to pass up to 2 peaks in the spectrum.
+		#if there are more peaks then blank the spectrum.
+		if peaks>3:
 			# blank spectrum
 			mask_peaks[j][i]=0
 
