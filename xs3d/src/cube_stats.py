@@ -139,6 +139,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 			Print().status("Changing RMS to original cube value")
 
 		Print().out("Cleaned cube RMS",round(clip*sigma_sm,10))
+		Print().status("Creating 3D mask ")
 
 		sn_temp=rms_mean_all/sigma_sm
 		if sn_temp > 50:
@@ -198,28 +199,28 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	mask_peaks=np.ones((ny,nx))
 	for i,j in zip(row,col):
 		arr0=msk_cube[:,j,i]
-		arr=cube_smooth[:,j,i]		
-		npeaks,seg=find_zero_segments(arr0)		
+		arr=cube_smooth[:,j,i]
+		npeaks,seg=find_zero_segments(arr0)
 		if npeaks >=2:
 			peak_k=[seg[k] for k in range(npeaks)]
 			fmax=0
 			a=np.zeros(nz)
 			for p in peak_k:
-					p1start,p1end=p				
+					p1start,p1end=p
 					flux_k=np.max(arr[p1start:p1end+1])
 					if flux_k>fmax:
 						a[:]=False
 						a[p1start:p1end+1]=True
 						fmax=flux_k
-				
+
 			msk_cube[:,j,i]=a
-					
+
 	#choose the minmum number of pixels above threshold to
 	# be considered as a good spectrum.
 	nabove=ds
 	msk_cube_2d=(msk_cube).sum(axis=0)
-	peaks_min_msk=(msk_cube_2d>nabove)	
-	#peaks_min_msk[mask_peaks==1]=1				
+	peaks_min_msk=(msk_cube_2d>nabove)
+	#peaks_min_msk[mask_peaks==1]=1
 	msk_cube=msk_cube*peaks_min_msk
 	plot=0
 	if plot:
