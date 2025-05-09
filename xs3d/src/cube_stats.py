@@ -179,8 +179,8 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	def find_zero_segments(arr):
 		#
 		# Find nonzero segments (peaks) in the spectrum:
-		# If there are 2 segments: 00_00 there is only 1 peak in the spectrum.
-		# If there are 3 segments: 00_00_00 there are 2 peaks, and so on.
+		# If there are 2 segments: 0011001100 there are 2 peaks in the spectrum.
+		# If there are 3 segments: 00110011001100 there are 3 peaks, and so on.
 		#
 		segments = []
 		start = -1
@@ -197,23 +197,23 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	# evaluate spectra with 2 or more peaks
 	mask_peaks=np.ones((ny,nx))
-	for i,j in zip(row,col):
-		arr0=msk_cube[:,j,i]
-		arr=cube_smooth[:,j,i]
-		npeaks,seg=find_zero_segments(arr0)
-		if npeaks >=2:
-			peak_k=[seg[k] for k in range(npeaks)]
-			fmax=0
-			a=np.zeros(nz)
-			for p in peak_k:
-					p1start,p1end=p
-					flux_k=np.max(arr[p1start:p1end+1])
-					if flux_k>fmax:
-						a[:]=False
-						a[p1start:p1end+1]=True
-						fmax=flux_k
-
-			msk_cube[:,j,i]=a
+	if ds>1 and dv>1:
+		for i,j in zip(row,col):
+			arr0=msk_cube[:,j,i]
+			arr=cube_smooth[:,j,i]
+			npeaks,seg=find_zero_segments(arr0)
+			if npeaks >=2:
+				peak_k=[seg[k] for k in range(npeaks)]
+				fmax=0
+				a=np.zeros(nz)
+				for p in peak_k:
+						p1start,p1end=p
+						flux_k=np.max(arr[p1start:p1end+1])
+						if flux_k>fmax:
+							a[:]=False
+							a[p1start:p1end+1]=True
+							fmax=flux_k
+				msk_cube[:,j,i]=a
 
 	#choose the minmum number of pixels above threshold to
 	# be considered as a good spectrum.
