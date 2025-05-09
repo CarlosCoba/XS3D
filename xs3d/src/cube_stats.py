@@ -153,7 +153,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		msk_rms=(cube_smooth) > global_rmse*clip
 
 		msk_cube=np.copy(msk_rms)
-		msk_cube_2d=(msk_cube).sum(axis=0)
+		#msk_cube_2d=(msk_cube).sum(axis=0)
 		if ds>1 and dv>1:
 			for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
 				if msk_rms[k,j,i] :
@@ -166,6 +166,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	else:
 		msk_cube=cube > rms_cube*clip
 
+	msk_cube_2d=(msk_cube).sum(axis=0)
 	# apply the user mask and the SN msk
 	msk_cube*=(msk_usr)
 
@@ -173,17 +174,17 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	row=row[msk_cube_2d>0]
 	col=col[msk_cube_2d>0]
 
-	# reject all spectra with 2 peaks or more
+
 	def find_zero_segments(arr):
 		#
-		# Find zero segments (peaks) in the spectrum:
+		# Find nonzero segments (peaks) in the spectrum:
 		# If there are 2 segments: 00_00 there is only 1 peak in the spectrum.
 		# If there are 3 segments: 00_00_00 there are 2 peaks, and so on.
 		#
 		segments = []
 		start = -1
 		for i, num in enumerate(arr):
-		    if num == 0:
+		    if num != 0:
 		        if start == -1:
 		            start = i
 		    elif start != -1:
@@ -191,27 +192,41 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		        start = -1
 		if start != -1:
 		    segments.append((start, len(arr) - 1))
-		return len(segments)
+		return len(segments),segments
 
+	# evaluate spectra with 2 or more peaks
 	mask_peaks=np.ones((ny,nx))
 	for i,j in zip(row,col):
-		arr=msk_cube[:,j,i]
-		peaks=find_zero_segments(arr)
-		#I will allow to pass up to 2 peaks in the spectrum.
-		#if there are more peaks then blank the spectrum.
-		if peaks>3:
-			# blank spectrum
-			mask_peaks[j][i]=0
-
+		arr0=msk_cube[:,j,i]
+		arr=cube_smooth[:,j,i]		
+		npeaks,seg=find_zero_segments(arr0)		
+		if npeaks >=2:
+			peak_k=[seg[k] for k in range(npeaks)]
+			fmax=0
+			a=np.zeros(nz)
+			for p in peak_k:
+					p1start,p1end=p				
+					flux_k=np.max(arr[p1start:p1end+1])
+					if flux_k>fmax:
+						a[:]=False
+						a[p1start:p1end+1]=True
+						fmax=flux_k
+				
+			msk_cube[:,j,i]=a
+					
 	#choose the minmum number of pixels above threshold to
 	# be considered as a good spectrum.
-	nabove=1
-	msk_cube=msk_cube*mask_peaks*(msk_cube_2d>nabove)
+	nabove=ds
+	msk_cube_2d=(msk_cube).sum(axis=0)
+	peaks_min_msk=(msk_cube_2d>nabove)	
+	#peaks_min_msk[mask_peaks==1]=1				
+	msk_cube=msk_cube*peaks_min_msk
 	plot=0
 	if plot:
+		msk_cube_2d=(msk_cube).sum(axis=0)
 		plt.imshow(msk_cube_2d,origin='lower');plt.show()
 		fig,ax=plt.subplots(1,1)
-		xc,yc=26,52
+		xc,yc=235,247
 		ori=cube[:,yc,xc]
 		sm=cube_smooth[:,yc,xc]
 		ori_msk=(cube*(msk_cube))[:,yc,xc]
