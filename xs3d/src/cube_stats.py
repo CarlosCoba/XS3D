@@ -32,8 +32,8 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		clip=config_others.getfloat('clip',6)
 
 	nthreads=config_general.getint('nthreads',1)
-	dv=config_others.getint('dv',4)
-	ds=config_others.getint('ds',2)
+	dv=config_others.getint('dv',2)
+	ds=config_others.getint('ds',4)
 
 	# Following the procedure of Dame 2011
 	# https://arxiv.org/pdf/1101.1499
