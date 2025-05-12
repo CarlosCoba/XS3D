@@ -151,19 +151,19 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		#the rms that will be passed
 		rms_cube = global_rmse*clip
 
-		msk_rms=(cube_smooth) > global_rmse*clip
+		rat_sn=cube_smooth / (global_rmse*clip)
+		msk_rms=rat_sn>=1
 
 		msk_cube=np.copy(msk_rms)
-		#msk_cube_2d=(msk_cube).sum(axis=0)
+		avg_flux=np.zeros((ny,nx))
 		if ds>1 and dv>1:
 			for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
 				if msk_rms[k,j,i] :
-					#dS=sigma_inst_pix_spat//2
-					#dV=sigma_inst_pix_spec//2
 					dS=ds//2
 					dV=dv//2
 					msk_cube[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1]=True
-
+					mean_flux_box=np.any(np.mean(rat_sn[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1],axis=(1,2))>=1)
+					(avg_flux[j-dS:j+dS+1,i-dS:i+dS+1])[avg_flux[j-dS:j+dS+1,i-dS:i+dS+1]!=1]=mean_flux_box
 	else:
 		msk_cube=cube > rms_cube*clip
 
@@ -196,7 +196,6 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		return len(segments),segments
 
 	# evaluate spectra with 2 or more peaks
-	mask_peaks=np.ones((ny,nx))
 	if ds>1 and dv>1:
 		for i,j in zip(row,col):
 			arr0=msk_cube[:,j,i]
@@ -217,11 +216,10 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	#choose the minmum number of pixels above threshold to
 	# be considered as a good spectrum.
-	nabove=ds
-	msk_cube_2d=(msk_cube).sum(axis=0)
-	peaks_min_msk=(msk_cube_2d>nabove)
-	#peaks_min_msk[mask_peaks==1]=1
-	msk_cube=msk_cube*peaks_min_msk
+	#nabove=1
+	#msk_cube_2d=(msk_cube).sum(axis=0)
+	#peaks_min_msk=(msk_cube_2d>=nabove)
+	msk_cube=msk_cube*avg_flux
 	plot=0
 	if plot:
 		msk_cube_2d=(msk_cube).sum(axis=0)
