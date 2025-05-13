@@ -31,6 +31,11 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	if clip is None:
 		clip=config_others.getfloat('clip',6)
 
+	if msk_user!=None:
+		msk_usr=get_fits_data(msk_user).astype(bool)
+	else:
+		msk_usr=np.ones((ny,nx)).astype(bool)
+
 	nthreads=config_general.getint('nthreads',1)
 	dv=config_others.getint('dv',2)
 	ds=config_others.getint('ds',4)
@@ -40,22 +45,13 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	#(1) rms noise.
 	cube = np.copy(data)
+	# apply here the user mask
+	cube = cube*msk_usr
 	isnan=np.isfinite(cube)
 	cube[~isnan]=0
 	iszero=cube!=0
 	noise_msk=cube<0
 	[nz,ny,nx]=cube.shape
-
-	# select spectra with low signal
-	avg2d=np.nansum(cube, axis=0)
-
-	# mask spectra that have low signal (on average)
-	msk_signal = (avg2d>0)
-	if msk_user!=None:
-		msk_usr=get_fits_data(msk_user).astype(bool)
-	else:
-		msk_usr=np.ones((ny,nx)).astype(bool)
-
 
 	noise=cube*noise_msk.astype(float)
 	noisep=abs(noise)
@@ -110,6 +106,8 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 		dft=fftconv(padded_cube,padded_psf,threads=nthreads)
 		cube_smooth=dft.conv_DFT(cube_slices)
+		# release the memory
+		del padded_cube; del cube_slices; del padded_psf; del psf_slices
 		#Do not forget to recover the zeros
 		cube_smooth*=iszero
 
@@ -120,8 +118,6 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		rms_channels=np.array([rmse(cube_smooth_neg[k]) for k in range(nz) ])
 		#avg rms
 		rms_channel=np.median(rms_channels)
-
-
 
 		noisep=abs(cube_smooth_neg)
 		noisep=noisep[noisep!=0]
@@ -155,22 +151,19 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		msk_rms=rat_sn>=1
 
 		msk_cube=np.copy(msk_rms)
-		avg_flux=np.zeros((ny,nx))
+		#avg_flux=np.zeros((ny,nx))
 		if ds>1 and dv>1:
 			for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
 				if msk_rms[k,j,i] :
 					dS=ds//2
 					dV=dv//2
 					msk_cube[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1]=True
-					mean_flux_box=np.any(np.mean(rat_sn[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1],axis=(1,2))>=1)
-					(avg_flux[j-dS:j+dS+1,i-dS:i+dS+1])[avg_flux[j-dS:j+dS+1,i-dS:i+dS+1]!=1]=mean_flux_box
+					#mean_flux_box=np.any(np.mean(rat_sn[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1],axis=(1,2))>=1)
+					#(avg_flux[j-dS:j+dS+1,i-dS:i+dS+1])[avg_flux[j-dS:j+dS+1,i-dS:i+dS+1]!=1]=mean_flux_box
 	else:
 		msk_cube=cube > rms_cube*clip
 
 	msk_cube_2d=(msk_cube).sum(axis=0)
-	# apply the user mask and the SN msk
-	msk_cube*=(msk_usr)
-
 	col, row =np.indices((ny,nx))
 	row=row[msk_cube_2d>0]
 	col=col[msk_cube_2d>0]
@@ -213,13 +206,6 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 							a[p1start:p1end+1]=True
 							fmax=flux_k
 				msk_cube[:,j,i]=a
-
-	#choose the minmum number of pixels above threshold to
-	# be considered as a good spectrum.
-	#nabove=1
-	#msk_cube_2d=(msk_cube).sum(axis=0)
-	#peaks_min_msk=(msk_cube_2d>=nabove)
-	msk_cube=msk_cube*avg_flux
 	plot=0
 	if plot:
 		msk_cube_2d=(msk_cube).sum(axis=0)
