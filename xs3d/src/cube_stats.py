@@ -104,7 +104,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		padded_cube, cube_slices = data_2N(cube, axes=axes)
 		padded_psf, psf_slices = data_2N(psf3d_1, axes=axes)
 
-		dft=fftconv(padded_cube,padded_psf,threads=nthreads)
+		dft=fftconv(padded_cube,padded_psf,threads=nthreads, axes=axes)
 		cube_smooth=dft.conv_DFT(cube_slices)
 		# release the memory
 		del padded_cube; del cube_slices; del padded_psf; del psf_slices
