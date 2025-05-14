@@ -128,7 +128,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 
 	#gs2 = gridspec.GridSpec(3, 7, width_ratios=widths)#, height_ratios=heights)
 	#gs2.update(left=0.05, right=0.97,top=0.9,bottom=0.15, hspace = 0.0, wspace = 0.0)
-	levels=2**np.arange(1,7,1,dtype=float)
+	levels=2**np.arange(-2,7,1,dtype=float)
 
 
 	#"""
