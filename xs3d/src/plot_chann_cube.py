@@ -123,7 +123,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 			chanmap=datacube[kk]
 			chanmap_mdl=(cube_mdl_conv[kk])/rms
 			axes[j].imshow(chanmap,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto',alpha=0.7)
-			levels=2**np.arange(-2,7,1,dtype=float)
+			levels=2**np.arange(-1,7,1,dtype=float)
 			axes[j].contour(chanmap_mdl,levels=levels,colors='navy', linestyles='solid',zorder=1,extent=ext,linewidths=0.4,alpha=1)
 
 			vchan=round(wave_kms[kk],2)
