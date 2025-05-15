@@ -25,6 +25,9 @@ def rmse(data_array):
 
 
 def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
+	cube = np.copy(data)
+	[nz,ny,nx]=cube.shape
+	
 	Print().status("Estimating RMS")
 	config_general = config['general']
 	config_others = config['others']
@@ -44,14 +47,12 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	# https://arxiv.org/pdf/1101.1499
 
 	#(1) rms noise.
-	cube = np.copy(data)
 	# apply here the user mask
 	cube = cube*msk_usr
 	isnan=np.isfinite(cube)
 	cube[~isnan]=0
 	iszero=cube!=0
 	noise_msk=cube<0
-	[nz,ny,nx]=cube.shape
 
 	noise=cube*noise_msk.astype(float)
 	noisep=abs(noise)
