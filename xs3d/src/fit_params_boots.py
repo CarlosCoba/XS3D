@@ -94,6 +94,15 @@ class Least_square_fit:
 		self.constant_params = constant_params
 		self.osi = ["-", ".", ",", "#","%", "&", ""]
 
+		#assume 4% outliers
+		self.mom1[abs(self.mom1-self.vsys0)>1e3]=0
+		p1=np.nanpercentile(np.unique(self.mom1),2)
+		p99=np.nanpercentile(np.unique(self.mom1),98)
+		msk_outliers=(self.mom1>p1)*(self.mom1<p99)
+		self.mom0=self.mom0*(msk_outliers)
+		self.mom1=self.mom1*(msk_outliers)
+		self.mom2=self.mom2*(msk_outliers)
+		
 		# args to pass to minimize function
 		self.kws={'maxiter':500,'fatol':1e-4,'adaptivessss':True}
 		self.kwargs = {}
