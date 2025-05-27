@@ -170,8 +170,9 @@ class Least_square_fit:
 		self.sigma_inst_pix=psf_lsf.sigma_inst_pix
 
 		# if there are mom2[y][x] < sigma_inst, then assign the instrumental
-		mom2_msk=((self.mom2<self.sigma_inst_kms) & (self.mom0!=0)) if self.sigma_inst_kms is not None else np.zeros_like(self.mom2)
-		self.mom2[mom2_msk]=self.sigma_inst_kms
+		if self.sigma_inst_kms is not None:
+			mom2_msk=((self.mom2<self.sigma_inst_kms) & (self.mom0!=0))
+			self.mom2[mom2_msk]=self.sigma_inst_kms
 
 		self.min_sig=0.1
 		if self.sigma_inst_pix is not None:
