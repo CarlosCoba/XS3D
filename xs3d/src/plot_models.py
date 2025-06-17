@@ -37,7 +37,7 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
 
-	fig, ax2 = plt.subplots(figsize=(6.5, 5.5), dpi = 300)
+	fig, ax2 = plt.subplots(figsize=(6.5, 6.5*0.75), dpi = 300)
 
 
 	#ax2=plt.subplot(gs2[0,3])
@@ -56,19 +56,19 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 
 	#txt = AnchoredText('$\mathrm{V}_{t}/\sigma=%s$'%(mean_rat),loc='upper left', pad=0.1, borderpad=0, prop=dict(size=10), frameon=0);ax2.add_artist(txt)
 
-	ax2.errorbar(R, Sigma, yerr=eSigma, color = "#db6d52", label = "$\sigma_{intrin}$",  fmt='D', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 1, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
-	ax2.errorbar(R, Vrot, yerr=eVrot, color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='D', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 1, ecolor='#362a1b', lw=1, ls = ':', capsize=2)
+	ax2.errorbar(R, Sigma, yerr=eSigma, color = "#db6d52", label = "$\sigma_{intrin}$",  fmt='D', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
+	ax2.errorbar(R, Vrot, yerr=eVrot, color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='D', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)
 
 
 	if vmode == "radial":
-		ax2.errorbar(R, Vrad, yerr=eVrad, color = "#c73412", label = "$\mathrm{V_{r}}$", fmt='D', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 1, ecolor='#c73412', lw=1, ls = ':', capsize=2)
+		ax2.errorbar(R, Vrad, yerr=eVrad, color = "#c73412", label = "$\mathrm{V_{r}}$", fmt='D', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
 
 	if vmode == "vertical":
-		ax2.errorbar(R, Vrad, yerr=eVrad, color = "#b47b50", label = "$\mathrm{V_{z}}$", fmt='D', mfc = '#b47b50', mec = '#170a06',ms = 4,mew = 1, ecolor='#b47b50', lw=1, ls = ':', capsize=2)
+		ax2.errorbar(R, Vrad, yerr=eVrad, color = "#b47b50", label = "$\mathrm{V_{z}}$", fmt='D', mfc = '#b47b50', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#b47b50', lw=1, ls = ':', capsize=2)
 
 	if vmode == "bisymmetric":
-		ax2.errorbar(R, Vrad, yerr=eVrad, color = "#c73412", label = "$\mathrm{V_{2,r}}$", fmt='D', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 1, ecolor='#c73412', lw=1, ls = ':', capsize=2)
-		ax2.errorbar(R, Vtan, yerr=eVtan, color = "#2fa7ce", label = "$\mathrm{V_{2,t}}$", fmt='D', mfc = '#2fa7ce', mec = '#170a06',ms = 4,mew = 1, ecolor='#2fa7ce', lw=1, ls = ':', capsize=2)
+		ax2.errorbar(R, Vrad, yerr=eVrad, color = "#c73412", label = "$\mathrm{V_{2,r}}$", fmt='D', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
+		ax2.errorbar(R, Vtan, yerr=eVtan, color = "#2fa7ce", label = "$\mathrm{V_{2,t}}$", fmt='D', mfc = '#2fa7ce', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#2fa7ce', lw=1, ls = ':', capsize=2)
 
 	#bbox_to_anchor =(x0, y0, width, height)
 	ax2.legend(loc = "center", fontsize = 20, bbox_to_anchor = (0, 1, 1, 0.2), ncol = 4, frameon = False, labelspacing=0.1, handlelength=1, handletextpad=0.3,columnspacing=0.8)
