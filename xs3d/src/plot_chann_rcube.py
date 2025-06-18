@@ -62,7 +62,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 		ymin,ymax=-rmax_norm*(4/3.),rmax_norm*(4/3.)
 
 
-	width, height = 11, 9 # width [cm]
+	width, height = 17, 17*(5/6) # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
@@ -80,7 +80,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 
 	l0=int(l0)
 	gs2 = gridspec.GridSpec(l0, l0)
-	gs2.update(left=0.12, right=0.85,top=0.93,bottom=0.1, hspace = 0, wspace = 0)
+	gs2.update(left=0.12, right=0.86,top=0.93,bottom=0.1, hspace = 0, wspace = 0)
 	axes=[plt.subplot(gs2[j,i]) for j,i in product(np.arange(l0),np.arange(l0))]
 
 
@@ -91,7 +91,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	dup = u[c > 1]
 	if len(dup)>0:
 		chanplot=np.arange(ngood)
-		print('duplicated channels')
+		#print('Too many channels to show: Channels wont be displayed in multiples of the channel width')
 	chanplot=chanplot.astype(int)
 
 	vmin=0
@@ -106,24 +106,24 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 			#chanmap_mdl/=(chanmap_mdl!=0)
 			axes[j].imshow(chanmap_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto',alpha=0.7)
 			vchan=round(wave_kms[kk],2)
-			txt = AnchoredText(f'{vchan}', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":6},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)
+			txt = AnchoredText(f'{vchan}', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)
 
 			#axs(axes[k],rotation='horizontal', remove_ticks_all=True)
 
 	for j,Axes in enumerate(axes):
 		if j==(l0**2-l0):
-			axs(Axes,rotation='horizontal', direction='out', fontsize_ticklabels=6)
+			axs(Axes,rotation='horizontal', direction='out', fontsize_ticklabels=12)
 		else:
-			axs(Axes,rotation='horizontal', remove_xyticks=True, direction='out', fontsize_ticklabels=6)
+			axs(Axes,rotation='horizontal', remove_xyticks=True, direction='out', fontsize_ticklabels=12)
 
 
 	rms_int=int(np.log10(rms))
 	rms_round= round(rms/10**rms_int,5)
-	txt = AnchoredText(f'rms={rms_round}e{rms_int} [flux units]', loc="lower left", frameon=False, prop={"fontsize":8}, bbox_to_anchor=(0, 1), bbox_transform=axes[0].transAxes);axes[0].add_artist(txt)
+	txt = AnchoredText(f'rms={rms_round}e{rms_int} [flux units]', loc="lower left", frameon=False, prop={"fontsize":12}, bbox_to_anchor=(0, 1), bbox_transform=axes[0].transAxes);axes[0].add_artist(txt)
 	from matplotlib.cm import ScalarMappable
 	cmappable = ScalarMappable(colors.Normalize(vmin/rms,vmax/rms), cmap=cmap_mom0)
 	w=int(100*l0)
-	cb(cmappable,axes[-1],orientation = "vertical", colormap = cmap, bbox= (1.1,0,1,1), height = f"{w}%", width = "10%",label_pad = 0, label = "flux/rms",labelsize=8, ticksfontsize=6)
+	cb(cmappable,axes[-1],orientation = "vertical", colormap = cmap, bbox= (1.1,0,1,1), height = f"{w}%", width = "10%",label_pad = 0, label = "flux/rms",labelsize=12, ticksfontsize=9)
 
 	for Axes in axes:
 		elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
@@ -175,10 +175,10 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 
 
 	indx=(l0**2-l0)
-	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=8,labelpad=1)
-	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=8,labelpad=1)
+	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=12,labelpad=1)
+	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=12,labelpad=1)
 
-	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":6},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-1].add_artist(txt)
+	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-1].add_artist(txt)
 
 	plt.savefig("%sfigures/channels_rcube_%s_model_%s.png"%(out,vmode,galaxy))
 	#plt.clf()
