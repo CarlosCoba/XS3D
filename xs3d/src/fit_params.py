@@ -390,60 +390,6 @@ class Models(Config_params):
 
 class Fit_kin_mdls(Models):
 
-		def Vk2D(self,pars):
-			pa = pars['pa'] % 360
-			eps = pars['eps']
-			x0,y0 = pars['x0'],pars['y0']
-
-			self.r_n = Rings(self.XY_mesh,pa*np.pi/180,eps,x0,y0,self.pixel_scale)
-			twoDmdls= dataset_to_2D([self.ny,self.nx], self.n_annulus, self.rings_pos, self.r_n, self.XY_mesh, self.kinmdl_dataset, self.vmode, self.v_center, pars, self.index_v0, nmodls=self.Vk)
-			interp_sig_model=twoDmdls[0]
-			interp_model=twoDmdls[1:]
-
-			mask_inner = np.where( (self.r_n < self.rings_pos[0] ) )
-			x_r0,y_r0 = self.XY_mesh[0][mask_inner], self.XY_mesh[1][mask_inner]
-			r_space_0 = self.rings_pos[0]
-
-
-			for mdl2d in interp_model:
-				#(a) velocity rises linearly from zero: r1 = 0, v1 = 0
-				if self.v_center == 0 or (self.v_center != "extrapolate" and self.vmode != "circular"):
-					V_xy_mdl = self.kinmdl_dataset(pars, 0, (x_r0,y_r0), r_2 = 0, r_space = r_space_0)[1]
-					v_new_2 = V_xy_mdl[1]
-					mdl2d[mask_inner] = v_new_2
-				else:
-					r2 = self.rings_pos[0] 		# ring posintion
-					v1_index = self.index_v0	# index of velocity
-					V_xy_mdl = self.kinmdl_dataset(pars, v1_index, (x_r0,y_r0), r_2 = r2, r_space = r_space_0 )[1]
-					v_new_1 = V_xy_mdl[0]
-
-					r1 = 0 					# ring posintion
-					v2_index = 0			# index of velocity
-					V_xy_mdl = self.kinmdl_dataset(pars, v2_index, (x_r0,y_r0), r_2 = r1, r_space = r_space_0 )[1]
-					v_new_2 = V_xy_mdl[1]
-
-					v_new = v_new_1 + v_new_2
-					mdl2d[mask_inner] = v_new
-
-			#"""
-			# Dispersion is always extrpolated to r=0:
-			r2 = self.rings_pos[0] 		# ring posintion
-			v1_index = self.index_v0	# index of velocity
-			V_xy_mdl = self.kinmdl_dataset(pars, v1_index, (x_r0,y_r0), r_2 = r2, r_space = r_space_0, disp= True )
-			v_new_1 = V_xy_mdl[0]
-
-			r1 = 0 					# ring posintion
-			v2_index = 0			# index of velocity
-			V_xy_mdl = self.kinmdl_dataset(pars, v2_index, (x_r0,y_r0), r_2 = r1, r_space = r_space_0, disp = True)
-			v_new_2 = V_xy_mdl[1]
-
-			v_new = v_new_1 + v_new_2
-			interp_sig_model[mask_inner] = v_new
-			#"""
-			return interp_sig_model,interp_model
-
-
-
 		def residual(self, pars):
 			#print(pars)
 			Vsys = pars['Vsys']
@@ -459,68 +405,66 @@ class Fit_kin_mdls(Models):
 			else:
 				cos_theta=abs(cos_theta0) if self.WEIGHT==1 else (abs(cos_theta0))**self.WEIGHT
 
-			#interp_sig_model,interp_model=self.Vk2D(pars)
-			######
-
 			self.r_n = Rings(self.XY_mesh,pa*np.pi/180,eps,x0,y0,self.pixel_scale)
 			twoDmdls= dataset_to_2D([self.ny,self.nx], self.n_annulus, self.rings_pos, self.r_n, self.XY_mesh, self.kinmdl_dataset, self.vmode, self.v_center, pars, self.index_v0, nmodls=self.Vk)
 			sigmap=twoDmdls[0]
 			interp_model=twoDmdls[1:]
 
 			"""
-			Analysis of the inner radius
-
+			Analysis of the inner radius.
+			The analysis is performed only if the first ring starts at r[0] !=0.
 			"""
-			mask_inner = np.where( (self.r_n < self.rings_pos[0] ) )
-			x_r0,y_r0 = self.XY_mesh[0][mask_inner], self.XY_mesh[1][mask_inner]
-			r_space_0 = self.rings_pos[0]
+			if self.rings_pos[0] !=0:
+				mask_inner = np.where( (self.r_n < self.rings_pos[0] ) )
+				x_r0,y_r0 = self.XY_mesh[0][mask_inner], self.XY_mesh[1][mask_inner]
+				r_space_0 = self.rings_pos[0]
 
-			#(a) velocity rises linearly from zero: r1 = 0, v1 = 0
-			if self.v_center == 0 or (self.v_center != "extrapolate" and self.vmode != "circular"):
-				#Velocity and Sigma
-				VS_xy_mdl = self.kinmdl_dataset(pars, 0, (x_r0,y_r0), r_2 = 0, r_space = r_space_0)
-				S_xy_mdl=VS_xy_mdl[0]
-				V_xy_mdl=VS_xy_mdl[1:]
-				for k,mdl2d in enumerate(interp_model):
-					v_new_2 = V_xy_mdl[k][1]
-					mdl2d[mask_inner] = v_new_2
-			else:
+				#(a) velocity rises linearly from zero: r1 = 0, v1 = 0
+				if self.v_center == 0 or (self.v_center != "extrapolate" and self.vmode != "circular"):
+					#Velocity and Sigma
+					VS_xy_mdl = self.kinmdl_dataset(pars, 0, (x_r0,y_r0), r_2 = 0, r_space = r_space_0)
+					S_xy_mdl=VS_xy_mdl[0]
+					V_xy_mdl=VS_xy_mdl[1:]
+					for k,mdl2d in enumerate(interp_model):
+						v_new_2 = V_xy_mdl[k][1]
+						mdl2d[mask_inner] = v_new_2
+				else:
+					r2 = self.rings_pos[0] 		# ring posintion
+					v1_index = self.index_v0	# index of velocity
+					#Velocity and Sigma
+					VS_xy_mdl0 = self.kinmdl_dataset(pars, v1_index, (x_r0,y_r0), r_2 = r2, r_space = r_space_0)
+					S_xy_mdl0=VS_xy_mdl0[0]
+					V_xy_mdl0=VS_xy_mdl0[1:]
+
+					r1 = 0 					# ring posintion
+					v2_index = 0			# index of velocity
+					#Velocity and Sigma
+					VS_xy_mdl1 = self.kinmdl_dataset(pars, v2_index, (x_r0,y_r0), r_2 = r1, r_space = r_space_0)
+					S_xy_mdl1=VS_xy_mdl1[0]
+					V_xy_mdl1=VS_xy_mdl1[1:]
+
+					for k in range(len(interp_model)):
+						v_new_1=V_xy_mdl0[k][0]
+						v_new_2=V_xy_mdl1[k][1]
+						v_new = v_new_1 + v_new_2
+						(interp_model[k])[mask_inner] = v_new
+
+				#"""
+				# Dispersion is always extrpolated:
 				r2 = self.rings_pos[0] 		# ring posintion
 				v1_index = self.index_v0	# index of velocity
-				#Velocity and Sigma
-				VS_xy_mdl0 = self.kinmdl_dataset(pars, v1_index, (x_r0,y_r0), r_2 = r2, r_space = r_space_0)
-				S_xy_mdl0=VS_xy_mdl0[0]
-				V_xy_mdl0=VS_xy_mdl0[1:]
+				S_xy_mdl = self.kinmdl_dataset(pars, v1_index, (x_r0,y_r0), r_2 = r2, r_space = r_space_0, disp= True )
+				v_new_1 = S_xy_mdl[0]
 
 				r1 = 0 					# ring posintion
 				v2_index = 0			# index of velocity
-				#Velocity and Sigma
-				VS_xy_mdl1 = self.kinmdl_dataset(pars, v2_index, (x_r0,y_r0), r_2 = r1, r_space = r_space_0)
-				S_xy_mdl1=VS_xy_mdl1[0]
-				V_xy_mdl1=VS_xy_mdl1[1:]
+				S_xy_mdl = self.kinmdl_dataset(pars, v2_index, (x_r0,y_r0), r_2 = r1, r_space = r_space_0, disp = True)
+				v_new_2 = S_xy_mdl[1]
 
-				for k in range(len(interp_model)):
-					v_new_1=V_xy_mdl0[k][0]
-					v_new_2=V_xy_mdl1[k][1]
-					v_new = v_new_1 + v_new_2
-					(interp_model[k])[mask_inner] = v_new
+				v_new = v_new_1 + v_new_2
+				sigmap[mask_inner] = v_new
 
-			#"""
-			# Dispersion is always extrpolated:
-			r2 = self.rings_pos[0] 		# ring posintion
-			v1_index = self.index_v0	# index of velocity
-			S_xy_mdl = self.kinmdl_dataset(pars, v1_index, (x_r0,y_r0), r_2 = r2, r_space = r_space_0, disp= True )
-			v_new_1 = S_xy_mdl[0]
-
-			r1 = 0 					# ring posintion
-			v2_index = 0			# index of velocity
-			S_xy_mdl = self.kinmdl_dataset(pars, v2_index, (x_r0,y_r0), r_2 = r1, r_space = r_space_0, disp = True)
-			v_new_2 = S_xy_mdl[1]
-
-			v_new = v_new_1 + v_new_2
-			sigmap[mask_inner] = v_new
-
-			######
+				######
 
 			if self.vmode=='circular':
 				vt=interp_model[0]
