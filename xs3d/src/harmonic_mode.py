@@ -80,7 +80,8 @@ class Harmonic_model:
 
 		self.bootstrap_contstant_prms = np.zeros((self.n_boot, 6))
 		self.bootstrap_kin_c, self.bootstrap_kin_s = 0, 0
-
+		self.bootstrap_mom1d = 0		
+		
 		self.cube_class=cube_class
 		self.outdir = outdir
 		self.momscube=0
@@ -102,7 +103,7 @@ class Harmonic_model:
 		c1_tab_it, c3_tab_it, s1_tab_it, s3_tab_it = np.zeros(self.nrings,), np.zeros(self.nrings,), np.zeros(self.nrings,),np.zeros(self.nrings,)
 		for it in np.arange(self.n_it):
 			# Here we create the tabulated model
-			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.emoms, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)
+			_, disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.emoms, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)
 			c1_tab = c_tab[0]
 			c1_tab[abs(c1_tab) > 400] = np.nanmedian(c1_tab)
 			# Try to correct the PA if velocities are negative
@@ -141,7 +142,7 @@ class Harmonic_model:
 				self.n_circ = len(self.C_k[0])
 				self.n_noncirc = len((self.S_k[0])[self.S_k[0]!=0])
 				self.bootstrap_kin = np.zeros((self.n_boot, (2*self.m_hrm+1)*self.n_circ))
-
+				self.bootstrap_mom1d = np.zeros((self.n_boot, self.n_circ))		
 	""" Following, the error computation.
 	"""
 
@@ -167,7 +168,7 @@ class Harmonic_model:
 			self.chisq_global = -np.inf
 			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
 
-			disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.Rings,mommaps, emommaps,pa,eps,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)
+			intens_tab,disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.Rings,mommaps, emommaps,pa,eps,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)
 			c_tab=[list(c_tab[j]) for j in range(self.m_hrm)]
 			s_tab=[list(s_tab[j]) for j in range(self.m_hrm)]
 			kin=[c_tab, s_tab, disp_tab]
@@ -176,22 +177,28 @@ class Harmonic_model:
 
 			guess = [disp_tab,c_tab,s_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 			# Minimization
-			fitting = fit_boots(None, self.h, mommaps, emommaps, guess, self.vary, self.vmode, self.config, self.Rings, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
+			R={'R_pos':R_pos, 'R_NC': R_pos>self.r_bar_min }			
+			fitting = fit_boots(None, self.h, mommaps, emommaps, guess, self.vary, self.vmode, self.config, R, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
 			# outs
 			_ , pa0, eps0, x0, y0, vsys0, theta_b = fitting.results()
 			# convert PA to rad:
 			pa0=pa0*np.pi/180
 			#self.bootstrap_contstant_prms[k,:] = np.array ([ pa0, eps0, x0, y0, vsys0, theta_b ] )
 
-			return([[ pa0, eps0, x0, y0, vsys0, theta_b ], np.hstack(vels)])
+			return([[ pa0, eps0, x0, y0, vsys0, theta_b ], np.hstack(vels), intens_tab])
 
 	def run_boost_para(self):
 		ncpu = self.nthreads
 		with Pool(ncpu) as pool:
 			result=pool.map(self.boots,np.arange(self.n_boot),chunksize=1)
 		for k in range(self.n_boot):
+			self.bootstrap_contstant_prms[k,:] = result[k][0]		
 			self.bootstrap_kin[k,:] = result[k][1]
-			self.bootstrap_contstant_prms[k,:] = result[k][0]
+			self.bootstrap_mom1d[k,:] = result[k][2]						
+
+		p=np.nanpercentile(self.bootstrap_mom1d,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_mom1d[0])))
+		d=np.diff(p,axis=0)
+		std_mom1d= 0.5 * np.sum(d,axis=0)
 
 		p = np.nanpercentile(self.bootstrap_kin,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_kin[0])))
 		d=np.diff(p,axis=0)
@@ -206,7 +213,7 @@ class Harmonic_model:
 		std_phi_bar=abs(circstd(self.bootstrap_contstant_prms[:,-1])) # rad
 		std_const[0],std_const[-1]=std_pa,std_phi_bar
 
-		self.std_errors = [eCSS,std_const]
+		self.std_errors = [eCSS,std_const,std_mom1d]
 
 	def output(self):
 		#least

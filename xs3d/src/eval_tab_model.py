@@ -12,7 +12,7 @@ def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pix
 	mom1=mom1-vsys
 	mommaps2=[mom0,mom1,mom2]
 
-	disp_tab,vrot_tab,vrad_tab,vtan_tab = np.asarray([]),np.asarray([]),np.asarray([]),np.asarray([])
+	intens_tab,disp_tab,vrot_tab,vrad_tab,vtan_tab = np.asarray([]),np.asarray([]),np.asarray([]),np.asarray([]),np.asarray([])
 	c1_tab, c3_tab, s1_tab, s3_tab = np.asarray([]),np.asarray([]),np.asarray([]),np.asarray([])
 
 	#C, S = [], []
@@ -102,8 +102,15 @@ def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pix
 						k = k + 1
 					R_pos = np.append(R_pos,ring)
 
+			#Intensity is always computed
+			intens_k = M_tab(pa,inc,x0,y0,theta_b,ring, delta,index, shape, mommaps2, evel, pixel_scale=pixel_scale,vmode = 'intensity')
+			intens_tab = np.append(intens_tab,intens_k)				
+
 
 	if "hrm" not in vmode:
-		return disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos
+		if vmode == 'intensity':
+			return intens_tab
+		else:
+			return intens_tab, disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos
 	else:
-		return disp_tab, [globals()['C%s_tab' % (j)] for j in range(1,m_hrm+1)], [globals()['S%s_tab' % (j)] for j in range(1,m_hrm+1)], R_pos
+		return intens_tab, disp_tab, [globals()['C%s_tab' % (j)] for j in range(1,m_hrm+1)], [globals()['S%s_tab' % (j)] for j in range(1,m_hrm+1)], R_pos

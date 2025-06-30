@@ -35,7 +35,7 @@ cmap = vel_map()
 cmap_mom0 = vel_map('mom0')
 
 def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,out):
-	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
+	_,_,mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
 	mom0,mom1,mom2=momms_obs
 	mom0,mom1,mom2=zero2nan(mom0),zero2nan(mom1),zero2nan(mom2)
 	mom0_mdl,mom1_mdl,mom2_mdl=zero2nan(mom0_mdl),zero2nan(mom1_mdl),zero2nan(mom2_mdl_kms)

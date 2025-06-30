@@ -40,7 +40,7 @@ cmap_mom0 = vel_map('mom0')
 
 def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,config,rms,pixel,out):
 
-	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
+	_,_,mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
 	[pa,eps,inc,xc,yc,vsys,phi_bar,rmax]=const
 	wave_kms=hdr_info.wave_kms
 	[nz,ny,nx]=cube_mdl.shape
@@ -114,7 +114,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 		print('Too many channels to show: Channels wont be displayed in multiples of the channel width')
 	chanplot=chanplot.astype(int)
 
-	vmin=0
+	vmin=rms*(2**-1)
 	vmax=np.nanpercentile(cube_mdl[cube_mdl!=0],99.5)
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax) if vmax > 1 else colors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -123,6 +123,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 			kk=channels[k]
 			chanmap=datacube[kk]
 			chanmap_mdl=(cube_mdl_conv[kk])/rms
+			chanmap[chanmap==0]=np.nan
 			axes[j].imshow(chanmap,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto',alpha=1)
 			levels=2**np.arange(-1,7,1,dtype=float)
 			axes[j].contour(chanmap_mdl,levels=levels,colors='navy', linestyles='solid',zorder=1,extent=ext,linewidths=0.4,alpha=1)
@@ -204,7 +205,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=12,labelpad=1)
 	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=12,labelpad=1)
 
-	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-1].add_artist(txt)
+	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-2].add_artist(txt)
 
 	plt.savefig("%sfigures/channels_cube_%s_model_%s.png"%(out,vmode,galaxy))
 	#plt.clf()

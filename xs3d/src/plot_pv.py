@@ -64,7 +64,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	ext1[3]=ext1[3]-vsys
 
 	mom0,mom1,mom2=momaps
-	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels = momms_mdls
+	_,_,mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels = momms_mdls
 	pvd_maj,pvd_min,pvd_maj_mdl,pvd_min_mdl=pvds[0],pvds[1],pvds[2],pvds[3]
 	msk=np.isfinite(mom0*mom0_mdl/mom0)
 	slit_major*=msk

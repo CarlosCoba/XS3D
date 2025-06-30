@@ -94,7 +94,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 		#print('Too many channels to show: Channels wont be displayed in multiples of the channel width')
 	chanplot=chanplot.astype(int)
 
-	vmin=0
+	vmin=rms*(2**-1)
 	vmax=np.nanpercentile(cube_mdl[cube_mdl!=0],99.5)
 	norm = colors.Normalize(vmin=vmin/rms, vmax=vmax/rms)
 	#norm = colors.LogNorm(vmin=vmin, vmax=vmax)
@@ -103,7 +103,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 		if j<=ngood:
 			kk=channels[k]
 			chanmap_mdl=(cube_mdl[kk])/rms
-			#chanmap_mdl/=(chanmap_mdl!=0)
+			chanmap_mdl[chanmap_mdl==0]=np.nan
 			axes[j].imshow(chanmap_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto',alpha=0.7)
 			vchan=round(wave_kms[kk],2)
 			txt = AnchoredText(f'{vchan}', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)
@@ -178,7 +178,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=12,labelpad=1)
 	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=12,labelpad=1)
 
-	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-1].add_artist(txt)
+	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-2].add_artist(txt)
 
 	plt.savefig("%sfigures/channels_rcube_%s_model_%s.png"%(out,vmode,galaxy))
 	#plt.clf()

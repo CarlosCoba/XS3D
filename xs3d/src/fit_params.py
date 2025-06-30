@@ -80,7 +80,9 @@ class Least_square_fit:
 		self.m_hrm = m_hrm
 		self.nz,self.ny,self.nx = datacube.shape
 		self.h=header
-		self.rings_pos = rings_pos
+		self.rings_pos = rings_pos['R_pos']
+		self.rings_nc =  rings_pos['R_NC']		
+		self.r1st=self.rings_pos[0]
 		self.nrings = len(self.rings_pos)
 		self.n_annulus = self.nrings - 1
 		self.mommaps_obs=mommaps
@@ -321,28 +323,33 @@ class Models(Config_params):
 							pars["Vrot_%i" % (self.index_v0)] = self.v_center
 
 
-				# Dispersion and Vz are always extrapolated
-				s1, s2 = pars["Sig_0"], pars["Sig_1"]
-				s_int =  v_interp(0, r2, r1, s2, s1 )
-				pars["Sig_%i" % (self.index_v0)] = s_int
-				if self.vmode == 'vertical':
-					vz1, vz2 = pars["Vrad_0"], pars["Vrad_1"]
-					vz_int =  v_interp(0, r2, r1, vz2, vz1 )
-					pars["Vrad_%i" % (self.index_v0)] = vz_int
+				'''
+				Dispersion and Vz are always extrapolated to the origin.
+				But only if the first ring fitted is different from zero.
+				'''
+				if self.r1st !=0:
+					s1, s2 = pars["Sig_0"], pars["Sig_1"]
+					s_int =  v_interp(0, r2, r1, s2, s1 )
+					pars["Sig_%i" % (self.index_v0)] = s_int
+					if self.vmode == 'vertical':
+						vz1, vz2 = pars["Vrad_0"], pars["Vrad_1"]
+						vz_int =  v_interp(0, r2, r1, vz2, vz1 )
+						pars["Vrad_%i" % (self.index_v0)] = vz_int
 
-				if  "hrm" in self.vmode and self.v_center == "extrapolate":
-					for k in range(1,self.m_hrm+1) :
-						v1, v2 = pars['C%s_%i'% (k,0)], pars['C%s_%i'% (k,1)]
-						v_int =  v_interp(0, r2, r1, v2, v1 )
-						pars["C%s_%i" % (k, self.index_v0)] = v_int
+					if  "hrm" in self.vmode and self.v_center == "extrapolate":
+						for k in range(1,self.m_hrm+1) :
+							v1, v2 = pars['C%s_%i'% (k,0)], pars['C%s_%i'% (k,1)]
+							v_int =  v_interp(0, r2, r1, v2, v1 )
+							pars["C%s_%i" % (k, self.index_v0)] = v_int
 
-						v1, v2 = pars['S%s_%i'% (k,0)], pars['S%s_%i'% (k,1)]
-						v_int =  v_interp(0, r2, r1, v2, v1 )
-						pars["S%s_%i" % (k, self.index_v0)] = v_int
+							v1, v2 = pars['S%s_%i'% (k,0)], pars['S%s_%i'% (k,1)]
+							v_int =  v_interp(0, r2, r1, v2, v1 )
+							pars["S%s_%i" % (k, self.index_v0)] = v_int
 
 
+				Weights_xy = weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
 				Sig = pars['Sig_%i'% i]
-				modl0 = (SIGMA_MODEL(xy_mesh,Sig,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
+				modl0 = (SIGMA_MODEL(xy_mesh,Sig,pa,eps,x0,y0))*Weights_xy
 				if disp:
 					return modl0
 
@@ -351,36 +358,36 @@ class Models(Config_params):
 					Vrot = pars['Vrot_%i'% i]
 
 				if self.vmode == "circular":
-					modl1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
+					modl1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*Weights_xy
 					return modl0,modl1
 				if self.vmode == "radial" or self.vmode == 'vertical':
 					Vrad = pars['Vrad_%i'% i]
-					v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
-					v2 = (SIGMA_MODEL(xy_mesh,Vrad,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
+					v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*Weights_xy
+					v2 = (SIGMA_MODEL(xy_mesh,Vrad,pa,eps,x0,y0))*Weights_xy
 					return modl0,v1,v2
 				if self.vmode == 'ff':
 					toggle=self.vrad0[i] != 0 if i in range(self.nrings) else 1
 					Vrad=toggle*Vrot
-					v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
-					v2 = (SIGMA_MODEL(xy_mesh,Vrad,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
+					v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*Weights_xy
+					v2 = (SIGMA_MODEL(xy_mesh,Vrad,pa,eps,x0,y0))*Weights_xy
 					return modl0,v1,v2
 				if self.vmode == "bisymmetric":
 					Vrad = pars['Vrad_%i'% i]
 					Vtan = pars['Vtan_%i'% i]
 					if Vrad != 0 and Vtan != 0:
 						phi_b = pars['phi_b'] % (2*np.pi)
-						v2 = (SIGMA_MODEL(xy_mesh,Vrad,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
-						v3 = (SIGMA_MODEL(xy_mesh,Vtan,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
-						v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
+						v2 = (SIGMA_MODEL(xy_mesh,Vrad,pa,eps,x0,y0))*Weights_xy
+						v3 = (SIGMA_MODEL(xy_mesh,Vtan,pa,eps,x0,y0))*Weights_xy
+						v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*Weights_xy
 					else:
-						v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
+						v1 = (SIGMA_MODEL(xy_mesh,Vrot,pa,eps,x0,y0))*Weights_xy
 						v2=v1*0
 						v3=v1*0
 					return modl0,v1,v2,v3
 				if "hrm" in self.vmode:
 					C_k, S_k  = [pars['C%s_%i'% (k,i)] for k in range(1,self.m_hrm+1)], [pars['S%s_%i'% (k,i)] for k in range(1,self.m_hrm+1)]
-					Ck = [(SIGMA_MODEL(xy_mesh,ck,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale) for ck in C_k]
-					Sk = [(SIGMA_MODEL(xy_mesh,sk,pa,eps,x0,y0))*weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale) for sk in S_k]
+					Ck = [(SIGMA_MODEL(xy_mesh,ck,pa,eps,x0,y0))*Weights_xy for ck in C_k]
+					Sk = [(SIGMA_MODEL(xy_mesh,sk,pa,eps,x0,y0))*Weights_xy for sk in S_k]
 					vels=[Ck,Sk]
 					flatCS=list(chain(*vels))
 					return [modl0]+flatCS
@@ -413,8 +420,9 @@ class Fit_kin_mdls(Models):
 			"""
 			Analysis of the inner radius.
 			The analysis is performed only if the first ring starts at r[0] !=0.
+
 			"""
-			if self.rings_pos[0] !=0:
+			if self.r1st !=0:
 				mask_inner = np.where( (self.r_n < self.rings_pos[0] ) )
 				x_r0,y_r0 = self.XY_mesh[0][mask_inner], self.XY_mesh[1][mask_inner]
 				r_space_0 = self.rings_pos[0]
@@ -464,7 +472,7 @@ class Fit_kin_mdls(Models):
 				v_new = v_new_1 + v_new_2
 				sigmap[mask_inner] = v_new
 
-				######
+			######
 
 			if self.vmode=='circular':
 				vt=interp_model[0]
@@ -613,7 +621,7 @@ class Fit_kin_mdls(Models):
 
 			create_3D=	best_3d_model(self.mommaps_obs,self.datacube,self.h,self.config,self.vmode,self.V_k,pa,eps,x0,y0, Vsys,self.rings_pos,self.ring_space,self.pixel_scale,self.v_center,self.m_hrm,phi_b,self.Vk)
 			mdls_3D = create_3D.model3D()
-			mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels=mdls_3D
+			mom01d,mom0axi,mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels=mdls_3D
 
 
 			#We need to re-compute chisquare with the best model !
@@ -645,7 +653,7 @@ class Fit_kin_mdls(Models):
 			for k in range(self.Vk):
 				self.V_k[k] = np.asarray(self.V_k[k])
 				self.V_k_std[k] = np.asarray(self.V_k_std[k])
-			errors = [[],[]]
+			errors = [[],[],[]]
 			if "hrm" not in self.vmode:
 				errors[0],errors[1] = self.V_k_std,e_constant_parms
 			else:

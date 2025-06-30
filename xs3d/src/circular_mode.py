@@ -76,6 +76,7 @@ class Circular_model:
 
 		self.bootstrap_contstant_prms = np.zeros((self.n_boot, 6))
 		self.bootstrap_kin = 0
+		self.bootstrap_mom1d = 0		
 
 
 		self.cube_class=cube_class
@@ -97,7 +98,7 @@ class Circular_model:
 		for it in np.arange(self.n_it):
 
 			# Here we create the tabulated model
-			disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.emoms, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
+			_,disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.rings,self.mommaps, self.emoms, self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
 			vrot_tab[abs(vrot_tab) > 400] = np.nanmedian(vrot_tab)
 
 			# Try to correct the PA if velocities are negative
@@ -107,9 +108,10 @@ class Circular_model:
 
 			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 			if it == 0: first_guess_it = guess
-
+			
+			R={'Rpos':R_pos, 'R_NC': R_pos>self.r_bar_min}
 			# Minimization
-			fitting = fit_routine(self.datacube, self.edatacube, self.h, self.mommaps, self.emoms, guess, self.vary, self.vmode, self.config, R_pos, self.ring_space, self.frac_pixel, self.inner_interp,N_it=self.n_it0)
+			fitting = fit_routine(self.datacube, self.edatacube, self.h, self.mommaps, self.emoms, guess, self.vary, self.vmode, self.config, R, self.ring_space, self.frac_pixel, self.inner_interp,N_it=self.n_it0)
 			# outs
 			kin_3D_modls, Vk , self.pa0, self.eps0, self.x0, self.y0, self.vsys0, self.theta_b, out_data, Errors, true_rings = fitting.results()
 			xi_sq = out_data[-1]
@@ -131,8 +133,7 @@ class Circular_model:
 				self.std_errors = Errors
 				self.GUESS = [self.Disp, self.Vrot, self.Vrad, self.Vtan, self.PA, self.EPS, self.XC, self.YC, self.VSYS, self.THETA]
 				self.bootstrap_kin = np.zeros((self.n_boot, 4*self.n_circ))
-
-
+				self.bootstrap_mom1d = np.zeros((self.n_boot, self.n_circ))
 	""" Following, the error computation.
 	"""
 
@@ -157,9 +158,8 @@ class Circular_model:
 			# setting chisq to -inf will preserve the leastsquare results
 			self.chisq_global = -np.inf
 			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
-			disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.Rings,mommaps,emommaps,pa,eps,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
+			intens_tab,disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.Rings,mommaps,emommaps,pa,eps,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
 			vels=list(disp_tab)+list(vrot_tab)+list(vrad_tab)+list(vtan_tab)
-			#self.bootstrap_kin[k,:len(vels)] = np.asarray(vels)
 
 			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 			# Minimization
@@ -168,17 +168,21 @@ class Circular_model:
 			_ , pa0, eps0, x0, y0, vsys0, theta_b = fitting.results()
 			# convert PA to rad:
 			pa0=pa0*np.pi/180
-			#self.bootstrap_contstant_prms[k,:] = np.array ([ pa0, eps0, x0, y0, vsys0, theta_b ] )
 
-			return([[ pa0, eps0, x0, y0, vsys0, theta_b ], np.concatenate([disp_tab, vrot_tab, vrad_tab, vtan_tab])])
+			return([[ pa0, eps0, x0, y0, vsys0, theta_b ], np.concatenate([disp_tab, vrot_tab, vrad_tab, vtan_tab]), intens_tab])
 
 	def run_boost_para(self):
 		ncpu = self.nthreads
 		with Pool(ncpu) as pool:
 			result=pool.map(self.boots,np.arange(self.n_boot),chunksize=1)
 		for k in range(self.n_boot):
+			self.bootstrap_contstant_prms[k,:] = result[k][0]		
 			self.bootstrap_kin[k,:] = result[k][1]
-			self.bootstrap_contstant_prms[k,:] = result[k][0]
+			self.bootstrap_mom1d[k,:] = result[k][2]			
+
+		p = np.nanpercentile(self.bootstrap_mom1d,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_mom1d[0])))
+		d=np.diff(p,axis=0)
+		std_mom01d=0.5 * np.sum(d,axis=0)
 
 		p = np.nanpercentile(self.bootstrap_kin,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_kin[0])))
 		d=np.diff(p,axis=0)
@@ -190,7 +194,7 @@ class Circular_model:
 		std_pa=abs(circstd(self.bootstrap_contstant_prms[:,0]))*180/np.pi # rad ---> deg
 		std_phi_bar=abs(circstd(self.bootstrap_contstant_prms[:,-1])) # rad
 		std_const[0],std_const[-1]=std_pa,std_phi_bar
-		self.std_errors = [np.array_split(std_kin,4),std_const]
+		self.std_errors = [np.array_split(std_kin,4),std_const,std_mom01d]
 
 	def output(self):
 		#least

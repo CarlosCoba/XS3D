@@ -3,10 +3,12 @@ from astropy.io import fits
 from .phi_bar_sky import error_pa_bar_sky
 from .pixel_params import eps_2_inc,e_eps2e_inc
 
-def save_table(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR_MAJOR,PA_BAR_MINOR,errors_fit,bic_aic, e_ISM, out):
+def save_table(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR_MAJOR,PA_BAR_MINOR,errors_fit,bic_aic, mom01d, out):
 	n = len(Vrot)
 	e_PA,e_EPS,e_XC,e_YC,e_VSYS,e_THETA  = errors_fit[1]
 	e_Disp,e_Vrot,e_Vrad,e_Vtan  = errors_fit[0]
+	e_mom1d = errors_fit[2]
+	if np.sum(e_mom1d)==0: e_mom1d=np.zeros_like(mom01d)
 	INC, e_INC = eps_2_inc(EPS)*180/np.pi,e_eps2e_inc(EPS,e_EPS)*180/np.pi
 	N_free, N_nvarys, N_data, bic, aic, redchi = bic_aic
 
@@ -22,6 +24,7 @@ def save_table(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 	e_YC*=np.ones_like(R)
 	e_VSYS*=np.ones_like(R)
 	e_THETA*=np.ones_like(R)
+	
 
 	INC, e_INC = eps_2_inc(EPS)*180/np.pi,e_eps2e_inc(EPS,e_EPS)*180/np.pi
 
@@ -42,22 +45,24 @@ def save_table(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 	col15=fits.Column(name='e_Y0', unit =  'pixel', array=e_YC, format = 'D')
 	col16=fits.Column(name='VSYS', unit =  'km/s', array=VSYS, format = 'D')
 	col17=fits.Column(name='e_VSYS', unit =  'km/s', array=e_VSYS, format = 'D')
+	col18=fits.Column(name='I0', unit =  'flux*km/s', array=mom01d, format = 'D')
+	col19=fits.Column(name='e_I0', unit =  'flux*km/s', array=e_mom1d, format = 'D')		
 
 
 	if vmode == 'circular':
-		coldefs=fits.ColDefs([col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13,col14,col15,col16,col17])
+		coldefs=fits.ColDefs([col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13,col14,col15,col16,col17,col18,col19])
 		hdu=fits.BinTableHDU.from_columns(coldefs)
 	if vmode in ["radial",'vertical','bisymmetric']:
 		name='V2r' if vmode == 'bisymmetric' else 'Vr'
-		col18=fits.Column(name=name, unit = 'km/s', array=Vrad, format = 'D')
-		col19=fits.Column(name=f'e_{name}', unit = 'km/s', array=e_Vrad, format = 'D')
+		col20=fits.Column(name=name, unit = 'km/s', array=Vrad, format = 'D')
+		col21=fits.Column(name=f'e_{name}', unit = 'km/s', array=e_Vrad, format = 'D')
 		if vmode !=  'bisymmetric':
-			coldefs=fits.ColDefs([col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13,col14,col15,col16,col17,col18,col19])
+			coldefs=fits.ColDefs([col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13,col14,col15,col16,col17,col18,col19,col20,col21])
 			hdu=fits.BinTableHDU.from_columns(coldefs)
 		else:
-			col20=fits.Column(name='V2t', unit = 'km/s', array=Vrad, format = 'D')
-			col21=fits.Column(name='e_V2t', unit = 'km/s', array=e_Vrad, format = 'D')
-			coldefs=fits.ColDefs([col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13,col14,col15,col16,col17,col18,col19,col20,col21])
+			col22=fits.Column(name='V2t', unit = 'km/s', array=Vrad, format = 'D')
+			col23=fits.Column(name='e_V2t', unit = 'km/s', array=e_Vrad, format = 'D')
+			coldefs=fits.ColDefs([col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13,col14,col15,col16,col17,col18,col19,col20,col21,col22,col23])
 			hdu=fits.BinTableHDU.from_columns(coldefs)
 
 	hdu.writeto("%smodels/%s.%s.table.fits.gz"%(out,galaxy,vmode),overwrite=True)

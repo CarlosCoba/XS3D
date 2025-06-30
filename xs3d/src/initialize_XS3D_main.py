@@ -183,7 +183,8 @@ class Run_models:
 			self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.R,self.Disp,self.Ck,self.Sk,self.kin_3D_mdls,self.bic_aic,self.errors_fit = hrm()
 			self.Vrot=self.Ck[0]
 
-		self.ekin,self.econst = self.errors_fit
+		self.mom01d=self.kin_3D_mdls[0]
+		self.ekin,self.econst, _ = self.errors_fit
 		self.ePA,self.eEPS,self.eXC,self.eYC,self.eVSYS = self.econst[:5]
 		if self.vmode == "bisymmetric":
 			self.ePHI_BAR_deg = self.econst[5]*180/np.pi
@@ -205,7 +206,9 @@ class XS_out(Run_models):
 		#
 		## Write output into a table
 		#
-		save_table(self.galaxy, self.vmode,self.R,self.Disp,self.Vrot,self.Vrad,self.Vtan,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.PHI_BAR,self.PA_bar_mjr,self.PA_bar_mnr,self.errors_fit,self.bic_aic, self.e_ISM,out=self.outdir)
+		if self.vmode in ["circular","radial","vertical", "ff"] in self.vmode:
+			save_table(self.galaxy, self.vmode,self.R,self.Disp,self.Vrot,self.Vrad,self.Vtan,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.PHI_BAR,self.PA_bar_mjr,self.PA_bar_mnr,self.errors_fit,self.bic_aic, self.mom01d,out=self.outdir)
+		
 		if self.vmode in ["circular","radial","vertical", "ff"] or "hrm" in self.vmode:
 			# write header of table
 			if not path.exists(self.kin_params_table):
@@ -264,7 +267,7 @@ class XS_out(Run_models):
 
 		self.P.status("creating residual cube")
 		#create residual cube momement maps
-		rescube=self.datacube-self.kin_3D_mdls[4]
+		rescube=self.datacube-self.kin_3D_mdls[6]
 		rescube[~np.isfinite(rescube)]=0
 
 		plot_channels(self.galaxy,self.datacube,self.kin_3D_mdls,self.const,self.ext,self.vmode,self.h, self.hdr_info,self.config,self.rms_cube,self.pixel_scale,self.outdir)

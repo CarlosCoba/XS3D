@@ -5,7 +5,7 @@ from .kin_components import AZIMUTHAL_ANGLE
 
 
 def save_2d_models(galaxy,vmode,kin_3D_mdls,PA,INC,XC,YC,VSYS,m_hrm,out = False):
-	mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels=kin_3D_mdls
+	_,_,mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels=kin_3D_mdls
 			
 	if "hrm" in vmode:
 		C_k,S_k=[],[]
