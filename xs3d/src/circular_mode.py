@@ -76,7 +76,7 @@ class Circular_model:
 
 		self.bootstrap_contstant_prms = np.zeros((self.n_boot, 6))
 		self.bootstrap_kin = 0
-		self.bootstrap_mom1d = 0		
+		self.bootstrap_mom1d = 0
 
 
 		self.cube_class=cube_class
@@ -108,8 +108,8 @@ class Circular_model:
 
 			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 			if it == 0: first_guess_it = guess
-			
-			R={'Rpos':R_pos, 'R_NC': R_pos>self.r_bar_min}
+
+			R={'R_pos':R_pos, 'R_NC': R_pos>self.r_bar_min}
 			# Minimization
 			fitting = fit_routine(self.datacube, self.edatacube, self.h, self.mommaps, self.emoms, guess, self.vary, self.vmode, self.config, R, self.ring_space, self.frac_pixel, self.inner_interp,N_it=self.n_it0)
 			# outs
@@ -176,9 +176,9 @@ class Circular_model:
 		with Pool(ncpu) as pool:
 			result=pool.map(self.boots,np.arange(self.n_boot),chunksize=1)
 		for k in range(self.n_boot):
-			self.bootstrap_contstant_prms[k,:] = result[k][0]		
+			self.bootstrap_contstant_prms[k,:] = result[k][0]
 			self.bootstrap_kin[k,:] = result[k][1]
-			self.bootstrap_mom1d[k,:] = result[k][2]			
+			self.bootstrap_mom1d[k,:] = result[k][2]
 
 		p = np.nanpercentile(self.bootstrap_mom1d,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_mom1d[0])))
 		d=np.diff(p,axis=0)
