@@ -206,9 +206,9 @@ class XS_out(Run_models):
 		#
 		## Write output into a table
 		#
-		if self.vmode in ["circular","radial","vertical", "ff"] in self.vmode:
+		if self.vmode in ["circular","radial","vertical", "ff"]:
 			save_table(self.galaxy, self.vmode,self.R,self.Disp,self.Vrot,self.Vrad,self.Vtan,self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.PHI_BAR,self.PA_bar_mjr,self.PA_bar_mnr,self.errors_fit,self.bic_aic, self.mom01d,out=self.outdir)
-		
+
 		if self.vmode in ["circular","radial","vertical", "ff"] or "hrm" in self.vmode:
 			# write header of table
 			if not path.exists(self.kin_params_table):
