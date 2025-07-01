@@ -81,7 +81,7 @@ class Least_square_fit:
 		self.nz,self.ny,self.nx = datacube.shape
 		self.h=header
 		self.rings_pos = rings_pos['R_pos']
-		self.rings_nc =  rings_pos['R_NC']		
+		self.rings_nc =  rings_pos['R_NC']
 		self.r1st=self.rings_pos[0]
 		self.nrings = len(self.rings_pos)
 		self.n_annulus = self.nrings - 1
@@ -523,9 +523,9 @@ class Fit_kin_mdls(Models):
 
 			msk=(velmap!=0) & (self.mom0>0)
 			mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl=self.cube_modl.create_cube(velmap,sigmap,self.padded_cube,self.padded_psf,self.cube_slices,pass_cube=self.fit_from_cube)
-			ntotal_d=3*(self.nx*self.ny)
-			neff_d=3*np.sum( np.isfinite(self.mom1) & (self.mom1!=0))
-			neff_m=3*np.sum( np.isfinite(mom1_mdl) & (mom1_mdl!=0))
+			ntotal_d=(self.nx*self.ny)
+			neff_d=np.sum( (np.isfinite(self.mom1)) & (self.mom0!=0) )
+			neff_m=np.sum( (np.isfinite(mom1_mdl)) & (mom1_mdl!=0) & (self.mom0!=0))
 
 			if self.fit_from_cube:
 				residual_xy=np.sum((self.datacube-cube_mdl)**2,axis=0)
@@ -542,7 +542,7 @@ class Fit_kin_mdls(Models):
 
 			#residual=np.sqrt(residual/n)
 			if self.fit_from_cube:
-				a = np.sqrt( residual_xy*(ntotal_d**2)/(neff_d*neff_m) + residual).ravel()
+				a = np.sqrt( (residual_xy + residual)*(ntotal_d**2)/(neff_d*neff_m)).ravel()
 				return a
 			else:
 				return np.sqrt( residual*(ntotal_d**2)/(neff_d*neff_m) ).ravel()
@@ -627,16 +627,16 @@ class Fit_kin_mdls(Models):
 			#We need to re-compute chisquare with the best model !
 			# Compute the residuals
 			res = ( self.datacube - cube_mdl) #/ self.ecube
-			res2d=np.nansum(res,axis=0)
-			msk2d = (res2d !=0) & (self.mom0!=0) & (np.isfinite(mom1_mdl))
-			cost=res2d+(self.mom1-mom1_mdl)*msk2d+(self.mom2-mom2_mdl_kms)*msk2d
+			msk2D = np.isfinite(mom1_mdl) & (self.mom0!=0)
+			msk3D = (self.datacube!=0)*(msk2D*np.ones(self.nz)[:,None,None]).astype(bool)
+			cost = res[msk3D]
 
 			N_data=len(cost[msk2d])
 			N_free = N_data - N_nvarys
 
 			# Residual sum of squares
 			rss2 = (cost)**2
-			rss=np.nansum(rss2[msk2d])
+			rss=np.nansum(rss2)
 			# Compute reduced chisquare
 			chisq =rss
 			red_chi = chisq/ (N_free)
