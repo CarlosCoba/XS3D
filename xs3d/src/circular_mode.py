@@ -120,7 +120,8 @@ class Circular_model:
 			self.disp, self.vrot, self.vrad, self.vtan=disp, vrot, vrad, vtan
 
 			# Keep the best fit
-			if xi_sq < self.chisq_global:
+			#if xi_sq < self.chisq_global:
+			if True:
 				self.PA,self.EPS,self.XC,self.YC,self.VSYS,self.THETA = self.pa0, self.eps0, self.x0, self.y0,self.vsys0,self.theta_b
 				self.Vrot = np.asarray(vrot);self.n_circ = len(vrot)
 				self.Vrad = np.asarray(vrad)

@@ -80,8 +80,8 @@ class Harmonic_model:
 
 		self.bootstrap_contstant_prms = np.zeros((self.n_boot, 6))
 		self.bootstrap_kin_c, self.bootstrap_kin_s = 0, 0
-		self.bootstrap_mom1d = 0		
-		
+		self.bootstrap_mom1d = 0
+
 		self.cube_class=cube_class
 		self.outdir = outdir
 		self.momscube=0
@@ -128,8 +128,8 @@ class Harmonic_model:
 			s1 = s_k[0]
 
 			# Keep the best fit
-			if xi_sq < self.chisq_global:
-
+			#if xi_sq < self.chisq_global:
+			if True:
 				self.PA,self.EPS,self.XC,self.YC,self.VSYS = self.pa0, self.eps0, self.x0, self.y0, self.vsys0
 				self.C_k, self.S_k = c_k, s_k
 				self.Disp = np.asarray(disp)
@@ -142,7 +142,7 @@ class Harmonic_model:
 				self.n_circ = len(self.C_k[0])
 				self.n_noncirc = len((self.S_k[0])[self.S_k[0]!=0])
 				self.bootstrap_kin = np.zeros((self.n_boot, (2*self.m_hrm+1)*self.n_circ))
-				self.bootstrap_mom1d = np.zeros((self.n_boot, self.n_circ))		
+				self.bootstrap_mom1d = np.zeros((self.n_boot, self.n_circ))
 	""" Following, the error computation.
 	"""
 
@@ -177,7 +177,7 @@ class Harmonic_model:
 
 			guess = [disp_tab,c_tab,s_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 			# Minimization
-			R={'R_pos':R_pos, 'R_NC': R_pos>self.r_bar_min }			
+			R={'R_pos':R_pos, 'R_NC': R_pos>self.r_bar_min }
 			fitting = fit_boots(None, self.h, mommaps, emommaps, guess, self.vary, self.vmode, self.config, R, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
 			# outs
 			_ , pa0, eps0, x0, y0, vsys0, theta_b = fitting.results()
@@ -192,9 +192,9 @@ class Harmonic_model:
 		with Pool(ncpu) as pool:
 			result=pool.map(self.boots,np.arange(self.n_boot),chunksize=1)
 		for k in range(self.n_boot):
-			self.bootstrap_contstant_prms[k,:] = result[k][0]		
+			self.bootstrap_contstant_prms[k,:] = result[k][0]
 			self.bootstrap_kin[k,:] = result[k][1]
-			self.bootstrap_mom1d[k,:] = result[k][2]						
+			self.bootstrap_mom1d[k,:] = result[k][2]
 
 		p=np.nanpercentile(self.bootstrap_mom1d,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_mom1d[0])))
 		d=np.diff(p,axis=0)
