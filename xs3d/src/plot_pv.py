@@ -115,7 +115,8 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
 
-	levels=2**np.arange(-2,7,1,dtype=float)
+	levels=2**np.arange(-1,7,1,dtype=float)
+	levelso=np.insert(levels,0,-2)
 	#"""
 	pixelconv=1
 	bmajconv=bminconv=1
@@ -191,7 +192,8 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 		txt = AnchoredText('$\mathrm{PV_{major}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4);txt.patch.set_alpha(0.5);ax0.add_artist(txt)
 		txt = AnchoredText(f'PA:{pa_maj}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax0.transAxes);txt.patch.set_alpha(0);ax0.add_artist(txt)
 		ax0.imshow(pvd_maj,norm=norm,cmap=cmap_mom0,origin = "lower",extent=ext0,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
-		cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors='navy', linestyles='solid',zorder=10,extent=ext0,linewidths=0.5,alpha=1)
+		cnt=ax0.contour(pvd_maj,levels=levelso,colors='k', linestyles='solid',zorder=10,extent=ext0,linewidths=0.8,alpha=1)
+		cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors='navy', linestyles='solid',zorder=10,extent=ext0,linewidths=0.8,alpha=1)
 
 		lines = [Line2D([0], [0], color='navy',lw=0.8)];labels=['model']
 		ax0.legend(lines,labels,loc='upper left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False,fontsize=10,bbox_to_anchor=(0, 1.11), bbox_transform=ax0.transAxes)
@@ -208,7 +210,8 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 		txt = AnchoredText('$\mathrm{PV_{minor}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4);txt.patch.set_alpha(0.5);ax1.add_artist(txt)
 		txt = AnchoredText(f'PA:{pa_min}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax1.transAxes);txt.patch.set_alpha(0);ax1.add_artist(txt)
 		ax1.imshow(pvd_min,norm=norm,cmap=cmap_mom0,origin='lower',extent=ext1,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
-		ax1.contour(pvd_min_mdl,levels=levels,colors='navy', linestyles='solid',zorder=10,extent=ext1,linewidths=0.5,alpha=1)
+		ax1.contour(pvd_min,levels=levelso,colors='k', linestyles='solid',zorder=10,extent=ext1,linewidths=0.8,alpha=1)
+		ax1.contour(pvd_min_mdl,levels=levels,colors='navy', linestyles='solid',zorder=10,extent=ext1,linewidths=0.8,alpha=1)
 		ax1.plot((ext1[0],ext1[1]),(0,0),"k-",lw=0.5)
 		ax1.plot((0,0),(ext1[2],ext1[3]),"k-",lw=0.5)
 		ax1.set_xlabel(f'r ({rlabel})',fontsize=13,labelpad=1)
