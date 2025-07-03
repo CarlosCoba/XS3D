@@ -144,31 +144,32 @@ class Circular_model:
 		self.frac_pixel = 0
 		self.n_it,self.n_it0 = 1, 1
 		runs = [individual_run]
-		[mom0_cube,mom1_cube,mom2_cube]=self.momscube
-		[emom0,emom1,emom2]=self.emomscube
+		[mom0_cube,mom1_cube,mom2_cube] = self.momscube
+		[emom0,emom1,emom2] = self.emomscube
 
 		for k in runs:
-			mommaps=[mom0_cube[k],mom1_cube[k],mom2_cube[k]]
-			emommaps=[emom0,emom1,emom2]
+			mommaps = [mom0_cube[k],mom1_cube[k],mom2_cube[k]]
+			emommaps = [emom0,emom1,emom2]
 
 			self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b = self.GUESS[-6:]
 			np.random.seed()
 			pa = self.pa0 + 5*np.random.normal()
-			inc= eps_2_inc(self.eps0) + (5*np.pi/180)*np.random.normal() # rad
-			eps=inc_2_eps(inc*180/np.pi)
+			inc = eps_2_inc(self.eps0) + (5*np.pi/180)*np.random.normal() # rad
+			eps = inc_2_eps(inc*180/np.pi)
 			# setting chisq to -inf will preserve the leastsquare results
 			self.chisq_global = -np.inf
 			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
 			intens_tab,disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.Rings,mommaps,emommaps,pa,eps,self.x0,self.y0,self.vsys0,self.theta_b,self.delta,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
-			vels=list(disp_tab)+list(vrot_tab)+list(vrad_tab)+list(vtan_tab)
+			vels = list(disp_tab)+list(vrot_tab)+list(vrad_tab)+list(vtan_tab)
 
 			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
+			R = {'R_pos':R_pos, 'R_NC': R_pos>self.r_bar_min}
 			# Minimization
-			fitting = fit_boots(None, self.h, mommaps, emommaps, guess, self.vary, self.vmode, self.config, self.Rings, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
+			fitting = fit_boots(None, self.h, mommaps, emommaps, guess, self.vary, self.vmode, self.config, R, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
 			# outs
 			_ , pa0, eps0, x0, y0, vsys0, theta_b = fitting.results()
 			# convert PA to rad:
-			pa0=pa0*np.pi/180
+			pa0 = pa0*np.pi/180
 
 			return([[ pa0, eps0, x0, y0, vsys0, theta_b ], np.concatenate([disp_tab, vrot_tab, vrad_tab, vtan_tab]), intens_tab])
 

@@ -95,7 +95,12 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	chanplot=chanplot.astype(int)
 
 	vmin=rms*(2**-1)
-	vmax=np.nanpercentile(cube_mdl[cube_mdl!=0],99.5)
+	v99=np.nanpercentile(cube_mdl[cube_mdl!=0],99.5)
+	if v99 > vmin:
+		vmax = v99
+	else:
+		vmax = vmin
+		vmin = v99
 	norm = colors.Normalize(vmin=vmin/rms, vmax=vmax/rms)
 	#norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 

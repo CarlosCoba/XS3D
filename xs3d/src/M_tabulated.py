@@ -109,15 +109,44 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 	mom0_msk= (mom0>0) & np.isfinite(mom0)
 	mom1/=mom0_msk
 	mom2/=mom0_msk
-	#for k in emoms: k = np.ones_like(mom0)
-	[emom0,emom1,emom2]=emoms
+	mom0/=mom0_msk
+	if emoms is None:
+		emom0,emom1,emom2=np.ones_like(mom0),np.ones_like(mom0),np.ones_like(mom0)
+	else:
+		[emom0,emom1,emom2]=emoms
+
+	intens_val=mom0
 	vel_val=mom1
-	disp=mom2
+	disp_val=mom2
 
 	weigths_k,weigths_j,mask = weigths_w(xy_mesh,shape,pa,eps,x0,y0,rings,delta,k,pixel_scale =pixel_scale)
 	weigths_k,weigths_j = np.asarray(weigths_k),np.asarray(weigths_j)
 
-	# dispersion
+	###################
+	# (0) intensity  #
+	###################
+	w_rot = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,'dispersion')
+	sigma_v = emom0[mask]
+	#make zeros to nan to avoid infinites !
+	sigma_v[sigma_v==0]=np.nan
+	x11,x12 = w_rot**2/sigma_v**2,0/sigma_v**2
+	x21,x22 = 0/sigma_v**2,0/sigma_v**2
+
+	D = (intens_val[mask])
+	y1 = (w_rot/sigma_v**2)*D
+	y2 = (0/sigma_v**2)*D
+	A = np.asarray([[np.nansum(x11),np.nansum(x12)],[np.nansum(x21),np.nansum(x22)]])
+	B= np.asarray([np.nansum(y1),np.nansum(y2)])
+	intens=np.nansum(y1)/np.nansum(x11)
+	intens=abs(intens)
+
+	if vmode == 'intensity':
+		return intens
+
+
+	###################
+	# (1) dispersion  #
+	###################
 	w_rot = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,'dispersion')
 	sigma_v = emom2[mask]
 	#make zeros to nan to avoid infinites !
@@ -125,7 +154,7 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 	x11,x12 = w_rot**2/sigma_v**2,0/sigma_v**2
 	x21,x22 = 0/sigma_v**2,0/sigma_v**2
 
-	D = (disp[mask])
+	D = (disp_val[mask])
 	y1 = (w_rot/sigma_v**2)*D
 	y2 = (0/sigma_v**2)*D
 	A = np.asarray([[np.nansum(x11),np.nansum(x12)],[np.nansum(x21),np.nansum(x22)]])
@@ -133,6 +162,10 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 	dispersion=np.nansum(y1)/np.nansum(x11)
 	dispersion=abs(dispersion)
 
+
+	###################
+	# (2) velocities  #
+	###################
 	sigma_v = emom1[mask]
 	#make zeros to nan to avoid infinites !
 	sigma_v[sigma_v==0]=np.nan
@@ -261,3 +294,4 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 		#x = C, S
 		C, S = x[:m_hrm],x[m_hrm:]
 		return dispersion,C, S
+		

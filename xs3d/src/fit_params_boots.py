@@ -79,8 +79,8 @@ class Least_square_fit:
 		self.m_hrm = m_hrm
 		self.h=header
 		self.rings_pos = rings_pos['R_pos']
-		self.rings_nc =  rings_pos['R_NC']	
-		self.r1st=self.rings_pos[0]		
+		self.rings_nc =  rings_pos['R_NC']
+		self.r1st=self.rings_pos[0]
 		self.nrings = len(self.rings_pos)
 		self.n_annulus = self.nrings - 1
 		self.mommaps_obs=mommaps
@@ -332,7 +332,7 @@ class Models(Config_params):
 
 
 				Sig = pars['Sig_%i'% i]
-				Weights_xy = weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)				
+				Weights_xy = weigths_w(xy_mesh,pa,eps,x0,y0,r_2,r_space,pixel_scale=self.pixel_scale)
 				modl0 = (SIGMA_MODEL(xy_mesh,Sig,pa,eps,x0,y0))*Weights_xy
 				if disp:
 					return modl0
@@ -392,11 +392,15 @@ class Fit_kin_mdls(Models):
 			theta,cos_theta0=AZIMUTHAL_ANGLE([self.ny,self.nx],pa,eps,x0,y0)
 			sin,cos=SIN_COS(self.XY_mesh,pa,eps,x0,y0)
 
-			if self.WEIGHT==0:
-				cos_theta=1
-			else:
-				cos_theta=abs(cos_theta0) if self.WEIGHT==1 else (abs(cos_theta0))**self.WEIGHT
-
+			if self.WEIGHT == 0:
+				cos_theta = 1
+			elif self.WEIGHT == 1:
+				cos_theta = abs(cos_theta0)
+			elif self.WEIGHT == -1:
+				cos_theta = abs(cos_theta0)
+				cos_theta = np.exp(-cos_theta)
+			else :
+				cos_theta = 1
 			#interp_sig_model,interp_model=self.Vk2D(pars)
 			######
 

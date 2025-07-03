@@ -407,10 +407,15 @@ class Fit_kin_mdls(Models):
 			theta,cos_theta0=AZIMUTHAL_ANGLE([self.ny,self.nx],pa,eps,x0,y0)
 			sin,cos=SIN_COS(self.XY_mesh,pa,eps,x0,y0)
 
-			if self.WEIGHT==0:
-				cos_theta=1
-			else:
-				cos_theta=abs(cos_theta0) if self.WEIGHT==1 else (abs(cos_theta0))**self.WEIGHT
+			if self.WEIGHT == 0:
+				cos_theta = 1
+			elif self.WEIGHT == 1:
+				cos_theta = abs(cos_theta0)
+			elif self.WEIGHT == -1:
+				cos_theta = abs(cos_theta0)
+				cos_theta = np.exp(-cos_theta)
+			else :
+				cos_theta = 1
 
 			self.r_n = Rings(self.XY_mesh,pa*np.pi/180,eps,x0,y0,self.pixel_scale)
 			twoDmdls= dataset_to_2D([self.ny,self.nx], self.n_annulus, self.rings_pos, self.r_n, self.XY_mesh, self.kinmdl_dataset, self.vmode, self.v_center, pars, self.index_v0, nmodls=self.Vk)
@@ -631,7 +636,7 @@ class Fit_kin_mdls(Models):
 			msk3D = (self.datacube!=0)*(msk2D*np.ones(self.nz)[:,None,None]).astype(bool)
 			cost = res[msk3D]
 
-			N_data=len(cost[msk2d])
+			N_data=len(cost)
 			N_free = N_data - N_nvarys
 
 			# Residual sum of squares
