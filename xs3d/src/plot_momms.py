@@ -98,6 +98,13 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 	ax0.imshow(mom0,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
 	im1=ax1.imshow(mom0_mdl,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
 	vmin,vmax=vmin_vmax(res_mom0,2,98,symmetric=True)
+	lvmin, lvmax=int(np.log10(abs(vmin))),int(np.log10(abs(vmax)))
+	# to place the exponent above the color bar
+	exp = None
+	if lvmin == lvmax:
+		exp = lvmin - 1
+		res_mom0 = res_mom0*10**abs(exp)
+		vmin,vmax = vmin*10**abs(exp), vmax*10**abs(exp),
 	im2=ax2.imshow(res_mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
 	#moment 1 maps
@@ -195,7 +202,8 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 
 	spec_u = 'km/s'
 	cb(im1,ax0,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -27, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=11, ticksfontsize=11)
-	cb2=cb(im2,ax2,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -27, label = "$\mathrm{flux*%s}$"%(spec_u),labelsize=11, ticksfontsize=11,power=True)
+	label_res = '$\mathrm{flux*km/s}$' if exp is None else '$\mathrm{flux*km/s~(x10^{%s})}$'%(exp)
+	cb2=cb(im2,ax2,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -28, label = label_res,labelsize=11, ticksfontsize=11,power=True)
 
 	cb(im4,ax3,orientation = "horizontal", colormap = cmap, bbox= (0.5,1.12,1,1),width = "100%", height = "5%",label_pad = -27, label = "$\mathrm{km/s}$",labelsize=11, ticksfontsize=11)
 	cb(im5,ax5,orientation = "horizontal", colormap = cmap, bbox= (0.1,1.12,0.8,1),width = "100%", height = "5%",label_pad = -27, label = "$\mathrm{%s}$"%units_res_mom1,labelsize=11, ticksfontsize=11)
