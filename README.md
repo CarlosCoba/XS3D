@@ -123,5 +123,4 @@ Referencing XookSuut3D
 =================
 
 If you are using XS3D in your work, please cite it via [zenodo](https://zenodo.org/records/15697464), or use the XS3D release paper https://ui.adsabs.harvard.edu/abs/2025arXiv250818517L/abstract.
-A paper describing XS3D has been recently submitted to the ApJ.
 Also, if you use the XS colormap (red-black-blue) in a different context, I would appreciate it, if you include XS in the acknowledgment section.
