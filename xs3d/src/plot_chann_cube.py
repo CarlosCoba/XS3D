@@ -13,7 +13,7 @@ from .axes_params import axes_ambient as axs
 from .cbar import colorbar as cb
 from .colormaps_CLC import vel_map
 from .barscale import bscale
-from .ellipse import drawellipse
+from .ellipse import drawellipse, drawrectangle
 from .psf_lsf import PsF_LsF
 from .constants import __c__
 from .conv import conv2d,gkernel,gkernel1d
@@ -83,6 +83,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 
 
 	width, height = 17, 17*(5/6) # width [cm]
+	width, height = 18*(5/6), 17 # width [cm]	
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
@@ -126,7 +127,7 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 			chanmap[chanmap==0]=np.nan
 			axes[j].imshow(chanmap,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto',alpha=1)
 			levels=2**np.arange(-1,7,1,dtype=float)
-			axes[j].contour(chanmap_mdl,levels=levels,colors='navy', linestyles='solid',zorder=1,extent=ext,linewidths=0.4,alpha=1)
+			axes[j].contour(chanmap_mdl,levels=levels,colors='#0201ff', linestyles='solid',zorder=1,extent=ext,linewidths=0.4,alpha=1)
 
 			vchan=round(wave_kms[kk],2)
 			txt = AnchoredText(f'{vchan}', loc="upper left", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0);axes[j].add_artist(txt)
@@ -135,9 +136,9 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 
 	for j,Axes in enumerate(axes):
 		if j==(l0**2-l0):
-			axs(Axes,rotation='horizontal', direction='out', fontsize_ticklabels=12)
+			axs(Axes,rotation='horizontal', direction='in', fontsize_ticklabels=12, tick_minor=2)
 		else:
-			axs(Axes,rotation='horizontal', remove_xyticks=True, direction='out', fontsize_ticklabels=12)
+			axs(Axes,rotation='horizontal', direction='in', remove_xyticks=True, fontsize_ticklabels=12, tick_minor=2)
 
 
 	lines = [Line2D([0], [0], color='navy',lw=0.8)];labels=['model']
@@ -154,9 +155,14 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 	cb(cmappable,axes[-1],orientation = "vertical", colormap = cmap, bbox= (1.1,0,1,1), height = f"{w}%", width = "10%",label_pad = 0, label = "flux/rms",labelsize=12, ticksfontsize=9)
 
 	for Axes in axes:
-		elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
-		x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
-		Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
+		if vmode == 'edgeon':
+			rec=drawrectangle(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
+			x,y = rec[0], rec[1]
+			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)			
+		else:	
+			elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
+			x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
+			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
 
 		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax_norm,pa_deg=pa,eps=1)
 		x,y=elipse_mjr[0],elipse_mjr[1]#pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm
@@ -202,12 +208,13 @@ def plot_channels(galaxy,datacube,momms_mdls,const,ext,vmode,hdr_cube,hdr_info,c
 			Axes.add_artist(beam)
 
 	indx=(l0**2-l0)
-	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=12,labelpad=1)
-	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=12,labelpad=1)
+	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=12,labelpad=0)
+	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=12,labelpad=0)
 
 	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-2].add_artist(txt)
 
-	plt.savefig("%sfigures/channels_cube_%s_model_%s.png"%(out,vmode,galaxy))
+	fig.tight_layout()
+	fig.savefig("%sfigures/channels_cube_%s_model_%s.png"%(out,vmode,galaxy), bbox_inches='tight')
 	#plt.clf()
 	plt.close()
 

@@ -12,7 +12,7 @@ from .axes_params import axes_ambient as axs
 from .cbar import colorbar as cb
 from .colormaps_CLC import vel_map
 from .barscale import bscale
-from .ellipse import drawellipse
+from .ellipse import drawellipse, drawrectangle
 from .psf_lsf import PsF_LsF
 from .constants import __c__
 #params =   {'text.usetex' : True }
@@ -63,7 +63,8 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 
 
 	width, height = 17, 17*(5/6) # width [cm]
-	cm_to_inch = 0.393701 # [inch/cm]
+	width, height = 18*(5/6), 17 # width [cm]
+	cm_to_inch = 0.393701 # [inch/cm]	
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
 	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
@@ -117,9 +118,9 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 
 	for j,Axes in enumerate(axes):
 		if j==(l0**2-l0):
-			axs(Axes,rotation='horizontal', direction='out', fontsize_ticklabels=12)
+			axs(Axes,rotation='horizontal', direction='in', fontsize_ticklabels=12, tick_minor=2)
 		else:
-			axs(Axes,rotation='horizontal', remove_xyticks=True, direction='out', fontsize_ticklabels=12)
+			axs(Axes,rotation='horizontal', direction='in', remove_xyticks=True, fontsize_ticklabels=12, tick_minor=2)
 
 
 	rms_int=int(np.log10(rms))
@@ -131,9 +132,14 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	cb(cmappable,axes[-1],orientation = "vertical", colormap = cmap, bbox= (1.1,0,1,1), height = f"{w}%", width = "10%",label_pad = 0, label = "flux/rms",labelsize=12, ticksfontsize=9)
 
 	for Axes in axes:
-		elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
-		x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
-		Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
+		if vmode == 'edgeon':
+			rec=drawrectangle(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
+			x,y = rec[0], rec[1]
+			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
+		else:		
+			elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
+			x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
+			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
 
 		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax_norm,pa_deg=pa,eps=1)
 		x,y=elipse_mjr[0],elipse_mjr[1]#pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm
@@ -180,8 +186,8 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 
 
 	indx=(l0**2-l0)
-	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=12,labelpad=1)
-	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=12,labelpad=1)
+	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=12,labelpad=0)
+	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=12,labelpad=0)
 
 	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-2].add_artist(txt)
 
