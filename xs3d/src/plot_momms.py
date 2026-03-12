@@ -12,7 +12,7 @@ from .axes_params import axes_ambient as axs
 from .cbar import colorbar as cb
 from .colormaps_CLC import vel_map
 from .barscale import bscale
-from .ellipse import drawellipse
+from .ellipse import drawellipse, drawrectangle
 from .psf_lsf import PsF_LsF
 from .constants import __c__
 #params =   {'text.usetex' : True }
@@ -259,9 +259,14 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 
 
 	for Axes in [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8]:
-		elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
-		x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
-		Axes.plot(x, y, '-', color = '#393d42',  lw=1.5)
+		if vmode == 'edgeon':
+			rec=drawrectangle(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
+			x,y = rec[0], rec[1]
+			Axes.plot(x, y, '-', color = '#393d42',  lw=1.5)
+		else:
+			elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
+			x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
+			Axes.plot(x, y, '-', color = '#393d42',  lw=1.5)
 
 		elipse_mjr=drawellipse(xc,yc,bmajor=0.5*rmax_norm,pa_deg=pa,eps=1)
 		x,y=elipse_mjr[0],elipse_mjr[1]#pixel*(elipse_mjr[0]-nx/2)/rnorm,pixel*(elipse_mjr[1]-ny/2)/rnorm
@@ -270,7 +275,6 @@ def plot_mommaps(galaxy,momms_mdls,momms_obs,const,ext,vmode,hdr,config,pixel,ou
 		elipse_mnr=drawellipse(xc,yc,bmajor=0.5*(1-eps)*rmax_norm,pa_deg=pa+90,eps=1)
 		x,y=elipse_mnr[0],elipse_mnr[1]#pixel*(elipse_mnr[0]-nx/2)/rnorm,pixel*(elipse_mnr[1]-ny/2)/rnorm
 		Axes.plot(x, y, linestyle='--', color = '#393d42',  lw=1.5)
-
 
 
 	for Axes in axes:
