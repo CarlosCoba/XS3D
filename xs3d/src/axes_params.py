@@ -1,18 +1,18 @@
 import numpy as np
 import matplotlib.pylab as plt
-
 from matplotlib.ticker import FormatStrFormatter
 majorFormatter = FormatStrFormatter("$%g$")
 
-#def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 10, fontsize_yticklabel = 10, fontsize_ticklabels = None,  rotation = "vertical", frame = False, remove_axis_lines = 0 ):
 
-def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 11, fontsize_yticklabel = 11, fontsize_ticklabels = 11,  rotation = "vertical", frame = False, remove_axis_lines = 0, direction='in' ):
-	
+def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks= False, remove_xyticks=False, remove_ticks_all = False, tickscolor = "k", fontsize_xticklabel = 11, fontsize_yticklabel = 11, fontsize_ticklabels = 11,  rotation = 'v', frame = False, remove_axis_lines = 0, direction='in', tick_major=6.5, tick_minor=3.5):
+
+	if rotation == 'v': rotation = 'vertical'
+	if rotation == 'h': rotation = 'horizontal'
+
+
 	fontsize_xticklabel, fontsize_yticklabel = fontsize_ticklabels, fontsize_ticklabels
 	plt.setp(axis.get_yticklabels(), rotation=rotation, fontsize=fontsize_yticklabel)#,visible=False)
 	plt.setp(axis.get_xticklabels(), fontsize=fontsize_xticklabel)
-
-
 
 	if remove_axis_lines == False:
 		axis.spines['bottom'].set_color(tickscolor)
@@ -20,8 +20,8 @@ def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks
 		axis.spines['left'].set_color(tickscolor)
 		axis.spines['right'].set_color(tickscolor)
 		axis.minorticks_on()
-		axis.tick_params('both', length=6.5, width=0.3, which='major',direction=direction,color=tickscolor,bottom=1, top=1, left=1, right=1)
-		axis.tick_params('both', length=3.5, width=0.3, which='minor',direction=direction,color=tickscolor,bottom=1, top=1, left=1, right=1) 
+		axis.tick_params('both', length=tick_major, width=0.3, which='major',direction=direction,color=tickscolor,bottom=1, top=1, left=1, right=1)
+		axis.tick_params('both', length=tick_minor, width=0.3, which='minor',direction=direction,color=tickscolor,bottom=1, top=1, left=1, right=1)
 
 	else:
 
@@ -31,11 +31,11 @@ def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks
 		axis.spines["bottom"].set_position(("data",0))
 
 		axis.minorticks_on()
-		axis.tick_params('x', length=6.5, width=0.3, which='major',direction=direction,color=tickscolor,top=0)
-		axis.tick_params('x', length=3.5, width=0.3, which='minor',direction=direction,color=tickscolor,top=0)
- 
-		axis.tick_params('y', length=6.5, width=0.3, which='major',direction=direction,color=tickscolor,right=0)
-		axis.tick_params('y', length=3.5, width=0.3, which='minor',direction=direction,color=tickscolor,right=0) 
+		axis.tick_params('x', length=tick_major, width=0.3, which='major',direction=direction,color=tickscolor,top=0)
+		axis.tick_params('x', length=tick_minor, width=0.3, which='minor',direction=direction,color=tickscolor,top=0)
+
+		axis.tick_params('y', length=tick_major, width=0.3, which='major',direction=direction,color=tickscolor,right=0)
+		axis.tick_params('y', length=tick_minor, width=0.3, which='minor',direction=direction,color=tickscolor,right=0)
 
 		plt.setp(axis.get_yticklabels(), rotation=rotation, fontsize=fontsize_yticklabel)#,visible=False)
 		plt.setp(axis.get_xticklabels(), fontsize=fontsize_xticklabel)
@@ -55,8 +55,8 @@ def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks
 
 
 	# Remove unnecessary zeros in ticks
-	axis.xaxis.set_major_formatter(majorFormatter) 
-	axis.yaxis.set_major_formatter(majorFormatter) 
+	axis.xaxis.set_major_formatter(majorFormatter)
+	axis.yaxis.set_major_formatter(majorFormatter)
 
 
 
@@ -71,7 +71,7 @@ def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks
 
 	if remove_xyticks:
 		axis.yaxis.set_major_formatter(plt.NullFormatter())
-		axis.xaxis.set_major_formatter(plt.NullFormatter())		
+		axis.xaxis.set_major_formatter(plt.NullFormatter())
 
 	# remove all from the axis (both ticks and xy ticks labels)
 	if remove_ticks_all == True:
@@ -91,6 +91,5 @@ def axes_ambient(axis,xlabel=None,ylabel=None,remove_xticks= False,remove_yticks
 	#axis.set_facecolor(facecolor)
 
 
-	# Intead of padding in point units, you can pad with axes units: 
+	# Intead of padding in point units, you can pad with axes units:
 	#ax.yaxis.set_label_coords(-0.15, 0.5)
-
