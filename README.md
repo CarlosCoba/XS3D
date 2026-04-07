@@ -36,7 +36,7 @@ Dependencies
                 Python = 3.8
 ```
 
-Installation*
+Installation
 ===========
 
 1. Go to the XS3D directory
