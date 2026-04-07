@@ -19,7 +19,7 @@ Description
 XookSuut3D or XS3D for short, is a python tool developed to model circular and non-circular motions on 3D spectroscopic observations, like those obtained
 from Integral-Field-Spectroscopy, ALMA, VLA, etc. XS3D models a spectral-line cube observation, while corrects for the
 the observational Beam/PSF and spectral broadening (LSF). For this purpose
-it makes use of the [FFTW](https://www.fftw.org/) library via [pyFFTW](https://pypi.org/project/pyFFTW/). Make sure FFTW is installed in your machine.
+it makes use of the [FFTW](https://www.fftw.org/) library via [pyFFTW](https://pypi.org/project/pyFFTW/).
 XS3D is  particularly designed for spectral-line observations on frequency, wavelength and velocity domain, which makes it suitable to
 model a wide variety of spectral-lines from CO, HI, ionized gas and IR lines etc.
 XS3D adopts the same minimization technique as its 2D version, [XookSuut](https://github.com/CarlosCoba/XookSuut-code), but extended to datacubes.
@@ -36,7 +36,7 @@ Dependencies
                 Python = 3.8
 ```
 
-Installation
+Installation*
 ===========
 
 1. Go to the XS3D directory
@@ -51,6 +51,7 @@ you must get the following :
 USE: XS3D name cube.fits [mask] [PA] [INC] [X0] [Y0] [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]
 ```
 
+* Make sure FFTW is already installed in your system, otherwise pyFFTW will raise an installation Error.
 
 Uninstall
 ===========
