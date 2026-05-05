@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib
 import matplotlib.pylab as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
@@ -128,6 +129,6 @@ def plot_kin_models_h(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Ck,Sk,e_Ck,e_Sk,VSY
 	ax1.legend(loc = "center", fontsize = 16, bbox_to_anchor = (0, 2.1, 1.1, 0.2), ncol = m_hrm+1, frameon = False, labelspacing=0.1, handlelength=1, handletextpad=0.3,columnspacing=0.8)
 	ax1.grid(visible = True, which = "major", axis = "both", color='w', linestyle='-', linewidth=0.5, zorder = 1, alpha = 0.5)
 
-	#fig.tight_layout()	
+	#fig.tight_layout()
 	plt.savefig("%sfigures/kin_%s_disp_%s.png"%(out,vmode,galaxy))#, transparent=True)
 	plt.clf()
