@@ -50,7 +50,7 @@ arr = np.linspace(0, 50, 100).reshape((10, 10))
 cmap = plt.get_cmap('magma_r')
 new_cmap = truncate_colormap(cmap, 0, 0.6)
 cmap = vel_map()
-cmap_mom0 = vel_map('mom0')
+cmap_pvd = vel_map('pvd')
 
 def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixel,hdr_cube,hdr_info,config,out):
 	pvds,slits,ext=out_pvd
@@ -183,37 +183,40 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 			gs1 = fig.add_gridspec(nrows=2, ncols=1, left=0.08, right=0.2, top=0.9, bottom=0.1, wspace=0.2)
 			gs2 = fig.add_gridspec(nrows=1, ncols=2, left=0.3, right=0.99, wspace=0.2, bottom=0.1)
 
+		#
+		#define color lines
+		clines = '#279dc5'
 		# PVD major
-		vmin,vmax=vmin_vmax(pvd_maj,pmax=99.5)
+		vmin,vmax=vmin_vmax(pvd_maj,pmax=99.8)
 		if vmin<=0: vmin = 1
 		norm = colors.LogNorm(vmin=vmin, vmax=vmax)
 		ax0=plt.subplot(gs2[0,0])
 		axs(ax0,rotation='horizontal',fontsize_ticklabels=10)
-		txt = AnchoredText('$\mathrm{PV_{major}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0.5);ax0.add_artist(txt)
+		txt = AnchoredText('$\mathrm{PV_{major}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(1);ax0.add_artist(txt)
 		txt = AnchoredText(f'PA:{pa_maj}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax0.transAxes);txt.patch.set_alpha(0);ax0.add_artist(txt)
-		ax0.imshow(pvd_maj,norm=norm,cmap=cmap_mom0,origin = "lower",extent=ext0,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
+		ax0.imshow(pvd_maj,norm=norm,cmap=cmap_pvd,origin = "lower",extent=ext0,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
 		cnt=ax0.contour(pvd_maj,levels=levelso,colors='k', linestyles='solid',zorder=10,extent=ext0,linewidths=0.8,alpha=1)
-		cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors='#0201ff', linestyles='solid',zorder=10,extent=ext0,linewidths=0.8,alpha=1)
+		cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors=clines, linestyles='solid',zorder=10,extent=ext0,linewidths=0.8,alpha=1)
 
-		lines = [Line2D([0], [0], color='#0201ff',lw=0.8)];labels=['model']
+		lines = [Line2D([0], [0], color=clines,lw=0.8)];labels=['model']
 		ax0.legend(lines,labels,loc='upper left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False,fontsize=10,bbox_to_anchor=(0, 1.11), bbox_transform=ax0.transAxes)
-		ax0.scatter(R,vt,s=16,marker='o',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)
-		ax0.scatter(-R,-vt,s=16,marker='o',c='#5ea1ba',edgecolor='k',lw=0.3,zorder=20)
-		ax0.plot((ext0[0],ext0[1]),(0,0),"k-",lw=0.5)
-		ax0.plot((0,0),(ext0[2],ext0[3]),"k-",lw=0.5)
+		ax0.scatter(R,vt,s=16,marker='X',c='#ffb703',edgecolor='k',lw=0.3,zorder=20)
+		ax0.scatter(-R,-vt,s=16,marker='X',c='#ffb703',edgecolor='k',lw=0.3,zorder=20)
+		ax0.plot((ext0[0],ext0[1]),(0,0),"k--",lw=0.5,zorder=10)
+		ax0.plot((0,0),(ext0[2],ext0[3]),"k--",lw=0.5,zorder=10)
 		ax0.set_ylabel('$\mathrm{V_{LOS}~(km/s)}$',fontsize=12,labelpad=0)
 		ax0.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)
 
 		# PVD minor
 		ax1=plt.subplot(gs2[0,1])
 		axs(ax1,rotation='horizontal',fontsize_ticklabels=10)
-		txt = AnchoredText('$\mathrm{PV_{minor}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(0.5);ax1.add_artist(txt)
+		txt = AnchoredText('$\mathrm{PV_{minor}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(1);ax1.add_artist(txt)
 		txt = AnchoredText(f'PA:{pa_min}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax1.transAxes);txt.patch.set_alpha(0);ax1.add_artist(txt)
-		ax1.imshow(pvd_min,norm=norm,cmap=cmap_mom0,origin='lower',extent=ext1,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
+		ax1.imshow(pvd_min,norm=norm,cmap=cmap_pvd,origin='lower',extent=ext1,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
 		ax1.contour(pvd_min,levels=levelso,colors='k', linestyles='solid',zorder=10,extent=ext1,linewidths=0.8,alpha=1)
 		ax1.contour(pvd_min_mdl,levels=levels,colors='#0201ff', linestyles='solid',zorder=10,extent=ext1,linewidths=0.8,alpha=1)
-		ax1.plot((ext1[0],ext1[1]),(0,0),"k-",lw=0.5)
-		ax1.plot((0,0),(ext1[2],ext1[3]),"k-",lw=0.5)
+		ax1.plot((ext1[0],ext1[1]),(0,0),"k--",lw=0.5,zorder=10)
+		ax1.plot((0,0),(ext1[2],ext1[3]),"k--",lw=0.5,zorder=10)
 		ax1.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)
 		ax1.legend(lines,labels,loc='upper left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10,bbox_to_anchor=(0, 1.11), bbox_transform=ax1.transAxes)
 		if nplots==0:
@@ -268,11 +271,11 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	broadband[broadband==0]=np.nan
 	vmin,vmax=vmin_vmax(broadband)
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	 if (vmin>0) & (np.log10(vmax/vmin)>1)  else colors.Normalize(vmin=vmin, vmax=vmax)
-	im2=ax2.imshow(broadband,norm=norm,cmap=cmap_mom0,aspect='auto',origin='lower',extent=extimg)
+	im2=ax2.imshow(broadband,norm=norm,cmap=cmap_pvd,aspect='auto',origin='lower',extent=extimg)
 	ax2.contour(slit_major, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)
 	ax2.contour(slit_minor, levels =[0.95], colors = "k", alpha = 1, linewidths = 0.5,zorder=10,extent=extimg)
 	axs(ax2,rotation='horizontal',remove_xyticks=True)
-	clb=cb(im2, ax2, labelsize=10, colormap = cmap_mom0, bbox=(-0.25, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vmin, vmax], label = "flux", label_pad = -20, colors  = "k",orientation='vertical')
+	clb=cb(im2, ax2, labelsize=10, colormap = cmap_pvd, bbox=(-0.25, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [vmin, vmax], label = "flux", label_pad = -20, colors  = "k",orientation='vertical')
 	clb.text(-1,-0.2,round(vmin,1),transform=clb.transAxes,fontsize=8)
 	clb.text(-1,1.03,round(vmax,1),transform=clb.transAxes,fontsize=8)
 	ax2.text(xmin*(4/5.+1/10),ymax*(7/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)

@@ -21,13 +21,13 @@ def rgb_to_dec(value):
 def get_continuous_cmap(hex_list, float_list=None):
     ''' creates and returns a color map that can be used in heat map figures.
         If float_list is not provided, colour map graduates linearly between each color in hex_list.
-        If float_list is provided, each color in hex_list is mapped to the respective location in float_list. 
-        
+        If float_list is provided, each color in hex_list is mapped to the respective location in float_list.
+
         Parameters
         ----------
         hex_list: list of hex code strings
         float_list: list of floats between 0 and 1, same length as hex_list. Must start with 0 and end with 1.
-        
+
         Returns
         ----------
         colour map'''
@@ -36,7 +36,7 @@ def get_continuous_cmap(hex_list, float_list=None):
         pass
     else:
         float_list = list(np.linspace(0,1,len(rgb_list)))
-        
+
     cdict = dict()
     for num, col in enumerate(['red', 'green', 'blue']):
         col_list = [[float_list[i], rgb_list[i][num], rgb_list[i][num]] for i in range(len(float_list))]
@@ -65,12 +65,12 @@ mom0=['#f9f1f1', '#00002b', '#0e1e76', '#256a7d', '#3e9259', '#90ab55', '#bbaa62
 mom0=['#bde7db', '#89c4d0', '#54a3cd', '#377dd0', '#4954b1', '#3d3b6c', '#282738', '#1f1e1e', '#3a2126', '#672a39', '#9d2f45', '#cc4239', '#e96e36', '#f5a269', '#ffd4ac']
 
 mom0=['#e0dfda', '#637e8f', '#414c6a', '#1a1a01', '#332312', '#502d1e', '#6f372d', '#8f403b', '#b04b45', '#cd5d4c', '#de754f', '#e58b51', '#eaa053', '#efb759', '#f5d06b', '#fae58a', '#fdf3ab', '#ffffcc']
-mom0=mom0#[::-1]
+
+pvd = ['#F6E6D6', '#EBC7A8', '#D56D4C', '#B14A33', '#7A2E25']
 # for velocity maps
 mom1=hex_list
 
 def vel_map(c=mom1):
 	if c == 'mom0': c = mom0
+    if c == 'pvd': c = pvd
 	return get_continuous_cmap(c)
-
-
