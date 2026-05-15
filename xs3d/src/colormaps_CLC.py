@@ -66,7 +66,7 @@ mom0=['#bde7db', '#89c4d0', '#54a3cd', '#377dd0', '#4954b1', '#3d3b6c', '#282738
 
 mom0=['#e0dfda', '#637e8f', '#414c6a', '#1a1a01', '#332312', '#502d1e', '#6f372d', '#8f403b', '#b04b45', '#cd5d4c', '#de754f', '#e58b51', '#eaa053', '#efb759', '#f5d06b', '#fae58a', '#fdf3ab', '#ffffcc']
 
-pvd = ['#F6E6D6', '#EBC7A8', '#D56D4C', '#B14A33', '#7A2E25']
+pvd = ['#FDFBF6','#F6E6D6', '#EBC7A8', '#D56D4C', '#B14A33', '#7A2E25']
 # for velocity maps
 mom1=hex_list
 

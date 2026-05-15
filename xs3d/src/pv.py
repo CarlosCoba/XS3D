@@ -39,10 +39,15 @@ def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,rms,confi
 
 	#######################################################################
 	# The following is to avoid plotting all channels from the cube.
-	# Otherwise is time consuming and not all channels contain signal.
+	# Otherwise it is time consuming and not all channels contain signal.
 	#######################################################################
-	meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]!=0) & (np.isfinite(datacube[k]))) )/rms for k in range(nz)])
-	chan_sig=(meanflux_chan>0.01) & np.isfinite(meanflux_chan)
+	#meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]!=0) & (np.isfinite(datacube[k]))) )/rms for k in range(nz)])
+	#chan_sig=(meanflux_chan>0.01) & np.isfinite(meanflux_chan)
+
+	# first, select and average those channels with fluxes above 10% the rms noise
+	meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]>=0.1*rms) & (np.isfinite(datacube[k]))) ) for k in range(nz)])
+	# select those channels with fluxes above 50% the rms noise
+	chan_sig=(meanflux_chan>=0.5*rms) & np.isfinite(meanflux_chan)
 	vchan=wave_kms[chan_sig]
 	vmin, vmax=np.min(vchan), np.max(vchan)
 	chan_msk=(wave_kms>=vmin) & (wave_kms<=vmax)

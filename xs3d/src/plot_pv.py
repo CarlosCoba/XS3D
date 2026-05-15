@@ -66,6 +66,11 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	mom0,mom1,mom2=momaps
 	_,_,mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels = momms_mdls
 	pvd_maj,pvd_min,pvd_maj_mdl,pvd_min_mdl=pvds[0],pvds[1],pvds[2],pvds[3]
+
+	# lets remove negative fluxes
+	pvd_maj[pvd_maj<0]=0
+	pvd_min[pvd_min<0]=0
+
 	msk=np.isfinite(mom0*mom0_mdl/mom0)
 	slit_major*=msk
 	slit_minor*=msk
@@ -115,8 +120,8 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
 
-	levels=2**np.arange(-1,7,1,dtype=float)
-	levelso=np.insert(levels,0,-2)
+	levels=2**np.arange(0,7,1,dtype=float)
+	levelso=levels
 	#"""
 	pixelconv=1
 	bmajconv=bminconv=1
@@ -175,7 +180,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 			fig = plt.figure(figsize=(figWidth0, figHeight0), dpi = 300)
 			widths = [0.3,0.3,0.7,1,1]
 			heights = [1,1,0.4,1,1]
-			gs2 = fig.add_gridspec(nrows=1, ncols=2, left=0.08, right=0.99, wspace=0.25, bottom=0.15)
+			gs2 = fig.add_gridspec(nrows=1, ncols=2, left=0.08, right=0.99, wspace=0.25, bottom=0.13, top = 0.94)
 		else:
 			fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
 			widths = [0.3,0.3,0.7,1,1]
@@ -184,26 +189,28 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 			gs2 = fig.add_gridspec(nrows=1, ncols=2, left=0.3, right=0.99, wspace=0.2, bottom=0.1)
 
 		#
-		#define color lines
+		#define color of lines
 		clines = '#279dc5'
+		dashline = (5, (10, 3))
+
 		# PVD major
 		vmin,vmax=vmin_vmax(pvd_maj,pmax=99.8)
-		if vmin<=0: vmin = 1
-		norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+		if vmin<0: vmin = 0
+		#norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+		# gamma=0.5 is equivalent to a square root normalization
+		norm = colors.PowerNorm(gamma=0.5, vmin=vmin, vmax=vmax)
 		ax0=plt.subplot(gs2[0,0])
 		axs(ax0,rotation='horizontal',fontsize_ticklabels=10)
 		txt = AnchoredText('$\mathrm{PV_{major}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(1);ax0.add_artist(txt)
-		txt = AnchoredText(f'PA:{pa_maj}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax0.transAxes);txt.patch.set_alpha(0);ax0.add_artist(txt)
+		txt = AnchoredText(f'PA {pa_maj}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax0.transAxes);txt.patch.set_alpha(0);ax0.add_artist(txt)
 		ax0.imshow(pvd_maj,norm=norm,cmap=cmap_pvd,origin = "lower",extent=ext0,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
-		cnt=ax0.contour(pvd_maj,levels=levelso,colors='k', linestyles='solid',zorder=10,extent=ext0,linewidths=0.8,alpha=1)
-		cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors=clines, linestyles='solid',zorder=10,extent=ext0,linewidths=0.8,alpha=1)
+		cnt=ax0.contour(pvd_maj,levels=levelso,colors='k', linestyles='solid',zorder=10,extent=ext0,linewidths=1,alpha=1)
+		cnt=ax0.contour(pvd_maj_mdl,levels=levels,colors=clines, linestyles='solid',zorder=10,extent=ext0,linewidths=1,alpha=1)
 
-		lines = [Line2D([0], [0], color=clines,lw=0.8)];labels=['model']
-		ax0.legend(lines,labels,loc='upper left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False,fontsize=10,bbox_to_anchor=(0, 1.11), bbox_transform=ax0.transAxes)
-		ax0.scatter(R,vt,s=16,marker='X',c='#ffb703',edgecolor='k',lw=0.3,zorder=20)
-		ax0.scatter(-R,-vt,s=16,marker='X',c='#ffb703',edgecolor='k',lw=0.3,zorder=20)
-		ax0.plot((ext0[0],ext0[1]),(0,0),"k--",lw=0.5,zorder=10)
-		ax0.plot((0,0),(ext0[2],ext0[3]),"k--",lw=0.5,zorder=10)
+		ax0.scatter(R,vt,s=20,marker='X',c='#ffb703',edgecolor='k',lw=0.3,zorder=20)
+		ax0.scatter(-R,-vt,s=20,marker='X',c='#ffb703',edgecolor='k',lw=0.3,zorder=20)
+		ax0.plot((ext0[0],ext0[1]),(0,0),color='black',linestyle=dashline,lw=0.5,zorder=10)
+		ax0.plot((0,0),(ext0[2],ext0[3]),color='black',linestyle=dashline,lw=0.5,zorder=10)
 		ax0.set_ylabel('$\mathrm{V_{LOS}~(km/s)}$',fontsize=12,labelpad=0)
 		ax0.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)
 
@@ -211,16 +218,22 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 		ax1=plt.subplot(gs2[0,1])
 		axs(ax1,rotation='horizontal',fontsize_ticklabels=10)
 		txt = AnchoredText('$\mathrm{PV_{minor}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(1);ax1.add_artist(txt)
-		txt = AnchoredText(f'PA:{pa_min}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax1.transAxes);txt.patch.set_alpha(0);ax1.add_artist(txt)
+		txt = AnchoredText(f'PA {pa_min}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax1.transAxes);txt.patch.set_alpha(0);ax1.add_artist(txt)
 		ax1.imshow(pvd_min,norm=norm,cmap=cmap_pvd,origin='lower',extent=ext1,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
-		ax1.contour(pvd_min,levels=levelso,colors='k', linestyles='solid',zorder=10,extent=ext1,linewidths=0.8,alpha=1)
-		ax1.contour(pvd_min_mdl,levels=levels,colors='#0201ff', linestyles='solid',zorder=10,extent=ext1,linewidths=0.8,alpha=1)
-		ax1.plot((ext1[0],ext1[1]),(0,0),"k--",lw=0.5,zorder=10)
-		ax1.plot((0,0),(ext1[2],ext1[3]),"k--",lw=0.5,zorder=10)
+		ax1.contour(pvd_min,levels=levelso,colors='k', linestyles='solid',zorder=10,extent=ext1,linewidths=1,alpha=1)
+		ax1.contour(pvd_min_mdl,levels=levels,colors='#0201ff', linestyles='solid',zorder=10,extent=ext1,linewidths=1,alpha=1)
+		ax1.plot((ext1[0],ext1[1]),(0,0),color='black',linestyle=dashline,lw=0.5,zorder=10)
+		ax1.plot((0,0),(ext1[2],ext1[3]),color='black',linestyle=dashline,lw=0.5,zorder=10)
 		ax1.set_xlabel(f'r ({rlabel})',fontsize=12,labelpad=1)
-		ax1.legend(lines,labels,loc='upper left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=10,bbox_to_anchor=(0, 1.11), bbox_transform=ax1.transAxes)
+
 		if nplots==0:
 			ax1.set_ylabel('$\mathrm{V_{LOS}~(km/s)}$',fontsize=12,labelpad=0)
+		else:
+			lines = [Line2D([0], [0], color='k',lw=0.8), Line2D([0], [0], color='#279dc5',lw=0.8)];labels=['data','model']
+			ax1.legend(lines,labels,loc='upper left',ncol=2,borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, columnspacing=0.5,fontsize=10,bbox_to_anchor=(
+0, 1.11), bbox_transform=ax1.transAxes)
+			ax0.legend(lines,labels,loc='upper left',ncol=2,borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, columnspacing=0.5,fontsize=10,bbox_to_anchor=(
+0, 1.11), bbox_transform=ax0.transAxes)
 
 		# plot PSF ellipse ?
 		config_general = config['general']
@@ -249,10 +262,10 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 				beam.ellipse.set(color='gray')
 				Axes.add_artist(beam)
 
-		for Axes in [ax0, ax1]:
-			if np.any( abs(np.array([ext0[2],ext0[3]]))  > max_vt*(4/3.) ):
-				vmin,vmax= -(max_vt+2*fwhm_kms), (max_vt+2*fwhm_kms)
-				Axes.set_ylim(vmin,vmax)
+		#for Axes in [ax0, ax1]:
+		#	if np.any( abs(np.array([ext0[2],ext0[3]]))  > max_vt*(4/3.) ):
+		#		vmin,vmax= -(max_vt+2*fwhm_kms), (max_vt+2*fwhm_kms)
+		#		Axes.set_ylim(vmin,vmax)
 
 
 		if nplots==0:
@@ -268,7 +281,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 
 	ax2=plt.subplot(gs1[0,0])
 	broadband=np.nansum(datacube,axis=0)
-	broadband[broadband==0]=np.nan
+	broadband[broadband<=0]=np.nan
 	vmin,vmax=vmin_vmax(broadband)
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax)	 if (vmin>0) & (np.log10(vmax/vmin)>1)  else colors.Normalize(vmin=vmin, vmax=vmax)
 	im2=ax2.imshow(broadband,norm=norm,cmap=cmap_pvd,aspect='auto',origin='lower',extent=extimg)
