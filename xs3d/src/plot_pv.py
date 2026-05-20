@@ -201,7 +201,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 		norm = colors.PowerNorm(gamma=0.5, vmin=vmin, vmax=vmax)
 		ax0=plt.subplot(gs2[0,0])
 		axs(ax0,rotation='horizontal',fontsize_ticklabels=10)
-		txt = AnchoredText('$\mathrm{PV_{major}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(1);ax0.add_artist(txt)
+		txt = AnchoredText('$\mathrm{PV_{MAJ}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(1);ax0.add_artist(txt)
 		txt = AnchoredText(f'PA {pa_maj}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax0.transAxes);txt.patch.set_alpha(0);ax0.add_artist(txt)
 		ax0.imshow(pvd_maj,norm=norm,cmap=cmap_pvd,origin = "lower",extent=ext0,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
 		cnt=ax0.contour(pvd_maj,levels=levelso,colors='k', linestyles='solid',zorder=10,extent=ext0,linewidths=1,alpha=1)
@@ -217,7 +217,7 @@ def plot_pvd(galaxy,out_pvd,vt,R,const,vmode,rms,momms_mdls,momaps,datacube,pixe
 		# PVD minor
 		ax1=plt.subplot(gs2[0,1])
 		axs(ax1,rotation='horizontal',fontsize_ticklabels=10)
-		txt = AnchoredText('$\mathrm{PV_{minor}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(1);ax1.add_artist(txt)
+		txt = AnchoredText('$\mathrm{PV_{MIN}}$', loc=loc_txt_pv, pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4);txt.patch.set_alpha(1);ax1.add_artist(txt)
 		txt = AnchoredText(f'PA {pa_min}$^\circ$', loc="lower right", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4,bbox_to_anchor=(1., 1.), bbox_transform=ax1.transAxes);txt.patch.set_alpha(0);ax1.add_artist(txt)
 		ax1.imshow(pvd_min,norm=norm,cmap=cmap_pvd,origin='lower',extent=ext1,aspect='auto',alpha=0.7)#,vmin=vmin,vmax=vmax)
 		ax1.contour(pvd_min,levels=levelso,colors='k', linestyles='solid',zorder=10,extent=ext1,linewidths=1,alpha=1)

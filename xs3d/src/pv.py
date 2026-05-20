@@ -1,22 +1,9 @@
 import numpy as np
 from astropy.io import fits
-from .pixel_params import Rings
+from .pixel_params import Rings, slits
 from .constants import __c__
 from .read_hdr import Header_info
 from .psf_lsf import PsF_LsF
-
-def slit(xy,pa,eps,x0,y0,width=5,pixel=1):
-
-	x,y=xy
-	# y = m(x-x0)+y0 --> y -mx +(mx0-y0)
-	alpha=(pa+np.pi/2)
-	m=np.tan(alpha)
-	A,B,C=-m,1,m*x0-y0
-	d = abs(A*x+B*y+C)/np.sqrt(A**2+B**2)
-	darc=d*pixel
-	msk = darc < width/2.
-
-	return msk
 
 
 def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,rms,config):
@@ -87,8 +74,8 @@ def pv_array(datacube,hdr_cube,momms_mdls,vt,r,pa,eps,x0,y0,vsys,pixel,rms,confi
 	if nx*pixel//width <=2:
 		width=5*pixel
 
-	msk_slit_maj=slit((x,y),pa_maj,eps,x0,y0,width=width,pixel=pixel)
-	msk_slit_min=slit((x,y),pa_min,eps,x0,y0,width=width,pixel=pixel)
+	msk_slit_maj=slits((x,y),pa_maj,eps,x0,y0,width=width,pixel=pixel)
+	msk_slit_min=slits((x,y),pa_min,eps,x0,y0,width=width,pixel=pixel)
 
 
 

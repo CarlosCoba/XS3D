@@ -36,6 +36,19 @@ def v_interp(r, r2, r1, v2, v1 ):
 	v0 = m*(r-r1) + v1
 	return v0
 
+def slits(xy,pa,eps,x0,y0,width=5,pixel=1):
+
+	x,y=xy
+	# y = m(x-x0)+y0 --> y -mx +(mx0-y0)
+	alpha=(pa+np.pi/2)
+	m=np.tan(alpha)
+	A,B,C=-m,1,m*x0-y0
+	d = abs(A*x+B*y+C)/np.sqrt(A**2+B**2)
+	darc=d*pixel
+	msk = darc < width/2.
+
+	return msk
+
 
 #######################################################3
 
@@ -62,12 +75,21 @@ def pixels(shape,velmap,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 	rxy_pixels_mask = ring_pixels(XY_mesh,pa,eps,x0,y0,ring,delta,pixel_scale)
 
 	indices = np.indices((ny,nx))
-	pix_y=  indices[0]
-	pix_x=  indices[1]
+	pix_y_indx =  indices[0]
+	pix_x_indx =  indices[1]
 
-	pix_x = pix_x[rxy_pixels_mask]
-	pix_y = pix_y[rxy_pixels_mask]
+	# pixels in each ring
+	pix_x = pix_x_indx[rxy_pixels_mask]
+	pix_y = pix_y_indx[rxy_pixels_mask]
 
+	# lets check if the ring contains pixels along the semimajor axis
+	width = delta
+	pa_slit = pa * np.pi/180
+	msk_slit = slits((pix_x_indx,pix_y_indx),pa_slit,eps,x0,y0,width=width,pixel=pixel_scale)
+	# multiply two boolean masks
+	pix_maj_axs = msk_slit * np.isfinite(vel_map)
+	# if npix_maj_axs!=0 then there is at least one pixel along the major axis
+	npix_maj_axs = np.sum(pix_maj_axs[rxy_pixels_mask])
 
 	####################################################
 	# Now extract the same ring in a double size window
@@ -77,11 +99,8 @@ def pixels(shape,velmap,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 	XY_mesh0 = np.meshgrid(np.arange(0, nx2, 1),np.arange(0, ny2, 1),sparse=True)
 	rxy_pixels_mask_twice = ring_pixels(XY_mesh0,pa,eps,nx2//2,ny2//2,ring,delta,pixel_scale)
 
-
-
 	#pixels in the original image
 	vel_pixesl = velmap[rxy_pixels_mask]
-	#npix_exp = len(pix_x)
 
 	#pixels in the new image
 	npix_exp=len(rxy_pixels_mask_twice[0])
@@ -92,11 +111,15 @@ def pixels(shape,velmap,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 	ngood = len(vel_good)
 
 
-	if npix_exp >0 and ngood >0 :
-		f_pixel = ngood/(1.0*npix_exp)
-	else:
-		f_pixel = 0
+	#if npix_exp >0 and ngood >0 :
+	#	f_pixel = ngood/(1.0*npix_exp)
+	#else:
+	#	f_pixel = 0
 
+	f_pixel = ngood/(1.0*npix_exp)
+	# if there are pixels along the major axis accept the ring :
+	if npix_maj_axs > 0:
+		f_pixel = 1
 
 	plot=0
 	if plot:
