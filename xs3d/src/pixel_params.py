@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pylab as plt
+from .ellipse import drawellipse
 
 def eps_2_inc(eps):
 	cos_i = 1-eps
@@ -125,7 +126,11 @@ def pixels(shape,velmap,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 	if plot:
 		print('f_pixel=',f_pixel)
 		plt.imshow(velmap, origin = "lower")
-		plt.scatter(pix_x,pix_y,s=3, marker = 'x', color = 'k')
+		plt.scatter(pix_x, pix_y, s=3, marker = 'x', color = 'k')
+
+		elipse_mjr=drawellipse(x0, y0, bmajor=ring/pixel_scale, pa_deg=pa, eps=eps)
+		x_,y_=elipse_mjr[0],elipse_mnr[1]
+		Axes.plot(x_, y_, linestyle='--', color = 'k',  lw=2)
 		plt.show()
 
 	return f_pixel
