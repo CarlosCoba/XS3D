@@ -88,7 +88,7 @@ def pixels(shape,velmap,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 	pa_slit = pa * np.pi/180
 	msk_slit = slits((pix_x_indx,pix_y_indx),pa_slit,eps,x0,y0,width=width,pixel=pixel_scale)
 	# multiply two boolean masks
-	pix_maj_axs = msk_slit * np.isfinite(vel_map)
+	pix_maj_axs = msk_slit * np.isfinite(velmap)
 	# if npix_maj_axs!=0 then there is at least one pixel along the major axis
 	npix_maj_axs = np.sum(pix_maj_axs[rxy_pixels_mask])
 
