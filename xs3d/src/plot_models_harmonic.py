@@ -49,7 +49,7 @@ def plot_kin_models_h(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Ck,Sk,e_Ck,e_Sk,VSY
 	#nrows x ncols
 	widths = [1, 1, 0.4,1.5]
 	heights = [1, 0.6]
-	gs = gridspec.GridSpec(2, 1), height_ratios=heights)
+	gs = gridspec.GridSpec(2, 1, height_ratios=heights)
 	gs.update(left=0.15, right=0.95,top=0.87,bottom=0.14, hspace = 0.05, wspace = 0)
 
 
