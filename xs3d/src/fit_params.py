@@ -157,7 +157,7 @@ class Least_square_fit:
 		self.Y0min,self.Y0max,self.vary_yc = config_const.getfloat('MIN_Y0', 0), config_const.getfloat('MAX_Y0', self.ny),config_const.getboolean('FIT_Y0', self.vary_yc)
 		self.VSYSmin,self.VSYSmax,self.vary_vsys = config_const.getfloat('MIN_VSYS', 0), config_const.getfloat('MAX_VSYS', 10*__c__),config_const.getboolean('FIT_VSYS', self.vary_vsys)
 		self.PAbarmin,self.PAbarmax,self.vary_phib = config_const.getfloat('MIN_PHI_BAR', -2*np.pi), config_const.getfloat('MAX_PHI_BAR', 2*np.pi),config_const.getboolean('FIT_PHI_BAR', self.vary_phib)
-		self.WEIGHT=config_const.getint('WEIGHT',0)
+		self.weight=config_const.getint('WEIGHT',0)
 		self.XTOL=config_const.getfloat('XTOL',1e-5)
 		self.MAXF=config_const.getint('MAXF',15)
 
@@ -212,6 +212,7 @@ class Least_square_fit:
 		self.padded_psf=np.copy(self.padded_cube)
 		self.mask_cube=np.ones_like(self.datacube,dtype=bool)*(self.mom0!=0)
 		self.fit_from_cube=config_general.getboolean('fit_from_cube',False)
+		self.obs_peak = (self.datacube).max()
 
 		self.rel=1e10
 		self.peakI0=np.nanmax(self.datacube,axis=0)
@@ -407,11 +408,11 @@ class Fit_kin_mdls(Models):
 			theta,cos_theta0=AZIMUTHAL_ANGLE([self.ny,self.nx],pa,eps,x0,y0)
 			sin,cos=SIN_COS(self.XY_mesh,pa,eps,x0,y0)
 
-			if self.WEIGHT == 0:
+			if self.weight == 0:
 				cos_theta = 1
-			elif self.WEIGHT == 1:
+			elif self.weight == 1:
 				cos_theta = abs(cos_theta0)
-			elif self.WEIGHT == -1:
+			elif self.weight == -1:
 				cos_theta = abs(cos_theta0)
 				cos_theta = np.exp(-cos_theta)
 			else :
@@ -532,7 +533,13 @@ class Fit_kin_mdls(Models):
 			neff_d=np.sum( (np.isfinite(self.mom1)) & (self.mom0!=0) )
 			neff_m=np.sum( (np.isfinite(mom1_mdl)) & (mom1_mdl!=0) & (self.mom0!=0))
 
+			obs_peak = self.obs_peak
 			if self.fit_from_cube:
+				obs_n = self.datacube/obs_peak
+				mod_n = cube_mdl/obs_peak
+				residual = np.sqrt(cos_theta) * (obs_n-mod_n)   # weighted residuals
+				cost = float(np.sum(residuals ** 2))
+
 				residual_xy=np.sum((self.datacube-cube_mdl)**2,axis=0)
 				residual_xy*=msk
 				del cube_mdl
@@ -543,11 +550,11 @@ class Fit_kin_mdls(Models):
 					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta + msk*((self.peakI0-cube_mdl)**2)
 				else:
 					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta + msk*((self.peakI0-cube_mdl)**2)
-					#n=len(residual)
 
-			#residual=np.sqrt(residual/n)
 			if self.fit_from_cube:
 				a = np.sqrt( (residual_xy + residual)*(ntotal_d**2)/(neff_d*neff_m)).ravel()
+				a = np.sqrt( cost*(ntotal_d**2)/(neff_d*neff_m) ).ravel()
+
 				return a
 			else:
 				return np.sqrt( residual*(ntotal_d**2)/(neff_d*neff_m) ).ravel()

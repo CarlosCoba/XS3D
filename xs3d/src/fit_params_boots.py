@@ -154,7 +154,7 @@ class Least_square_fit:
 		self.Y0min,self.Y0max,self.vary_yc = config_const.getfloat('MIN_Y0', 0), config_const.getfloat('MAX_Y0', self.ny),config_const.getboolean('FIT_Y0', self.vary_yc)
 		self.VSYSmin,self.VSYSmax,self.vary_vsys = config_const.getfloat('MIN_VSYS', 0), config_const.getfloat('MAX_VSYS', 10*__c__),config_const.getboolean('FIT_VSYS', self.vary_vsys)
 		self.PAbarmin,self.PAbarmax,self.vary_phib = config_const.getfloat('MIN_PHI_BAR', -np.pi), config_const.getfloat('MAX_PHI_BAR', np.pi),config_const.getboolean('FIT_PHI_BAR', self.vary_phib)
-		self.WEIGHT=config_const.getint('WEIGHT',0)
+		self.weight=config_const.getint('WEIGHT',0)
 		self.XTOL=config_const.getfloat('XTOL',1e-5)
 		self.MAXF=config_const.getint('MAXF',15)
 
@@ -392,11 +392,11 @@ class Fit_kin_mdls(Models):
 			theta,cos_theta0=AZIMUTHAL_ANGLE([self.ny,self.nx],pa,eps,x0,y0)
 			sin,cos=SIN_COS(self.XY_mesh,pa,eps,x0,y0)
 
-			if self.WEIGHT == 0:
+			if self.weight == 0:
 				cos_theta = 1
-			elif self.WEIGHT == 1:
+			elif self.weight == 1:
 				cos_theta = abs(cos_theta0)
-			elif self.WEIGHT == -1:
+			elif self.weight == -1:
 				cos_theta = abs(cos_theta0)
 				cos_theta = np.exp(-cos_theta)
 			else :

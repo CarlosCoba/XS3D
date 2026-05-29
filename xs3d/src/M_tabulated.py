@@ -119,8 +119,13 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 	vel_val=mom1
 	disp_val=mom2
 
-	weigths_k,weigths_j,mask = weigths_w(xy_mesh,shape,pa,eps,x0,y0,rings,delta,k,pixel_scale =pixel_scale)
+	weigths_k,weigths_j,mask_r_xy = weigths_w(xy_mesh,shape,pa,eps,x0,y0,rings,delta,k,pixel_scale=pixel_scale)
 	weigths_k,weigths_j = np.asarray(weigths_k),np.asarray(weigths_j)
+
+	# remove nan (x,y) pixels from rings
+	mask_r_xy_valid = np.isfinite((mom0*mom1*mom2)[mask_r_xy])
+	# this mask does not contain nans
+	mask = (mask_r_xy[0][mask_r_xy_valid], mask_r_xy[1][mask_r_xy_valid])
 
 	###################
 	# (0) intensity  #
@@ -294,4 +299,3 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 		#x = C, S
 		C, S = x[:m_hrm],x[m_hrm:]
 		return dispersion,C, S
-		
