@@ -168,6 +168,7 @@ class Least_square_fit:
 		psf_lsf= PsF_LsF(self.h, config)
 		self.sigma_inst_kms=psf_lsf.sigma_inst_kms
 		self.sigma_inst_pix=psf_lsf.sigma_inst_pix
+		self.dv=psf_lsf.cdelt3_kms
 
 		# if there are mom2[y][x] < sigma_inst, then assign the instrumental
 		if self.sigma_inst_kms is not None:
@@ -516,15 +517,14 @@ class Fit_kin_mdls(Models):
 
 			msk=(velmap!=0) & (self.mom0>0)
 			mom1_mdl,mom2_mdl_kms=velmap,sigmap
+			W = cos_theta/np.nansum(cos_theta)
 
 			if self.vary_disp:
-				residual =    msk*((self.mom1-mom1_mdl)**2)*cos_theta
+				residual =    msk*((self.mom1-mom1_mdl)/self.dv)*np.sqrt(W)
 			else:
-				residual =   msk*((self.mom1-mom1_mdl)**2)*cos_theta
+				residual =   msk*((self.mom1-mom1_mdl)/self.dv)*np.sqrt(W)
 
 			residual[~np.isfinite(residual)]=0
-			n=len(residual)
-			residual=np.sqrt(residual/n)
 			return residual
 
 

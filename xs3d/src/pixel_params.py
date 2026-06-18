@@ -69,6 +69,8 @@ def ring_pixels(xy_mesh,pa,eps,x0,y0,ring,delta,pixel_scale):
 
 def pixels(shape,velmap,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 
+	if eps> 0.90:
+		eps = 0.90
 	[ny,nx] = shape
 	x = np.arange(0, nx, 1)
 	y = np.arange(0, ny, 1)
@@ -111,16 +113,12 @@ def pixels(shape,velmap,pa,eps,x0,y0,ring, delta=1,pixel_scale = 1):
 	vel_good = vel_pixesl[good_vels]
 	ngood = len(vel_good)
 
-
-	#if npix_exp >0 and ngood >0 :
-	#	f_pixel = ngood/(1.0*npix_exp)
-	#else:
-	#	f_pixel = 0
-
-	f_pixel = ngood/(1.0*npix_exp)
+	f_pixel = ngood/(1.0*npix_exp) if npix_exp > 0 else 0
 	# if there are pixels along the major axis accept the ring :
 	if npix_maj_axs > 0:
 		f_pixel = 1
+	if npix_maj_axs == 0 and eps>=0.90:
+		f_pixel = 0
 
 	plot=0
 	if plot:

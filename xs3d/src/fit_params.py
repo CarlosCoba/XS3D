@@ -170,6 +170,7 @@ class Least_square_fit:
 		psf_lsf= PsF_LsF(self.h, config)
 		self.sigma_inst_kms=psf_lsf.sigma_inst_kms
 		self.sigma_inst_pix=psf_lsf.sigma_inst_pix
+		self.dv=psf_lsf.cdelt3_kms
 
 		# if there are mom2[y][x] < sigma_inst, then assign the instrumental
 		if self.sigma_inst_kms is not None:
@@ -537,27 +538,14 @@ class Fit_kin_mdls(Models):
 			if self.fit_from_cube:
 				obs_n = self.datacube/obs_peak
 				mod_n = cube_mdl/obs_peak
-				residual = np.sqrt(cos_theta) * (obs_n-mod_n)   # weighted residuals
-				cost = float(np.sum(residuals ** 2))
-
-				residual_xy=np.sum((self.datacube-cube_mdl)**2,axis=0)
-				residual_xy*=msk
-				del cube_mdl
-				residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta
-			else:
-
-				if self.vary_disp:
-					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta + msk*((self.peakI0-cube_mdl)**2)
-				else:
-					residual = msk*((self.mom2-mom2_mdl_kms)**2) + msk*((self.mom1-mom1_mdl)**2)*cos_theta + msk*((self.peakI0-cube_mdl)**2)
+				W	  = cos_theta/np.nansum(cos_theta)
+				residuals = np.sqrt(W) * (obs_n-mod_n) *msk  # weighted residuals
+				res_moms = np.sqrt(W) * ((self.mom1-mom1_mdl)/self.dv)*msk
 
 			if self.fit_from_cube:
-				a = np.sqrt( (residual_xy + residual)*(ntotal_d**2)/(neff_d*neff_m)).ravel()
-				a = np.sqrt( cost*(ntotal_d**2)/(neff_d*neff_m) ).ravel()
-
-				return a
+				return np.concatenate([residuals.ravel(), res_moms.ravel()])
 			else:
-				return np.sqrt( residual*(ntotal_d**2)/(neff_d*neff_m) ).ravel()
+				return np.concatenate([residuals.ravel(), res_moms.ravel()])
 
 
 		def reduce_func(res,x):
