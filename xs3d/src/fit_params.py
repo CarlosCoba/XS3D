@@ -110,17 +110,17 @@ class Least_square_fit:
 
 		X = np.arange(0, self.nx, 1)
 		Y = np.arange(0, self.ny, 1)
-		self.XY_mesh = np.meshgrid(X,Y)
+		self.xy_mesh = np.meshgrid(X,Y)
 
 		if self.xc0 % int(self.xc0) == 0 or self.yc0 % int(self.yc0) == 0 :
 			self.xc0, self.yc0 =  self.xc0 + 1e-5, self.yc0 + 1e-5
 		self.crval3,self.cdelt3,self.pixel_scale=Header_info(self.h,self.config).read_header()
 		self.wave_kms=Header_info(self.h,self.config).wave_kms
-		self.r_n = Rings(self.XY_mesh,self.pa0*np.pi/180,self.eps0,self.xc0,self.yc0,self.pixel_scale)
+		self.r_n = Rings(self.xy_mesh,self.pa0*np.pi/180,self.eps0,self.xc0,self.yc0,self.pixel_scale)
 		self.mask_psf = 0
 		self.frac_pixel = frac_pixel
 		self.v_center = v_center
-		vsys_min, vsys_max=np.min(self.wave_kms),np.max(self.wave_kms) 
+		vsys_min, vsys_max=np.min(self.wave_kms),np.max(self.wave_kms)
 
 
 		self.e_ISM = 0
@@ -401,20 +401,20 @@ class Fit_kin_mdls(Models):
 			x0,y0 = pars['x0'],pars['y0']
 			inc=eps_2_inc(eps)
 			theta,cos_theta0=AZIMUTHAL_ANGLE([self.ny,self.nx],pa,eps,x0,y0)
-			sin,cos=SIN_COS(self.XY_mesh,pa,eps,x0,y0)
+			sin,cos=SIN_COS(self.xy_mesh,pa,eps,x0,y0)
 
 			if self.weight == 0:
-				cos_theta = 1
+				rweight = 1
 			elif self.weight == 1:
-				cos_theta = abs(cos_theta0)
+				rweight = abs(cos_theta0)
 			elif self.weight == -1:
-				cos_theta = abs(cos_theta0)
-				cos_theta = np.exp(-cos_theta)
+				rweight = abs(cos_theta0)
+				rweight = np.exp(-cos_theta)
 			else :
-				cos_theta = 1
+				rweight = 1
 
-			self.r_n = Rings(self.XY_mesh,pa*np.pi/180,eps,x0,y0,self.pixel_scale)
-			twoDmdls= dataset_to_2D([self.ny,self.nx], self.n_annulus, self.rings_pos, self.r_n, self.XY_mesh, self.kinmdl_dataset, self.vmode, self.v_center, pars, self.index_v0, nmodls=self.Vk)
+			self.r_n = Rings(self.xy_mesh,pa*np.pi/180,eps,x0,y0,self.pixel_scale)
+			twoDmdls= dataset_to_2D([self.ny,self.nx], self.n_annulus, self.rings_pos, self.r_n, self.xy_mesh, self.kinmdl_dataset, self.vmode, self.v_center, pars, self.index_v0, nmodls=self.Vk)
 			sigmap=twoDmdls[0]
 			interp_model=twoDmdls[1:]
 
@@ -425,7 +425,7 @@ class Fit_kin_mdls(Models):
 			"""
 			if self.r1st !=0:
 				mask_inner = np.where( (self.r_n < self.rings_pos[0] ) )
-				x_r0,y_r0 = self.XY_mesh[0][mask_inner], self.XY_mesh[1][mask_inner]
+				x_r0,y_r0 = self.xy_mesh[0][mask_inner], self.xy_mesh[1][mask_inner]
 				r_space_0 = self.rings_pos[0]
 
 				#(a) velocity rises linearly from zero: r1 = 0, v1 = 0
@@ -528,7 +528,7 @@ class Fit_kin_mdls(Models):
 
 			cube_mdl = self.cube_modl.create_cube(velmap,sigmap,self.padded_cube,self.padded_psf,self.cube_slices)
 			mom1_mdl = self.cube_modl.obs_mommaps2(cube_mdl, return_mom='mom1')
-			
+
 			ntotal_d=(self.nx*self.ny)
 			neff_d=np.sum( (np.isfinite(self.mom1)) & (self.mom0!=0) )
 			neff_m=np.sum( (np.isfinite(mom1_mdl)) & (mom1_mdl!=0) & (self.mom0!=0))
@@ -537,7 +537,7 @@ class Fit_kin_mdls(Models):
 			if self.fit_from_cube:
 				obs_n = self.datacube/obs_peak
 				mod_n = cube_mdl/obs_peak
-				W	  = cos_theta/np.sum(cos_theta)
+				W	  = rweight/np.sum(rweight)
 				residuals = np.sqrt(W) * (obs_n-mod_n) *msk  # weighted residuals
 				res_moms  = np.sqrt(W) * ((self.mom1-mom1_mdl)/self.dv)*msk
 
@@ -547,7 +547,7 @@ class Fit_kin_mdls(Models):
 			if self.it % 20 == 0:
 				it = self.it
 				chisq = np.sum(residuals**2)
-				print(f'it: {it} chisquare : {chisq} pa: {pa} inc: {inc} xc: {x0} yc: {y0} vsys: {Vsys}' )
+				print(f'Iter {it:5d} chi2={chisq:.6f} pa:{pa} inc:{inc} xc:{x0} yc:{y0} vsys:{Vsys}')
 
 
 			if self.fit_from_cube:
@@ -569,14 +569,14 @@ class Fit_kin_mdls(Models):
 			res = self.residual(pars)
 
 			out1 = Minimizer(self.residual, pars)
-			
+
 			if self.fitmeth == 'lsq':
 				options={'verbose':2,'max_nfev':self.MAXF*(self.nparams+1),'xtol':self.XTOL,'gtol':self.XTOL,'ftol':self.XTOL}
 				out=out1.minimize(method='least_squares',**options)
 			if self.fitmeth == 'nelder':
 				options={'xatol':self.XTOL,'gtol':self.XTOL,'fatol':self.XTOL, 'maxiter':8000, 'adaptive': True}
 				fit_kws={'options':options}
-				out=out1.minimize(method='nelder',**fit_kws)			
+				out=out1.minimize(method='nelder',**fit_kws)
 
 			return out
 
@@ -632,31 +632,31 @@ class Fit_kin_mdls(Models):
 
 			create_3D = best_3d_model(self.mommaps_obs,self.datacube,self.h,self.config,self.vmode,self.V_k,pa,eps,x0,y0, Vsys,self.rings_pos,self.ring_space,self.pixel_scale,self.bmaj, self.v_center,self.m_hrm,phi_b,self.Vk)
 			mdls_3D = create_3D.model3D()
-			
-			
+
+
 			mom01d,mom0axi,mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels=mdls_3D
 
 
 			#We need to re-compute chisquare with the best model !
 			# Compute the residuals
-			res = ( self.datacube - cube_mdl) #/ self.ecube
+			res   = ( self.datacube - cube_mdl) / self.obs_peak
 			msk2D = np.isfinite(mom1_mdl) & (self.mom0!=0)
 			msk3D = (self.datacube!=0)*(msk2D*np.ones(self.nz)[:,None,None]).astype(bool)
-			cost = res[msk3D]
+			cost  = res[msk3D]
 
-			N_data=len(cost)
+			N_data = len(cost)
 			N_free = N_data - N_nvarys
 
 			# Residual sum of squares
-			rss2 = (cost)**2
-			rss=np.nansum(rss2)
+			rss2 	= (cost)**2
+			rss 	= np.nansum(rss2)
 			# Compute reduced chisquare
-			chisq =rss
-			red_chi = chisq/ (N_free)
+			chisq 	= rss
+			red_chi = chisq / (N_free)
 
-			chisq = chisq if np.isfinite(chisq) else 1e4
+			chisq   = chisq if np.isfinite(chisq) else 1e4
 			red_chi = red_chi if np.isfinite(red_chi) else 1e4
-			rss = rss if np.isfinite(rss) else 1e4
+			rss 	= rss if np.isfinite(rss) else 1e4
 
 			# Akaike Information Criterion
 			aic = N_data*np.log(rss/N_data) + 2*N_nvarys
@@ -673,8 +673,8 @@ class Fit_kin_mdls(Models):
 				errors[0],errors[1] = [self.V_k_std[0:self.m_hrm],self.V_k_std[self.m_hrm:-1],self.V_k_std[-1]],e_constant_parms
 
 
-
 			if len(self.V_k) != len(self.V_k_std)  : self.V_k_std = [1e-3]*len(self.V_k)
 
 			out_data = [N_free, N_nvarys, N_data, bic, aic, red_chi]
+
 			return mdls_3D, self.V_k, pa, eps , x0, y0, Vsys, phi_b, out_data, errors, self.rings_pos
