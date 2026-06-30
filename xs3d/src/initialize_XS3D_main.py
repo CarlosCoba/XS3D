@@ -98,11 +98,11 @@ class Run_models:
 		cube_class.eflux3d=self.errcube
 
 		#create observed momemnt maps
-		self.momaps=cube_class.obs_mommaps()
+		[self.mom0,self.mom1,self.mom2]=cube_class.obs_mommaps2(self.datacube)
 		# create random moments instead ?
 		#self.momaps=cube_class.obs_mommaps_rnd(individual_run=1)
 
-		[self.mom0,self.mom1,self.mom2]=self.momaps
+		self.momaps=[self.mom0,self.mom1,self.mom2]
 		#if vpeak2D is not None: self.mom1=vpeak2D # vpeak from smoothed cube
 		# create temporary error moment maps
 		self.emoms=[np.ones_like(self.mom0),np.ones_like(self.mom1),np.ones_like(self.mom2)]
@@ -124,7 +124,7 @@ class Run_models:
 		compute_geom=np.any([True if k in geom else False for k in osi])
 		if compute_geom:
 			# estimate geometric moments with mom0 map.
-			geom_start=geom_moms(self.mom0,self.pixel_scale)
+			geom_start=geom_moms(self.mom0,self.pixel_scale,binary=False)
 			sma=geom_start[-1]
 		if rfinal in osi:
 			rfinal = sma

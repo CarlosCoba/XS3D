@@ -84,6 +84,7 @@ class Least_square_fit:
 		self.rings_nc =  rings_pos['R_NC']
 		self.r1st=self.rings_pos[0]
 		self.nrings = len(self.rings_pos)
+		self.rmax = np.max(self.rings_pos)
 		self.n_annulus = self.nrings - 1
 		self.mommaps_obs=mommaps
 		[self.mom0,self.mom1,self.mom2]=mommaps
@@ -93,7 +94,7 @@ class Least_square_fit:
 		[self.emom0,self.emom1,self.emom2]=emoms
 		self.vmode = vmode
 		self.ring_space = ring_space
-		self.fit_method = 'nelder'#'least_squares'
+		self.fitmeth = 'nelder'#'least_squares'
 		self.config = config
 		self.constant_params = constant_params
 		self.osi = ["-", ".", ",", "#","%", "&", ""]
@@ -107,13 +108,6 @@ class Least_square_fit:
 		self.mom1=self.mom1*(msk_outliers)
 		self.mom2=self.mom2*(msk_outliers)
 
-		# args to pass to minimize function
-		self.kws={'maxiter':500,'fatol':1e-4,'adaptivessss':True}
-		self.kwargs = {}
-		#self.kwargs = {'ftol':1e-4,'gtol':1e-6,'xtol':1e-6,'max_nfev':max_nfev,'verbose':2}
-		if self.N_it == 0:
-			self.kwargs = {"ftol":1e8}
-
 		X = np.arange(0, self.nx, 1)
 		Y = np.arange(0, self.ny, 1)
 		self.XY_mesh = np.meshgrid(X,Y)
@@ -123,9 +117,10 @@ class Least_square_fit:
 		self.crval3,self.cdelt3,self.pixel_scale=Header_info(self.h,self.config).read_header()
 		self.wave_kms=Header_info(self.h,self.config).wave_kms
 		self.r_n = Rings(self.XY_mesh,self.pa0*np.pi/180,self.eps0,self.xc0,self.yc0,self.pixel_scale)
-		self.r_n = np.asarray(self.r_n, dtype = np.longdouble)
+		self.mask_psf = 0
 		self.frac_pixel = frac_pixel
 		self.v_center = v_center
+		vsys_min, vsys_max=np.min(self.wave_kms),np.max(self.wave_kms) 
 
 
 		self.e_ISM = 0
@@ -155,19 +150,17 @@ class Least_square_fit:
 		if self.INCmax >1:  self.INCmax = 1-np.cos(self.INCmax*np.pi/180)
 		self.X0min,self.X0max,self.vary_xc = config_const.getfloat('MIN_X0', 0), config_const.getfloat('MAX_X0', self.nx),config_const.getboolean('FIT_X0', self.vary_xc)
 		self.Y0min,self.Y0max,self.vary_yc = config_const.getfloat('MIN_Y0', 0), config_const.getfloat('MAX_Y0', self.ny),config_const.getboolean('FIT_Y0', self.vary_yc)
-		self.VSYSmin,self.VSYSmax,self.vary_vsys = config_const.getfloat('MIN_VSYS', 0), config_const.getfloat('MAX_VSYS', 10*__c__),config_const.getboolean('FIT_VSYS', self.vary_vsys)
+		self.VSYSmin,self.VSYSmax,self.vary_vsys = config_const.getfloat('MIN_VSYS', vsys_min), config_const.getfloat('MAX_VSYS', vsys_max),config_const.getboolean('FIT_VSYS', self.vary_vsys)
 		self.PAbarmin,self.PAbarmax,self.vary_phib = config_const.getfloat('MIN_PHI_BAR', -2*np.pi), config_const.getfloat('MAX_PHI_BAR', 2*np.pi),config_const.getboolean('FIT_PHI_BAR', self.vary_phib)
 		self.weight=config_const.getint('WEIGHT',0)
 		self.XTOL=config_const.getfloat('XTOL',1e-5)
 		self.MAXF=config_const.getint('MAXF',15)
 
 		config_general = config['general']
-		outliers = config_general.getboolean('outliers', False)
-		if outliers: self.kwargs["loss"]="soft_l1"
-		#self.kwargs["loss"]="soft_l1"
 
 		self.vary_disp=config_general.getboolean('fit_dispersion',False)
-		psf_lsf= PsF_LsF(self.h, config)
+		psf_lsf = PsF_LsF(self.h, config)
+		self.bmaj = psf_lsf.bmaj
 		self.sigma_inst_kms=psf_lsf.sigma_inst_kms
 		self.sigma_inst_pix=psf_lsf.sigma_inst_pix
 		self.dv=psf_lsf.cdelt3_kms
@@ -214,6 +207,7 @@ class Least_square_fit:
 		self.mask_cube=np.ones_like(self.datacube,dtype=bool)*(self.mom0!=0)
 		self.fit_from_cube=config_general.getboolean('fit_from_cube',False)
 		self.obs_peak = (self.datacube).max()
+		self.it = 0
 
 		self.rel=1e10
 		self.peakI0=np.nanmax(self.datacube,axis=0)
@@ -528,8 +522,13 @@ class Fit_kin_mdls(Models):
 				velmap=velsum+msk*Vsys
 
 
-			msk=(velmap!=0) & (self.mom0>0)
-			mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl=self.cube_modl.create_cube(velmap,sigmap,self.padded_cube,self.padded_psf,self.cube_slices,pass_cube=self.fit_from_cube)
+			self.msk_psf = self.r_n < (self.rmax + self.bmaj)
+			msk = (velmap!=0) & (self.mom0>0) & (self.msk_psf)
+			#mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl=self.cube_modl.create_cube(velmap,sigmap,self.padded_cube,self.padded_psf,self.cube_slices,pass_cube=self.fit_from_cube)
+
+			cube_mdl = self.cube_modl.create_cube(velmap,sigmap,self.padded_cube,self.padded_psf,self.cube_slices)
+			mom1_mdl = self.cube_modl.obs_mommaps2(cube_mdl, return_mom='mom1')
+			
 			ntotal_d=(self.nx*self.ny)
 			neff_d=np.sum( (np.isfinite(self.mom1)) & (self.mom0!=0) )
 			neff_m=np.sum( (np.isfinite(mom1_mdl)) & (mom1_mdl!=0) & (self.mom0!=0))
@@ -538,9 +537,18 @@ class Fit_kin_mdls(Models):
 			if self.fit_from_cube:
 				obs_n = self.datacube/obs_peak
 				mod_n = cube_mdl/obs_peak
-				W	  = cos_theta/np.nansum(cos_theta)
+				W	  = cos_theta/np.sum(cos_theta)
 				residuals = np.sqrt(W) * (obs_n-mod_n) *msk  # weighted residuals
-				res_moms = np.sqrt(W) * ((self.mom1-mom1_mdl)/self.dv)*msk
+				res_moms  = np.sqrt(W) * ((self.mom1-mom1_mdl)/self.dv)*msk
+
+
+
+			self.it = self.it + 1
+			if self.it % 20 == 0:
+				it = self.it
+				chisq = np.sum(residuals**2)
+				print(f'it: {it} chisquare : {chisq} pa: {pa} inc: {inc} xc: {x0} yc: {y0} vsys: {Vsys}' )
+
 
 			if self.fit_from_cube:
 				return np.concatenate([residuals.ravel(), res_moms.ravel()])
@@ -560,12 +568,15 @@ class Fit_kin_mdls(Models):
 			self.assign_constpars(pars)
 			res = self.residual(pars)
 
-			out1 = Minimizer(self.residual, pars)#, iter_cb=self.iter_cb)
-			options={'verbose':2,'max_nfev':self.MAXF*(self.nparams+1),'xtol':self.XTOL,'gtol':self.XTOL,'ftol':self.XTOL}
-			out=out1.minimize(method='least_squares',**options)
-
-			#fit_kws={'tol':1e-5}
-			#out = out1.scalar_minimize(**fit_kws)
+			out1 = Minimizer(self.residual, pars)
+			
+			if self.fitmeth == 'lsq':
+				options={'verbose':2,'max_nfev':self.MAXF*(self.nparams+1),'xtol':self.XTOL,'gtol':self.XTOL,'ftol':self.XTOL}
+				out=out1.minimize(method='least_squares',**options)
+			if self.fitmeth == 'nelder':
+				options={'xatol':self.XTOL,'gtol':self.XTOL,'fatol':self.XTOL, 'maxiter':8000, 'adaptive': True}
+				fit_kws={'options':options}
+				out=out1.minimize(method='nelder',**fit_kws)			
 
 			return out
 
@@ -619,8 +630,10 @@ class Fit_kin_mdls(Models):
 			if None in e_constant_parms:  e_constant_parms = [1e-3]*len(constant_parms)
 			if np.nan in e_constant_parms:  e_constant_parms = [1e-3]*len(constant_parms)
 
-			create_3D=	best_3d_model(self.mommaps_obs,self.datacube,self.h,self.config,self.vmode,self.V_k,pa,eps,x0,y0, Vsys,self.rings_pos,self.ring_space,self.pixel_scale,self.v_center,self.m_hrm,phi_b,self.Vk)
+			create_3D = best_3d_model(self.mommaps_obs,self.datacube,self.h,self.config,self.vmode,self.V_k,pa,eps,x0,y0, Vsys,self.rings_pos,self.ring_space,self.pixel_scale,self.bmaj, self.v_center,self.m_hrm,phi_b,self.Vk)
 			mdls_3D = create_3D.model3D()
+			
+			
 			mom01d,mom0axi,mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels=mdls_3D
 
 

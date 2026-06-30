@@ -71,6 +71,6 @@ pvd = ['#FDFBF6','#F6E6D6', '#EBC7A8', '#D56D4C', '#B14A33', '#7A2E25']
 mom1=hex_list
 
 def vel_map(c=mom1):
-    if c == 'mom0': c = mom0
-    if c == 'pvd': c = pvd
+	if c == 'mom0': c = mom0
+	if c == 'pvd': c = pvd
 	return get_continuous_cmap(c)
