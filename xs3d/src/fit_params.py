@@ -630,7 +630,7 @@ class Fit_kin_mdls(Models):
 			if None in e_constant_parms:  e_constant_parms = [1e-3]*len(constant_parms)
 			if np.nan in e_constant_parms:  e_constant_parms = [1e-3]*len(constant_parms)
 
-			create_3D = best_3d_model(self.mommaps_obs,self.datacube,self.h,self.config,self.vmode,self.V_k,pa,eps,x0,y0, Vsys,self.rings_pos,self.ring_space,self.pixel_scale,self.bmaj, self.v_center,self.m_hrm,phi_b,self.Vk)
+			create_3D = best_3d_model(self.mommaps_obs,self.datacube,self.h,self.config,self.vmode,self.V_k,pa,eps,x0,y0,Vsys,self.rings_pos,self.ring_space,self.pixel_scale,self.bmaj,self.v_center,self.m_hrm,phi_b,self.Vk)
 			mdls_3D = create_3D.model3D()
 
 
