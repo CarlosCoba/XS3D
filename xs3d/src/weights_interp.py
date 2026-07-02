@@ -4,10 +4,9 @@ from .pixel_params import Rings
 
 #v_new = v1*(r2-r)/(r2-r1) + v2*(r-r1)/(r2-r1)
 #v_new = v1*w_v1 + v2*w_v2
-def weigths_w(xy_mesh, pa, eps, x0, y0, r2, ring_space, pixel_scale, r1 = None):
+def weigths_w(xy_mesh, pa_deg, eps, x0, y0, r2, ring_space, pixel_scale, r1 = None):
 
-	pa  = pa*np.pi/180  
-	r_n = Rings(xy_mesh,pa,eps,x0,y0,pixel_scale)
+	r_n = Rings(xy_mesh,pa_deg,eps,x0,y0,pixel_scale)
 
 	ring_space = float(ring_space)
 

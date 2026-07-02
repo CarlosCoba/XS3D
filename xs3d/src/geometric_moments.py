@@ -76,6 +76,7 @@ def geom_moms(image0,pixel=1,plot=False,binary=True, nloops=15):
 		bmin2=0.5*(x2+y2) - np.sqrt( (0.5*(x2-y2))**2 + xy**2 )
 		bmaj=np.sqrt(bmaj2)
 		bmin=np.sqrt(bmin2)
+		b_a = bmin/bmaj # -> axis ratio
 		eps = 1-(bmin/bmaj)
 
 		tan_2theta=2*xy/(x2-y2)
@@ -89,9 +90,16 @@ def geom_moms(image0,pixel=1,plot=False,binary=True, nloops=15):
 			theta=theta2
 
 		theta_deg=theta*180/np.pi
-		inc_deg=np.arccos(1-eps)*180/np.pi
+		inc_rad=np.arccos(1-eps)
+		inc_deg=inc_rad*180/np.pi
+		
+		q0 = 0.2 # -> intrinsic thickness of an oblate stellar disk
+		cos2_i = (b_a**2-q0**2)/(1-q0**2)
+		inc_cor_rad = np.arccos(np.sqrt(cos2_i)) if cos2_i > 0 else inc_rad
+		inc_cor_deg = inc_cor_rad*180/np.pi
+		
 		pa_astro_deg=theta_deg-90
-		pa_astro_deg = pa_astro_deg % 360
+		pa_astro_deg=pa_astro_deg % 360
 		pa_astro_rad=pa_astro_deg*np.pi/180
 		rmax=2*(bmaj)*pixel
 
@@ -126,11 +134,11 @@ def geom_moms(image0,pixel=1,plot=False,binary=True, nloops=15):
 
 		plot=0
 		if plot:
-			print(pa_astro_deg,inc_deg, xcen, ycen,rmax)
+			print(pa_astro_deg,inc_cor_deg, xcen, ycen,rmax)
 			plt.imshow(image0*(img/img),origin='lower');
 			x,y=ellipse(xcen,ycen,theta_deg,bmaj*2,eps)
 			plt.scatter(xcen,ycen,s=50,c='r')
 			plt.plot(x,y,'r-')
 			plt.show()
 	rmax=(rmax//pixel)*pixel
-	return pa_astro_deg,inc_deg, xcen, ycen, rmax
+	return pa_astro_deg,inc_cor_deg, xcen, ycen, rmax

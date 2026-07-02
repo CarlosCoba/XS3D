@@ -4,9 +4,9 @@ from .pixel_params import Rings,eps_2_inc
 
 
 
-def weigths_w(xy_mesh,shape,pa,eps,x0,y0,ring,delta,k,pixel_scale):
+def weigths_w(xy_mesh,shape,pa_deg,eps,x0,y0,ring,delta,k,pixel_scale):
 
-	r_n = Rings(xy_mesh,pa,eps,x0,y0,pixel_scale)
+	r_n = Rings(xy_mesh,pa_deg,eps,x0,y0,pixel_scale)
 	a_k = ring
 
 
@@ -35,10 +35,11 @@ def myatan(x,y):
 
 
 
-def cos_sin(xy_mesh,pa,eps,x0,y0,pixel_scale=1):
+def cos_sin(xy_mesh,pa_deg,eps,x0,y0,pixel_scale=1):
 	(x,y) = xy_mesh
-	R  = Rings(xy_mesh,pa,eps,x0,y0,pixel_scale)
+	R  = Rings(xy_mesh,pa_deg,eps,x0,y0,pixel_scale)
 
+	pa = np.radians(pa_deg)
 	cos_tetha = (- (x-x0)*np.sin(pa) + (y-y0)*np.cos(pa))/R
 	sin_tetha = (- (x-x0)*np.cos(pa) - (y-y0)*np.sin(pa))/((1-eps)*R)
 
@@ -46,9 +47,11 @@ def cos_sin(xy_mesh,pa,eps,x0,y0,pixel_scale=1):
 	return cos_tetha,sin_tetha
 
 
-def trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode="radial",pixel_scale=1, m_hrm = 1):
-	inc = eps_2_inc(eps)
-	cos,sin = cos_sin(xy_mesh,pa,eps,x0,y0)
+def trigonometric_weights(xy_mesh,pa_deg,eps,x0,y0,phi_b,mask,vmode="radial",pixel_scale=1, m_hrm = 1):	
+	inc_deg = eps_2_inc(eps)
+	inc = np.radians(inc_deg)
+			
+	cos,sin = cos_sin(xy_mesh,pa_deg,eps,x0,y0)
 	cos,sin = cos[mask],sin[mask]
 
 	if vmode == "dispersion":
@@ -96,11 +99,11 @@ def trigonometric_weights(xy_mesh,pa,eps,x0,y0,phi_b,mask,vmode="radial",pixel_s
 
 
 
-def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=1,vmode = "radial", m_hrm = 1):
+def M_tab(pa_deg,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=1,vmode = "radial", m_hrm = 1):
 
 	[ny,nx] = shape
 
-	pa = pa*np.pi/180
+	pa = pa_deg
 	X = np.arange(0, nx, 1)
 	Y = np.arange(0, ny, 1)
 	xy_mesh = np.meshgrid(X,Y)
@@ -119,12 +122,14 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 	vel_val=mom1
 	disp_val=mom2
 
-	weigths_k,weigths_j,mask_r_xy = weigths_w(xy_mesh,shape,pa,eps,x0,y0,rings,delta,k,pixel_scale=pixel_scale)
+	if eps>0.90:
+		eps = 0.9
+	weigths_k,weigths_j,mask_r_xy = weigths_w(xy_mesh,shape,pa,eps,x0,y0,rings,delta,k,pixel_scale =pixel_scale)
 	weigths_k,weigths_j = np.asarray(weigths_k),np.asarray(weigths_j)
 
 	# remove nan (x,y) pixels from rings
 	mask_r_xy_valid = np.isfinite((mom0*mom1*mom2)[mask_r_xy])
-	# this mask does not contain nans
+	# this mask does not contain nans	
 	mask = (mask_r_xy[0][mask_r_xy_valid], mask_r_xy[1][mask_r_xy_valid])
 
 	###################
@@ -175,7 +180,6 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 	#make zeros to nan to avoid infinites !
 	sigma_v[sigma_v==0]=np.nan
 	if vmode == "circular":
-
 		w_rot = trigonometric_weights(xy_mesh,pa,eps,x0,y0,0,mask,vmode)
 		x11,x12 = w_rot**2/sigma_v**2,0/sigma_v**2
 		x21,x22 = 0/sigma_v**2,0/sigma_v**2
@@ -299,3 +303,4 @@ def M_tab(pa,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_scale=
 		#x = C, S
 		C, S = x[:m_hrm],x[m_hrm:]
 		return dispersion,C, S
+		

@@ -3,7 +3,10 @@ import matplotlib.pylab as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
+import matplotlib.ticker as ticker
 from matplotlib.offsetbox import AnchoredText
+
+
 from .axes_params import axes_ambient as axs
 from .cbar import colorbar as cb
 from .colormaps_CLC import vel_map
@@ -12,36 +15,50 @@ from .constants import __c__
 #params =   {'text.usetex' : True }
 #plt.rcParams.update(params)
 
-def vmin_vmax(data,pmin=2,pmax=99.5,base=None,symmetric =False):
-	vmin,vmax=np.nanpercentile(np.unique(data),pmin),np.nanpercentile(np.unique(data),pmax)
-	vsym = (vmax+abs(vmin))*0.5
-	if symmetric: vmin,vmax=-1*vsym,vsym
-	if base is not None:
-		vmin,vmax=(vmin//base+1)*base,(vmax//base+1)*base
-		if symmetric: vmin,vmax=-1*(vsym//base+1)*base,(vsym//base+1)*base
-	return vmin,vmax
-
-def zero2nan(data):
-	data[data==0]=np.nan
-	return data
-
 cmap = vel_map()
 
-def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad,Vtan,eVtan,VSYS,INC,ext,hdr_info,config,out):
-	_,_,mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl,velmap_intr,sigmap_intr,twoDmodels= momms_mdls
-	vt2D=twoDmodels[0]
+def plot_kin_models(galaxy,vmode,const,best,out):
 
-	width, height = 9, 6 # width [cm]
-	#width, height = 3, 15 # width [cm]
+	R=abs(best['radius'])
+	nrings=len(R)	
+	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
+
+	scalar_fields = ["v_rot", "v_rad", "v_2t", "v_2r", "v_disp"]
+	vels = {k:best[k] for k in scalar_fields}
+	vrot = vels['v_rot']
+	vrad = vels['v_rad'] if vmode != 'bisymmetric' else 	vels['v_2r']
+	vtan = vels['v_2t']
+	vdisp = vels['v_disp']
+	v_nc_max = np.max( abs(np.concatenate([vrad.ravel(), vtan.ravel()])))
+	
+	evrot = np.zeros_like(vrot)	
+	evrad = np.zeros_like(vrot)	
+	evtan = np.zeros_like(vrot)			
+	evdisp = np.zeros_like(vrot)			
+		
+	
+	width, height = 10, 6 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
 
-	fig, ax2 = plt.subplots(figsize=(6.5, 6.5*0.65), dpi = 300)
-
-
-	#ax2=plt.subplot(gs2[0,3])
-
+	if vmode=='circular':
+		fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
+		gs2 = fig.add_gridspec(nrows=1, ncols=1, left=0.10, right=0.85, wspace=0, bottom=0.17, top = 0.95)
+		ax0=plt.subplot(gs2[0,0])
+	else:
+		width, height = 10, 9 # width [cm]
+		figWidth = width * cm_to_inch # width [inch]
+		figHeight = height * cm_to_inch # width [inch]
+		heights = [1, 0.6]
+	
+		fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)		
+		gs = gridspec.GridSpec(2, 1, height_ratios=heights)
+		gs.update(left=0.13, right=0.85,top=0.97,bottom=0.10, hspace = 0.15, wspace = 0)
+		ax0 = plt.subplot(gs[0,0])
+		ax1 = plt.subplot(gs[1,0])
+		
+	
 	# is it the axes in arcsec or arcmin ?
 	rnorm=1
 	if np.max(R)>80:
@@ -50,74 +67,61 @@ def plot_kin_models(galaxy,vmode,momms_mdls,R,Sigma,eSigma,Vrot,eVrot,Vrad,eVrad
 	else:
 		rlabel='arcsec'
 
-	ext = ext/rnorm
 	R=R/rnorm
-	axs(ax2, rotation='horizontal',fontsize_ticklabels=16)
-
-	#txt = AnchoredText('$\mathrm{V}_{t}/\sigma=%s$'%(mean_rat),loc='upper left', pad=0.1, borderpad=0, prop=dict(size=10), frameon=0);ax2.add_artist(txt)
-
-	ax2.errorbar(R, Sigma, yerr=eSigma, color = "#db6d52", label = "$\sigma_{gas}$",  fmt='D', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
-	ax2.errorbar(R, Vrot, yerr=eVrot, color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='D', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)
+	delta_r = R[-1]-R[-2]
+	max_r = np.max(R)
+		
+	axs(ax0, rotation='horizontal',remove_axis_lines = True, fontsize_ticklabels=10)
 
 
+	ax0.errorbar(R, vdisp, yerr=evdisp, color = "#db6d52", label = "$\sigma_\mathrm{gas}$",  fmt='o', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
+	ax0.errorbar(R, vrot, yerr=evrot, color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='o', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)	
+	if vmode != 'circular':
+		ax1.errorbar(R, -1e4*vdisp, yerr=evdisp, color = "#db6d52", label = "$\sigma_\mathrm{gas}$",  fmt='o', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, -1e4*vrot, yerr=evrot, color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='o', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)
+	
 	if vmode == "radial":
-		ax2.errorbar(R, Vrad, yerr=eVrad, color = "#c73412", label = "$\mathrm{V_{r}}$", fmt='D', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vrad, yerr=evrad, color = "#c73412", label = "$\mathrm{V_{r}}$", fmt='o', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
 
 	if vmode == "vertical":
-		ax2.errorbar(R, Vrad, yerr=eVrad, color = "#b47b50", label = "$\mathrm{V_{z}}$", fmt='D', mfc = '#b47b50', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#b47b50', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vrad, yerr=evrad, color = "#b47b50", label = "$\mathrm{V_{z}}$", fmt='o', mfc = '#b47b50', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#b47b50', lw=1, ls = ':', capsize=2)
 
 	if vmode == "bisymmetric":
-		ax2.errorbar(R, Vrad, yerr=eVrad, color = "#c73412", label = "$\mathrm{V_{2,r}}$", fmt='D', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
-		ax2.errorbar(R, Vtan, yerr=eVtan, color = "#2fa7ce", label = "$\mathrm{V_{2,t}}$", fmt='D', mfc = '#2fa7ce', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#2fa7ce', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vrad, yerr=evrad, color = "#c73412", label = "$\mathrm{V_{2,r}}$", fmt='o', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vtan, yerr=evtan, color = "#2fa7ce", label = "$\mathrm{V_{2,t}}$", fmt='o', mfc = '#2fa7ce', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#2fa7ce', lw=1, ls = ':', capsize=2)
 
-	#bbox_to_anchor =(x0, y0, width, height)
-	ax2.legend(loc = "upper left", fontsize = 14, bbox_to_anchor = (1,1), ncol = 1, frameon = 1, labelspacing=0.7, handlelength=1, handletextpad=0.3,columnspacing=0.8,borderaxespad=0.1)
+	# Move the left and bottom spines to x = 0 and y = 0, respectively.
+	ax0.spines[["left", "bottom"]].set_position(("data", 0))
+	# Hide the top and right spines.
+	ax0.spines[["top", "right"]].set_visible(False)
 
-	vels0 = np.asarray([0*Vrot, Vrot, Vrad, Vtan])
-	vels=vels0.flatten()
-	msk=(np.isfinite(vels))
-	vels=vels[msk]
-	max_vel,min_vel = int(np.nanmax(vels)),int(np.nanmin(vels))
-	min_vel = abs(min_vel)
-	pad=40
+	ax0.plot(1, 0, ">k", transform=ax0.get_yaxis_transform(), clip_on=False)
+	ax0.plot(0, 1, "^k", transform=ax0.get_xaxis_transform(), clip_on=False)
 
-	M=25
-	if max_vel> 120:
-		M=30
-	if max_vel>190:
-		M=40
-	if max_vel>250:
-		M=50
-	if max_vel>300:
-		M=60
-	if max_vel < 50:
-		M = 10 if max_vel > 10 else 1
-		ax2.set_ylim(-1*(min_vel//1)-1,1.25*(max_vel//1))
+	ax0.set_ylim(0, 30*(np.max(vrot)//30)+40)
+	ax0.xaxis.set_major_locator(ticker.MaxNLocator(5))
+	ax0.yaxis.set_major_locator(ticker.MaxNLocator(5))
+	
+	dashline = (5, (10, 3))
+	ax0.plot([0,max_r],[0,0],color = "k",linestyle=dashline, alpha = 0.6,linewidth = 0.5)
+	ax0.set_ylabel('$\mathrm{Velocity\,(km~s^{-1})}$',fontsize=10)
+
+	if vmode != 'circular':
+		ax1.legend(loc = "upper left", fontsize=10, bbox_to_anchor=(1,1), ncol=1, bbox_transform=ax0.transAxes, labelspacing=0.7, handlelength=1, handletextpad=0.3,columnspacing=0.8,borderaxespad=0.1,frameon=False)	
+		ax0.set_xlim(-delta_r*0.1, max_r+delta_r*0.1)
+		ax1.set_xlim(-delta_r*0.1, max_r+delta_r*0.1)	
+		ax1.plot([0,max_r],[0,0],color = "k",linestyle=dashline, alpha = 1,linewidth = 0.5)				
+		axs(ax1, remove_xticks= False, rotation = 'horizontal', fontsize_ticklabels=10)
+		ax1.grid(visible = True, which = "major", axis = "both", color='gray', linestyle='-', linewidth=0.5, zorder = 1, alpha = 0.5)
+		ax1.xaxis.set_major_locator(ticker.MaxNLocator(5))		
+		ax1.yaxis.set_major_locator(ticker.MaxNLocator(3))
+		ax1.set_ylim(-v_nc_max -4 , v_nc_max + 4)
+		ax1.set_xlabel(f'r ({rlabel})',fontsize=10)
+		ax1.set_ylabel("$\mathrm{V_{NC}~(km\,s^{-1})}$",fontsize = 10)					
 	else:
-		ax2.set_ylim(-30*(min_vel//30)-30,30*(max_vel//30)+40)
-	ax2.yaxis.set_major_locator(MultipleLocator(M))
-
-	ax2.plot([0,np.nanmax(R)],[0,0],color = "k",linestyle='-', alpha = 0.6,linewidth = 0.3)
-	ax2.set_xlabel(f'r ({rlabel})',fontsize=16)
-	ax2.set_ylabel('$\mathrm{Velocity~(km~s^{-1})}$',fontsize=16)
-
-
-	"""
-	# plot PSF ellipse ?
-	config_general = config['general']
-	eline=config_general.getfloat('eline')
-	specres=config_general.getfloat('fwhm_inst',None)
-
-	if specres	is not None:
-		specres_kms=(specres/eline)*__c__
-		fwhm_kms=specres_kms/2.354
-	else:
-		fwhm_kms=hdr_info.cdelt3_kms
-
-	fwhm_kms=fwhm_kms*np.sin(INC*np.pi/180)
-	x0,y0=np.nanmax(R)*0.05, max_vel*0.8
-	ax2.errorbar(x0, y0, yerr=fwhm_kms,fmt ='s',lw=0.5,color='k', ms=1)
-    """
+		ax0.legend(loc="upper left", fontsize = 10, bbox_to_anchor=(1,1), ncol=1, labelspacing=0.7, handlelength=1, handletextpad=0.3,columnspacing=0.8,borderaxespad=0.1,frameon=False)	
+		ax0.set_xlabel(f'r ({rlabel})',fontsize=10)	
+				
 	fig.tight_layout()
 	plt.savefig("%sfigures/kin_%s_disp_%s.png"%(out,vmode,galaxy))
 	#plt.clf()

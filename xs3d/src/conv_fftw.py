@@ -56,7 +56,6 @@ class fftconv:
 		# Here apply the convolution theorem		
 		conv= self.ifft_obj(fft_cube * fft_psf)
 		conv_real = np.real(np.fft.fftshift(conv,axes=self.axes))
-		
 		# Remove padding
 		return conv_real[cube_slices]
 
@@ -72,7 +71,7 @@ nx=2**N --> log2(nx)/log(2)=N
 """
 def data_2N(data,axes=None):
 	dims=np.shape(data)
-	naxes=len(dims)
+	naxes=data.ndim
 	if axes is None:
 		axes=list(np.arange(naxes))
 		

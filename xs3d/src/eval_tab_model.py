@@ -2,7 +2,7 @@ import numpy as np
 from .pixel_params import pixels
 from .M_tabulated import M_tab
 
-def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pixel_scale, vmode, shape, frac_pixel, r_bar_min, r_bar_max, m_hrm = 1):
+def tab_mod_vels(rings, mommaps, evel, pa_deg, inc, x0, y0, vsys,theta_b, delta, pixel_scale, vmode, shape, frac_pixel, r_bar_min, r_bar_max, m_hrm = 1):
 
 	mom0,mom1,mom2=mommaps
 	#do not include negative values in m0 in this analysis
@@ -11,6 +11,7 @@ def tab_mod_vels(rings, mommaps, evel, pa, inc, x0, y0, vsys,theta_b, delta, pix
 	mom0,mom1,mom2=mom0*msk,mom1*msk,mom2*msk
 	mom1=mom1-vsys
 	mommaps2=[mom0,mom1,mom2]
+	pa = pa_deg
 
 	intens_tab,disp_tab,vrot_tab,vrad_tab,vtan_tab = np.asarray([]),np.asarray([]),np.asarray([]),np.asarray([]),np.asarray([])
 	c1_tab, c3_tab, s1_tab, s3_tab = np.asarray([]),np.asarray([]),np.asarray([]),np.asarray([])

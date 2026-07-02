@@ -19,7 +19,7 @@ from .conv_spec1d import gaussian_filter1d,convolve_sigma
 
 
 class best_3d_model:
-	def __init__(self,mommaps_obs,cube,hdr,config,vmode,V_k, pa, eps, x0, y0, Vsys, ring_pos, ring_space, pixel_scale, bmaj, inner_interp, m_hrm = 1, phi_b = None, nVk=2):
+	def __init__(self,mommaps_obs,cube,hdr,config,vmode,V_k, pa, eps, x0, y0, Vsys, ring_pos, ring_space, pixel_scale, inner_interp, m_hrm = 1, phi_b = None, nVk=2):
 	
 	
 		[self.mom0,self.mom1,self.mom2]=mommaps_obs
@@ -29,13 +29,11 @@ class best_3d_model:
 		self.vmode  =  vmode
 		self.pa, self.eps, self.x0, self.y0, self.Vsys =pa, eps, x0, y0, Vsys
 		self.rings_pos = ring_pos
-		self.rmax = np.max(ring_pos)
 		self.r1st=self.rings_pos[0]
 		self.ring_space = ring_space
 		self.nrings = len(self.rings_pos)
 		self.n_annulus = self.nrings - 1
 		self.pixel_scale = pixel_scale
-		self.bmaj = bmaj
 		self.phi_b = phi_b
 		self.alpha = phi_b
 		self.V = V_k
@@ -249,7 +247,6 @@ class best_3d_model:
 
 			#create a copy
 			twoDmodels=np.copy(interp_model)
-			msk_psf = self.r_n < (self.rmax + self.bmaj)
 
 			theta,cos_theta0=AZIMUTHAL_ANGLE([self.ny,self.nx],self.pa,self.eps,self.x0,self.y0)
 			sin,cos=SIN_COS(self.XY_mesh,self.pa,self.eps,self.x0,self.y0)			
@@ -305,11 +302,7 @@ class best_3d_model:
 			# for bootstrap errors
 			if twoD_only: return velmap_intr,sigmap_intr
 			
-			cube_mdl=self.cube_modl.create_cube(velmap_intr,sigmap_intr)
-			cube_mdl*=msk_psf
-			mom0_mdl,mom1_mdl,mom2_mdl_kms = self.cube_modl.obs_mommaps2(cube_mdl)
-			mom2_mdl_A = mom2_mdl_kms
-						
+			mom0_mdl,mom1_mdl,mom2_mdl_kms,mom2_mdl_A,cube_mdl=self.cube_modl.create_cube(velmap_intr,sigmap_intr)
 
 			mom0axi[mom0axi==0]=np.nan
 			mom0_mdl[mom0_mdl==0]=np.nan

@@ -3,32 +3,60 @@ import numpy as np
 import warnings
 
 class Header_info:
+	
 	def __init__(self,hdr,config):
-		self.config=config
+		
 		self.naxis = hdr['NAXIS']
+		
+		self.nv = hdr['NAXIS3'] # <-- velocity channels
+		
 		self.nz = hdr['NAXIS3']
+		
 		self.ny = hdr['NAXIS2']
+		
 		self.nx = hdr['NAXIS1']
-		self.crpix3 = hdr['CRPIX3']
+		
+		self.crpix3 = hdr['CRPIX3'] if 'CRPIX3' in hdr else 1		
+
+		self.bmaj = hdr['BMAJ']*3600 if 'BMAJ' in hdr else None
+		
+		self.bmin = hdr['BMIN']*3600 if 'BMIN' in hdr else None		
+
+		self.bpa = hdr['BPA'] if 'BMIN' in hdr else None		
+		
+		
 		self.scale=0
+		
 		self.crval3=0
+		
 		self.bunit='Intensity'
+		
 		self.ctype3=None
+		
 		self.cunit1='deg'
-		#self.cdelt3_kms=0
+		
 		self.cunit3=''
+		
 		self.wavelength_wave=['Angstrom','angstrom','um','WAVELENGTH','WAVE','ANGSTROM','UM','micron','lambda','LAMBDA']
+		
 		self.wavelength_frec=['FREQ','Freq','freq','FREQUENCY','frequency','Hz','HZ']
+		
 		self.wave_types=self.wavelength_wave+self.wavelength_frec
-		general=self.config['general']
-		others=self.config['others']
-		highz=self.config['high_z']
+
+		self.config=config				
+		general = self.config['general']
+		others = self.config['others']
+		highz = self.config['high_z']
+
+				
 		self.redshift=highz.getfloat('redshift',None)
+		
 		self.eline=general.getfloat('eline',None)
+		
 		self.vdoppler=others.get('vdoppler','opt')
 
 		if self.naxis!=3:
-			print(f'The input data is not a datacube!.\
+			print(f'The input data is not a 3D datacube!.\
 			Check your cube dimensions \
 			NAXIS = {self.naxis} != 3')
 			quit()
@@ -75,11 +103,13 @@ class Header_info:
 		if self.scale>1:
 			print('Warning!, the pixel scale seems to be too large !')
 
+
+		self.pix_arcs = self.scale*3600
+
 		self.scale=self.scale*3600 # from degree to arcsec
-		self.spec_axis = self.crval3 + self.cdelt3*(np.arange(self.nz) + 1 - self.crpix3) # wave axis in original units
-		#if self.spec_axis[0]>self.spec_axis[-1]:
-		#	self.cdelt3=-1*self.cdelt3
-		#	self.spec_axis = self.crval3 + self.cdelt3*(np.arange(self.nz) + 1 - self.crpix3) # wave axis in original units
+		
+		# wave axis in original units:
+		self.spec_axis = self.crval3 + self.cdelt3*(np.arange(self.nz) + 1 - self.crpix3) 
 
 		if (self.cunit3 in self.wavelength_wave) or (self.ctype3 in self.wavelength_wave):
 			self.elinez=self.eline if self.redshift is None else self.eline*(1+self.redshift)
@@ -105,6 +135,12 @@ class Header_info:
 			print("No spectral information/units found in header or in config_file");quit()
 
 
+		self.dx=self.pix_arcs		 #  arcsec/pixel
+		self.dy=self.pix_arcs		 #  arcsec/pixel
+		self.dv=self.cdelt3_kms
+		self.v_min=self.wave_kms[0]
+		self.rms = 1
+
 	def cube_dims(self):
 		return self.nz,self.ny,self.nx
 
@@ -117,3 +153,6 @@ class Header_info:
 
 	def read_header(self):
 		return self.crval3,self.cdelt3,self.scale
+		
+		
+

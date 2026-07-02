@@ -14,6 +14,7 @@ import matplotlib.pylab as plt
 from .constants import __c__, __sigma_2_FWHM__
 from .read_hdr import Header_info
 
+			
 def trapecium(flux,a,b,dx):
 	n=len(flux)
 	f_a=flux[0]
@@ -84,10 +85,13 @@ def mask_wave(h,config):
 	crval3=(wave_cover[msk])[0]
 	cdelt3=wave_cover[1]-wave_cover[0]
 	
+	
+	# update header
 	h['CRVAL3']=crval3
 	h['CRPIX3']=1
 	h['CDELT3']=cdelt3
-	h['NAXIS3']=len(wave_cover[msk])			
+	h['NAXIS3']=len(wave_cover[msk])
+				
 	return msk,h,True
 
 def mommaps(cube,h,config,rms=0):

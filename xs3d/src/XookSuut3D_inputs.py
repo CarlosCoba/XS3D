@@ -62,11 +62,11 @@ class input_params:
 		X0 = sys.argv[6]
 		Y0 = sys.argv[7]
 		VSYS = sys.argv[8]
-		vary_PA = bool(float(sys.argv[9]))
-		vary_INC = bool(float(sys.argv[10]))
-		vary_XC = bool(float(sys.argv[11]))
-		vary_YC = bool(float(sys.argv[12]))
-		vary_VSYS = bool(float(sys.argv[13]))
+		vary_PA = int(sys.argv[9])
+		vary_INC = int(sys.argv[10])
+		vary_XC = int(sys.argv[11])
+		vary_YC = int(sys.argv[12])
+		vary_VSYS = int(sys.argv[13])
 		vary_PHIB = 1
 
 		# Rings configuration
@@ -129,7 +129,7 @@ class input_params:
 		input_config.read(config_file)
 
 		# Shortcuts to the different configuration sections variables.
-		config_const = input_config['constant_params']
+		config_const = input_config['fitting']
 		config_general = input_config['general']
 
 		PA = config_const.get('PA', PA)

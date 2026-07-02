@@ -48,7 +48,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	#(1) rms noise.
 	# apply here the user mask
-	cube = cube*msk_usr
+	cube = cube*(msk_usr.astype(float))
 	isnan=np.isfinite(cube)
 	cube[~isnan]=0
 	iszero=cube!=0
@@ -107,11 +107,11 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 		dft=fftconv(padded_cube,padded_psf,threads=nthreads, axes=axes)
 		cube_smooth=dft.conv_DFT(cube_slices)
+		iszerosmth=cube_smooth!=0
 		# release the memory
 		del padded_cube; del cube_slices; del padded_psf; del psf_slices
 		#Do not forget to recover the zeros
 		cube_smooth*=iszero
-
 
 		msk_neg=cube_smooth<0
 		#rms per channel on the smoothed cube
@@ -152,18 +152,19 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		msk_rms=rat_sn>=1
 
 		msk_cube=np.copy(msk_rms)
-		#avg_flux=np.zeros((ny,nx))
+		# add neighbor pixels since they contribute to the beam(ds,dv)
 		if ds>1 and dv>1:
 			for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
 				if msk_rms[k,j,i] :
 					dS=ds//2
 					dV=dv//2
 					msk_cube[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1]=True
-					#mean_flux_box=np.any(np.mean(rat_sn[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1],axis=(1,2))>=1)
-					#(avg_flux[j-dS:j+dS+1,i-dS:i+dS+1])[avg_flux[j-dS:j+dS+1,i-dS:i+dS+1]!=1]=mean_flux_box
 	else:
 		msk_cube=cube > rms_cube*clip
 
+	# keep zeros from the smoothed cube
+	msk_cube*=iszerosmth
+	
 	msk_cube_2d=(msk_cube).sum(axis=0)
 	col, row =np.indices((ny,nx))
 	row=row[msk_cube_2d>0]
@@ -189,7 +190,8 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		    segments.append((start, len(arr) - 1))
 		return len(segments),segments
 
-	# evaluate spectra with 2 or more peaks
+	# Evaluate spectra with 2 or more peaks.
+	# Keep the spectrum with the maximum intensity, hopefully will be signal, not noise.
 	if ds>1 and dv>1:
 		for i,j in zip(row,col):
 			arr0=msk_cube[:,j,i]
@@ -207,13 +209,23 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 							a[p1start:p1end+1]=True
 							fmax=flux_k
 				msk_cube[:,j,i]=a
+
+	# find m=3 consecutive non-zero values along spectral axis
+	# msk_cube_tmp = msk_cube[:-2, :, :] & msk_cube[1:-1, :, :] & msk_cube[2:, :, :]
+	m=3
+	msk_cube_tmp = np.logical_and.reduce([msk_cube[i:nz-m+i+1] for i in range(m)])
+	msk_cube_tmp = np.sum(msk_cube_tmp, axis = 0)
+	msk_cube*=(msk_cube_tmp>=1)
+	msk_cube=(msk_cube).astype(float)
+						
 	plot=0
 	if plot:
+		xc,yc = 107, 112	
 		msk_cube_2d=(msk_cube).sum(axis=0)
+		plt.plot(xc, yc, 'rx')
 		plt.imshow(msk_cube_2d,origin='lower');plt.show()
 		fig,ax=plt.subplots(1,1)
-		xc,yc=235,247
-		ori=cube[:,yc,xc]
+		ori=data[:,yc,xc]
 		sm=cube_smooth[:,yc,xc]
 		ori_msk=(cube*(msk_cube))[:,yc,xc]
 		ax.plot(np.arange(nz), np.ones(nz)*(global_rmse*clip) , 'g--', lw =2, label = 'rms*clip')
@@ -222,7 +234,6 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		ax.plot(np.arange(nz), sm*(sm<0) , 'b-', lw =5, label = 'smooth -')
 		ax.plot(np.arange(nz), ori_msk , 'r-', lw =5, label='observed-msked')
 		ax.plot(np.arange(nz), ori , 'k-', lw = 1, label = 'observed');ax.legend();plt.show()
-
 
 	# calculate the peak velocity using the smoothed cube
 	vpeak=config_others.getboolean('vpeak',False)

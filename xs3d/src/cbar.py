@@ -43,8 +43,9 @@ def colorbar(im,axis,orientation="vertical",labelsize=10,colormap="rainbow",tick
 		#cbar1.ax.get_yaxis().labelpad = label_pad
 
 	cbar1.ax.tick_params(color = colors)
-	cbar1.ax.tick_params(axis='y', direction='in',rotation=rot_ticks, labelsize=ticksfontsize)
-	cbar1.ax.tick_params(axis='x', labelsize=ticksfontsize)	
+	cbar1.ax.tick_params(axis='y', direction='in',  which='major', length=7, rotation=rot_ticks, labelsize=ticksfontsize, width = 1)
+	cbar1.ax.tick_params(axis='x', direction='in',  which='major', length=7, labelsize=ticksfontsize, width = 1)	
+	cbar1.ax.tick_params(axis='both', direction='in',  which='minor', length=3, labelsize=ticksfontsize, width = 0.8)		
 	cax1.tick_params(direction='in', pad = pad, width = 0.5)
 	cax1.tick_params(colors=colors, which='both') 
 
@@ -55,6 +56,7 @@ def colorbar(im,axis,orientation="vertical",labelsize=10,colormap="rainbow",tick
 	if power:
 		cbar1.formatter.set_powerlimits((0, 0))
 	
-	return cax1
+	# return the colorbar and the 
+	return cbar1
 
 

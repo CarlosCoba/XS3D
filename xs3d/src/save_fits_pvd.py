@@ -9,7 +9,7 @@ def zero2nan(data):
 
 def save_pvds(galaxy,vmode,out_pvd, rms,hdr_info,out):
 	pvd_arr=out_pvd[0]
-	ext_pvds=out_pvd[2]
+	ext_pvds=out_pvd[1]
 	cdelt3=hdr_info.cdelt3_kms
 
 	[pvd_obs_major,pvd_obs_mnr,pvd_mdl_major,pvd_mdl_mnr]= pvd_arr

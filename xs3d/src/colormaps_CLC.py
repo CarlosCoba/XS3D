@@ -54,19 +54,12 @@ blues = ["#01025a", "#193476", "#376b94", "#5ea1ba", "#a3dbe6"]
 reds = ["#531132", "#800d20", "#aa2c24", "#db6d52", "#f1b691"]
 black = ["#423f46"]
 
-
 # for intensity maps
 mom0 = black+blues[::-1]+reds[::-1]
 # for intensity maps
-mom0=['#e3e2d1','#a3a08d','#6e655c','#e9d0c8','#dfbcaa','#df6d07','#720c09','#310a34','#616de0','#acbddf','#fafafa']
-mom0=['#f9f1f1', '#00002b', '#0e1e76', '#256a7d', '#3e9259', '#90ab55', '#bbaa62', '#d6b197', '#f1dedc', '#f9f1f1']
-#mom0=['#e0dfda', '#414c6a', '#637e8f', '#90a6a3', '#c4bca9', '#ba171a','#f8e6c0', '#f2d6a4', '#e4a379', '#996863', '#fefdfd']
-#mom0=['#e0dfda', '#414c6a', '#637e8f', '#90a6a3', '#77656a', '#c4bca9','#f8e6c0', '#f2d6a4', '#e4a379', '#996863', '#fefdfd']
-mom0=['#bde7db', '#89c4d0', '#54a3cd', '#377dd0', '#4954b1', '#3d3b6c', '#282738', '#1f1e1e', '#3a2126', '#672a39', '#9d2f45', '#cc4239', '#e96e36', '#f5a269', '#ffd4ac']
-
-mom0=['#e0dfda', '#637e8f', '#414c6a', '#1a1a01', '#332312', '#502d1e', '#6f372d', '#8f403b', '#b04b45', '#cd5d4c', '#de754f', '#e58b51', '#eaa053', '#efb759', '#f5d06b', '#fae58a', '#fdf3ab', '#ffffcc']
-
+mom0=['#f8fafc', '#9aa5b8', '#384150', '#1b202d', '#332312', '#502d1e', '#6f372d', '#8f403b', '#b04b45', '#cd5d4c', '#de754f', '#e58b51', '#eaa053', '#efb759', '#f5d06b', '#fae58a', '#fdf3ab', '#ffffcc','#f2f5f9']
 pvd = ['#FDFBF6','#F6E6D6', '#EBC7A8', '#D56D4C', '#B14A33', '#7A2E25']
+#mom0=['#f8fafc','#1b202d','#332312','#5a0202','#7c0000','#991701','#b54400','#d27201','#ed9f00','#e5cd23','#f4f4f4']
 # for velocity maps
 mom1=hex_list
 

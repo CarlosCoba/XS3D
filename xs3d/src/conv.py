@@ -17,22 +17,22 @@ def gkernel(shape,fwhm,bmaj=None,bmin=None,bpa = 0,pixel_scale = 1., norm=True):
 
 
 	Bpa=bpa*np.pi/180
-	Bmaj = bmaj*__FWHM_2_sigma__ if bmaj is not None else fwhm
-	Bmin = bmin*__FWHM_2_sigma__ if bmin is not None else fwhm
+	Bmaj=bmaj*__FWHM_2_sigma__ if bmaj is not None else fwhm
+	Bmin=bmin*__FWHM_2_sigma__ if bmin is not None else fwhm
 		
 	#if bmaj==None: bmaj=fwhm*__FWHM_2_sigma__
 	#if bmin==None: bmin=fwhm*__FWHM_2_sigma__
 
-	[ny,nx]=shape
-	x0,y0 = nx/2., ny/2.
+	[ny, nx]=shape
+	x0, y0 = nx/2., ny/2.
 	y, x = np.indices(shape)
 
 	q = Bmin/Bmaj
 	eps = (1-q)
 		
-	X = (- (x-x0)*np.sin(Bpa) + (y-y0)*np.cos(Bpa))
-	Y = (- (x-x0)*np.cos(Bpa) - (y-y0)*np.sin(Bpa))
-	r2= (X**2+(Y/(1-eps))**2).astype('float64')
+	X=(- (x-x0)*np.sin(Bpa) + (y-y0)*np.cos(Bpa))
+	Y=(- (x-x0)*np.cos(Bpa) - (y-y0)*np.sin(Bpa))
+	r2=(X**2+(Y/(1-eps))**2).astype('float64')
 
 	# if only fwhm is passed.
 	if fwhm is not None:	

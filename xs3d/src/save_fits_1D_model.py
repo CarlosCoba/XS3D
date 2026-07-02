@@ -1,56 +1,47 @@
 import numpy as np
 from astropy.io import fits
 from .phi_bar_sky import error_pa_bar_sky
-from .pixel_params import eps_2_inc,e_eps2e_inc
+from .pixel_params import eps_2_inc,e_eps2e_inc,inc_2_eps
 
-def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR_MAJOR,PA_BAR_MINOR,errors_fit,bic_aic, e_ISM, out):
-	n = len(Vrot)
-	e_PA,e_EPS,e_XC,e_YC,e_Vsys,e_theta  = errors_fit[1]
-	e_Disp,e_Vrot,e_Vrad,e_Vtan  = errors_fit[0]
-	INC, e_INC = eps_2_inc(EPS)*180/np.pi,e_eps2e_inc(EPS,e_EPS)*180/np.pi
-	N_free, N_nvarys, N_data, bic, aic, redchi = bic_aic
+def save_model(galaxy,vmode,const,best,result,out):
+	R=best['radius']
+	nrings=len(R)	
+	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
+	eps = inc_2_eps(inc)
+	scalar_fields = ["v_rot", "v_rad", "v_2t", "v_2r", "v_disp"]
+	vels = {k:best[k] for k in scalar_fields}
+	vrot = vels['v_rot']		
 
+	if vmode == 'circular':
+		data = np.zeros((5,nrings))
+		data[0][:] = R
+		data[1][:] = vels['v_disp']
+		data[2][:] = vels['v_rot']
+		data[3][:] = np.zeros_like(vrot)
+		data[4][:] = np.zeros_like(vrot)
+		
+	if vmode == 'radial':
+		data = np.zeros((7,nrings))
+		data[0][:] = R			
+		data[1][:] = vels['v_disp']
+		data[2][:] = vels['v_rot']
+		data[3][:] = vels['v_rad']		
+		data[4][:] = np.zeros_like(vrot)
+		data[5][:] = np.zeros_like(vrot)	
+		data[6][:] = np.zeros_like(vrot)	
 
-	if vmode == "circular":
-			data = np.zeros((5,n))
-			data[0][:] = R
-			data[1][:] = Disp
-			data[2][:] = Vrot
-			data[3][:] = e_Disp
-			data[4][:] = e_Vrot
-
-	if vmode == "ff":
-			data = np.zeros((5,n))
-			data[0][:] = R
-			data[1][:] = Disp
-			data[2][:] = Vrot
-			data[3][:] = e_Disp
-			data[4][:] = e_Vrot
-
-	if vmode == "radial" or vmode == 'vertical':
-			data = np.zeros((7,n))
-			data[0][:] = R
-			data[1][:] = Disp
-			data[2][:] = Vrot
-			data[3][:] = Vrad
-			data[4][:] = e_Disp
-			data[5][:] = e_Vrot
-			data[6][:] = e_Vrad
-
-	if vmode == "bisymmetric":
-			data = np.zeros((9,n))
-			data[0][:] = R
-			data[1][:] = Disp
-			data[2][:] = Vrot
-			data[3][:] = Vrad
-			data[4][:] = Vtan
-			data[5][:] = e_Disp
-			data[6][:] = e_Vrot
-			data[7][:] = e_Vrad
-			data[8][:] = e_Vtan
-
-
-
+	if vmode == 'bisymmetric':
+		data = np.zeros((9,nrings))
+		data[0][:] = R			
+		data[1][:] = vels['v_disp']
+		data[2][:] = vels['v_rot']
+		data[3][:] = vels['v_2r']		
+		data[4][:] = vels['v_2t']				
+		data[5][:] = np.zeros_like(vrot)
+		data[6][:] = np.zeros_like(vrot)	
+		data[7][:] = np.zeros_like(vrot)
+		data[8][:] = np.zeros_like(vrot)
+		
 	hdu = fits.PrimaryHDU(data)
 
 	if vmode == "circular":
@@ -92,31 +83,23 @@ def save_model(galaxy,vmode,R,Disp,Vrot,Vrad,Vtan,PA,EPS,XC,YC,VSYS,THETA,PA_BAR
 			hdu.header['NAME7'] = 'error radial velocity (km/s)'
 			hdu.header['NAME8'] = 'error tangencial velocity (km/s)'
 
-	hdu.header['redchisq'] = redchi
-	hdu.header['Nfree'] = N_free
-	hdu.header['Nvarys'] = N_nvarys
-	hdu.header['Ndata'] = N_data
-	hdu.header['BIC'] = bic
-	hdu.header['AIC'] = aic
-	hdu.header['PA'] = PA
-	hdu.header['e_PA'] = e_PA
-	hdu.header['EPS'] = EPS
-	hdu.header['e_EPS'] = e_EPS
-	hdu.header['INC'] = INC
-	hdu.header['e_INC'] = e_INC
-	hdu.header['VSYS'] = VSYS
-	hdu.header['e_VSYS'] = e_Vsys
-	hdu.header['XC'] = XC
-	hdu.header['e_XC'] = e_XC
-	hdu.header['YC'] = YC
-	hdu.header['e_YC'] = e_YC
+	chi2=result.chisqr
+	hdu.header['chi2'] = chi2
+	hdu.header['pa'] = pa
+	hdu.header['e_pa'] = 0
+	hdu.header['eps'] = eps
+	hdu.header['e_pa'] = 0
+	hdu.header['inc'] = inc
+	hdu.header['e_inc'] = 0
+	hdu.header['v_sys'] = v_sys
+	hdu.header['e_vsys'] = 0
+	hdu.header['xc'] = x_center
+	hdu.header['e_xc'] = 0
+	hdu.header['yc'] = y_center
+	hdu.header['e_yc'] = 0
 
 	if vmode == "bisymmetric":
-			hdu.header['HIERARCH PHI_BAR'] = THETA*180/np.pi
-			hdu.header['HIERARCH e_PHI_BAR'] = e_theta*180/np.pi
-			hdu.header['HIERARCH PA_BAR_MAJOR'] = PA_BAR_MAJOR
-			hdu.header['HIERARCH e_PA_BAR_MAJOR'] = error_pa_bar_sky(PA,EPS,THETA,e_PA,e_EPS,e_theta)
-			hdu.header['HIERARCH PA_BAR_MINOR'] = PA_BAR_MINOR
-			hdu.header['HIERARCH e_PA_BAR_MINOR'] = error_pa_bar_sky(PA,EPS,THETA-np.pi/2,e_PA,e_EPS,e_theta)
+		hdu.header['HIERARCH phi_bar'] = phi_bar
+		hdu.header['HIERARCH e_phi_bar'] = 0
 
-	hdu.writeto("%smodels/%s.%s.1D_model.fits.gz"%(out,galaxy,vmode),overwrite=True)
+	hdu.writeto(f"{out}models/{galaxy}.{vmode}.1D_model.fits.gz",overwrite=True)	
