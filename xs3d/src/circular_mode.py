@@ -50,7 +50,6 @@ class Circular_model:
 		self.pixel_scale= header.scale
 		self.psf_lsf	= psf_lsf
 
-		print('delta=',delta)
 		if self.n_it == 0: self.n_it =1
 
 
@@ -88,8 +87,8 @@ class Circular_model:
 		config_boots	= config['bootstrap']
 		config_general	= config['general']
 		config_others	= config['others']
-		config_clouds	= config['clouds']				
-		config_lsq 		= config['fitting']						
+		config_clouds	= config['clouds']
+		config_lsq 		= config['fitting']
 		self.n_boot 	= config_boots.getint('Nboots', 0)
 
 		self.bootstrap_contstant_prms = np.zeros((self.n_boot, 6))
@@ -106,18 +105,18 @@ class Circular_model:
 		self.nsubclouds = config_clouds.getint('nsubclouds', 50)
 		self.z_scale 	= config_clouds.getfloat('z_scale', 0.1)
 		self.z_profile 	= config_clouds.get('z_profile', 'sech2')
-				
+
 		self.disp_kms	= 	psf_lsf.sigma_inst_kms
 		self.vary_disp	= 	psf_lsf.vary_disp
-		
+
 		# fitting
 		self.rweight		= config_lsq.getint('rweight', 0)
 		self.zweight		= config_lsq.getboolean('zweight', 0)
 		self.weights		= (self.rweight,self.zweight)
-		self.fitmethod 		= config_lsq.get('optimethod', 'nelder')	
+		self.fitmethod 		= config_lsq.get('optimethod', 'nelder')
 		self.seed			= 40
 		self.vary_nc		= config_lsq.getfloat('vary_nc', 2)
-					
+
 		"""
 
 		 					CIRCULAR MODEL
@@ -147,19 +146,19 @@ class Circular_model:
 
 			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 			vels = [disp_tab,vrot_tab,vrad_tab,vtan_tab]
-			
+
 			if it == 0: first_guess_it = guess
-			
+
 			R_nc = (R_pos >= self.r_bar_min) & (R_pos <= self.r_bar_max)
-			r_nc_vary = (R_nc * self.vary_nc).astype(float)	
+			r_nc_vary = (R_nc * self.vary_nc).astype(float)
 			R={'R_pos':R_pos, 'R_nc': r_nc_vary}
-			
+
 			rmax=np.max(R_pos)
-			rmax_px=rmax/self.pixel_scale			
+			rmax_px=rmax/self.pixel_scale
 			guess_common = dict(
 				v_sys          = self.vsys0,
-				inc            = self.inc0,    
-				pa             = self.pa0 % 360,   
+				inc            = self.inc0,
+				pa             = self.pa0 % 360,
 				x_center       = self.x0,
 				y_center       = self.y0,
 				z_scale        = self.z_scale,
@@ -170,12 +169,12 @@ class Circular_model:
 				phi_bar		   = 45
 			)
 
-			
+
 			cnf_prms=Set_params(self.vmode, self.psf_lsf, R, self.ring_space, self.vary, self.hdr,guess_common)
 			guess_rings = cnf_prms.circular(vels)
 			spec = cnf_prms.prms(self.vmode)
 			lmfit_prm=cnf_prms
-			
+
 
 			#assume 2% outliers
 			mom0_obs=self.mommaps[0]
@@ -183,7 +182,7 @@ class Circular_model:
 			mom2_obs=self.mommaps[2]
 			msk1 = 	(abs(mom1_obs-self.vsys0)>1e3)
 			msk2 = 	(mom2_obs>1000)
-				
+
 			mom1_obs[msk1*msk2]=0
 			p01=np.nanpercentile(np.unique(mom1_obs),1)
 			p99=np.nanpercentile(np.unique(mom1_obs),99)
@@ -192,22 +191,22 @@ class Circular_model:
 			# ============================================================
 			# 1.  Cube configuration
 			# ============================================================
-				
-			cube_oper=Cube_operations(self.hdr, self.config, self.psf_lsf)	
-				
+
+			cube_oper=Cube_operations(self.hdr, self.config, self.psf_lsf)
+
 			# ============================================================
 			# 5.  Fit using Nelder-Mead
 			# ============================================================
 			minmethod='Nelder-Mead' if self.fitmethod=='nelder'else 'Levenberg-Marquardt '
 			print(f"Running {minmethod} fit (velocity_model='{self.vmode}')...")
-			
+
 			method = self.fitmethod
 			if method == 'nelder':
 				options = {'xatol'  : 1e-3,'fatol'  : 1e-3,'maxiter': 8000, 'adaptive': True}
 				fit_kws = {'options': options,}
 			if method == 'leastsq':
 				fit_kws = {}
-			
+
 			best_rings, result = fit_rings(
 				self.obs_cube*msk_outliers,
 				self.mommaps,
@@ -221,8 +220,8 @@ class Circular_model:
 				seed         = self.seed,
 				verbose      = True,
 				fit_kws      = fit_kws,
-			)			
-			
+			)
+
 			obs_cube = self.obs_cube
 			# ============================================================
 			# 7.  Build best-fit model cube for diagnostics
@@ -231,25 +230,25 @@ class Circular_model:
 			mod_cube 	= best_model.build(best_rings, verbose=False)
 			res_cube 	= residual_cube(obs_cube, mod_cube)
 			best_vals	= extractp(best_rings)
-			
+
 			mom0_obs,_,_= cube_oper.obs_mommaps2(obs_cube)
 			mom0_mod,_,_= cube_oper.obs_mommaps2(mod_cube)
-			#[mom0_mod,mom1_mod,mom2_mod] = mom_mod     
+			#[mom0_mod,mom1_mod,mom2_mod] = mom_mod
 			mod_cube_norm=mod_cube*np.divide(mom0_obs, mom0_mod, where=mom0_mod>0, out=np.zeros_like(mom0_mod))
-  						
+
 			best_vals['pa'] 		= best_vals['pa'] % 360
-			best_vals['phi_bar'] 	= best_vals['phi_bar'] % 360			
+			best_vals['phi_bar'] 	= best_vals['phi_bar'] % 360
 
 			scalar_fields	= ["v_sys","inc","pa","x_center","y_center","phi_bar"]
 			operator 		= [np.mean,circmean,circmean,np.mean,np.mean,circmean]
-			const = {p : opr(best_vals[p]) for p,opr in zip(scalar_fields, operator)}	
-			
+			const = {p : opr(best_vals[p]) for p,opr in zip(scalar_fields, operator)}
+
 			# get the final mask
-			W_cur= make_weight_map(mom0_obs, self.psf_lsf, best_rings, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=4)						 			
-			msk = (W_cur !=0).astype(float)								
+			W_cur= make_weight_map(mom0_obs, self.psf_lsf, best_rings, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=4)
+			msk = (W_cur !=0).astype(float)
 			mod_cube_norm*=msk
 
-						    						
+
 			return mod_cube_norm,best_rings,best_vals,result
 
 
