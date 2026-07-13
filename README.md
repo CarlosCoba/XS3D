@@ -80,11 +80,16 @@ Moment maps obtained from the observed and model datacubes.
 ![mom_muse](/figures/mommaps_circular_model_NGC3351.png)
 
 
-Intrinsic velocity and velocity dispersion of the gas.
-![disp_muse|(/figures/kin_circular_disp_NGC3351.png)
-
 Position velocity diagram from the model cube along the major and minor axes
-![pvd_muse](/figures/pvd_circular_model_NGC3351.png)
+![pvd_muse](/figures/pvds_circular_model_NGC3351.png)
+
+Rings projected into the sky plane
+![ring_muse](/figures/rings_circular_model_NGC3351.png)
+
+Example on a galaxy with a bar.
+===========
+![mom_bisymmetric](/figures/mommaps_bisymmetric_model_NGC4535.png)
+
 
 
 Example on a **high redshift galaxy** (z=7.30) with ALMA

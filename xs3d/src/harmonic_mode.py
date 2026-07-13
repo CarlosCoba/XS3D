@@ -201,8 +201,9 @@ class Harmonic_model:
 			# ============================================================
 			# 5.  Fit using Nelder-Mead
 			# ============================================================
-			minmethod='Nelder-Mead' if self.fitmethod=='nelder'else 'Levenberg-Marquardt '
-			print(f"Running {minmethod} fit (velocity_model='{self.vmode}')...")
+			minmethod='Nelder-Mead' if self.fitmethod=='nelder'
+            minmethod='Levenberg-Marquardt' if self.fitmethod=='leastsq'
+            minmethod='Powell' if self.fitmethod=='powell'
 
 			method = self.fitmethod
 			if method    == 'nelder':

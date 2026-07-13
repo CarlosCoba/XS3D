@@ -197,7 +197,11 @@ class Circular_model:
 			# ============================================================
 			# 5.  Fit using Nelder-Mead
 			# ============================================================
-			minmethod='Nelder-Mead' if self.fitmethod=='nelder'else 'Levenberg-Marquardt '
+			minmethod='Nelder-Mead' if self.fitmethod=='nelder'
+            minmethod='Levenberg-Marquardt' if self.fitmethod=='leastsq'
+            minmethod='Powell' if self.fitmethod=='powell'
+
+
 			print(f"Running {minmethod} fit (velocity_model='{self.vmode}')...")
 
 			method = self.fitmethod
