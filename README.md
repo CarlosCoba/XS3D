@@ -79,12 +79,11 @@ Moment maps obtained from the observed and model datacubes.
 |mom_muse|
 ![mom_muse](/figures/mommaps_circular_model_NGC3351.png)
 
+Rings projected into the sky plane
+![ring_muse](/figures/rings_circular_model_NGC3351.png)
 
 Position velocity diagram from the model cube along the major and minor axes
 ![pvd_muse](/figures/pvds_circular_model_NGC3351.png)
-
-Rings projected into the sky plane
-![ring_muse](/figures/rings_circular_model_NGC3351.png)
 
 Example on a galaxy with a bar.
 ===========
