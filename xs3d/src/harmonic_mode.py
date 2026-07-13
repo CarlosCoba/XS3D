@@ -50,7 +50,7 @@ class Harmonic_model:
 		self.m_hrm = m_hrm
 		self.pixel_scale=header.scale
 		self.psf_lsf=psf_lsf
-		
+
 		if self.n_it == 0: self.n_it = 1
 		rend = self.rfinal
 		if (self.rfinal-self.rstart) % self.ring_space == 0 :
@@ -91,7 +91,7 @@ class Harmonic_model:
 		config_general	= config['general']
 		config_others	= config['others']
 		config_clouds	= config['clouds']
-		config_lsq 		= config['fitting']													
+		config_lsq 		= config['fitting']
 		self.n_boot		= config_boots.getint('Nboots', 0)
 
 
@@ -108,15 +108,15 @@ class Harmonic_model:
 		self.nsubclouds = config_clouds.getint('nsubclouds', 50)
 		self.z_scale 	= config_clouds.getfloat('z_scale', 0.1)
 		self.z_profile 	= config_clouds.get('z_profile', 'sech2')
-				
+
 		self.disp_kms	= 	psf_lsf.sigma_inst_kms
 		self.vary_disp	= 	psf_lsf.vary_disp
-		
+
 		# fitting
 		self.rweight		= config_lsq.getint('rweight', 0)
 		self.zweight		= config_lsq.getboolean('zweight', 0)
 		self.weights		= (self.rweight,self.zweight)
-		self.fitmethod 		= config_lsq.get('optimethod', 'nelder')	
+		self.fitmethod 		= config_lsq.get('optimethod', 'nelder')
 		self.seed			= 40
 		self.vary_nc		= config_lsq.getfloat('vary_nc', 2)
 
@@ -145,25 +145,25 @@ class Harmonic_model:
 			# convert arrays to list
 			c_tab=[list(c_tab[k]) for k in range(self.m_hrm)]
 			s_tab=[list(s_tab[k]) for k in range(self.m_hrm)]
-			#disp_tab=list(disp_tab)			
+			#disp_tab=list(disp_tab)
 			disp_tab = np.clip(disp_tab, self.disp_kms, None)
 			disp_tab = np.sqrt(disp_tab**2 - self.disp_kms**2)
 			if not self.vary_disp:
 				disp_tab = np.ones_like(disp_tab)*self.disp_kms
 
 			guess = [disp_tab,c_tab,s_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
-			
+
 			R_nc = (R_pos >= self.r_bar_min) & (R_pos <= self.r_bar_max)
-			r_nc_vary = (R_nc * self.vary_nc).astype(float)	
+			r_nc_vary = (R_nc * self.vary_nc).astype(float)
 			R={'R_pos':R_pos, 'R_nc': r_nc_vary}
 
 			vels = [disp_tab,c_tab,s_tab]
 			rmax=np.max(R_pos)
-			rmax_px=rmax/self.pixel_scale						
+			rmax_px=rmax/self.pixel_scale
 			guess_common = dict(
 				v_sys          = self.vsys0,
-				inc            = self.inc0,    
-				pa             = self.pa0 % 360,   
+				inc            = self.inc0,
+				pa             = self.pa0 % 360,
 				x_center       = self.x0,
 				y_center       = self.y0,
 				z_scale        = self.z_scale,
@@ -173,7 +173,7 @@ class Harmonic_model:
 				velocity_model = self.vmode,
 				phi_bar		   = 45
 			)
-			
+
 			cnf_prms=Set_params(self.vmode, self.psf_lsf, R, self.ring_space, self.vary, self.hdr,guess_common,self.m_hrm)
 			guess_rings = cnf_prms.harm(vels)
 			spec = cnf_prms.prms(self.vmode)
@@ -185,7 +185,7 @@ class Harmonic_model:
 			mom2_obs=self.mommaps[2]
 			msk1 = 	(abs(mom1_obs-self.vsys0)>1e3)
 			msk2 = 	(mom2_obs>1000)
-				
+
 			mom1_obs[msk1*msk2]=0
 			p1=np.nanpercentile(np.unique(mom1_obs),1)
 			p99=np.nanpercentile(np.unique(mom1_obs),99)
@@ -195,22 +195,25 @@ class Harmonic_model:
 			# ============================================================
 			# 1.  Cube configuration
 			# ============================================================
-				
-			cube_oper=Cube_operations(self.hdr, self.config, self.psf_lsf)	
-													
+
+			cube_oper=Cube_operations(self.hdr, self.config, self.psf_lsf)
+
 			# ============================================================
 			# 5.  Fit using Nelder-Mead
 			# ============================================================
 			minmethod='Nelder-Mead' if self.fitmethod=='nelder'else 'Levenberg-Marquardt '
 			print(f"Running {minmethod} fit (velocity_model='{self.vmode}')...")
-			
+
 			method = self.fitmethod
-			if method == 'nelder':
-				options = {'xatol'  : 1e-3,'fatol'  : 1e-3,'maxiter': 8000, 'adaptive': True}
+			if method    == 'nelder':
+				options = {'xatol'  : 1e-3,'fatol'  : 1e-3,'maxiter': 3000, 'adaptive': True}
 				fit_kws = {'options': options,}
-			if method == 'leastsq':
+			if method    == 'leastsq':
 				fit_kws = {}
-			
+            if method   == 'powell'
+                options = {'xtol': 1e-2, 'ftol': 1e-2}
+                fit_kws =  {'options': options}
+
 			best_rings, result = fit_rings(
 				self.obs_cube*msk_outliers,
 				self.mommaps,
@@ -224,8 +227,8 @@ class Harmonic_model:
 				seed         = self.seed,
 				verbose      = True,
 				fit_kws      = fit_kws,
-			)			
-			
+			)
+
 			obs_cube = self.obs_cube
 			# ============================================================
 			# 7.  Build best-fit model cube for diagnostics
@@ -234,33 +237,33 @@ class Harmonic_model:
 			mod_cube 	= best_model.build(best_rings, verbose=False)
 			res_cube 	= residual_cube(obs_cube, mod_cube)
 			best_vals	= extractp(best_rings)
-			
-			mom0_obs,_,_=cube_oper.obs_mommaps2(obs_cube)
-			mom_mod=cube_oper.obs_mommaps2(mod_cube)
+
+			mom0_obs,_,_=cube_oper.obs_mommaps(obs_cube)
+			mom_mod=cube_oper.obs_mommaps(mod_cube)
 			[mom0_mod,mom1_mod,mom0_mod2] = mom_mod
-        
+
 			mod_cube=mod_cube*np.divide(mom0_obs,mom0_mod,where=mom0_mod!=0,out=np.zeros_like(mom0_mod))
 
 			best_vals['pa'] = best_vals['pa'] % 360
-			best_vals['phi_bar'] = best_vals['phi_bar'] % 360			
-    		
+			best_vals['phi_bar'] = best_vals['phi_bar'] % 360
+
 			best_const = extractp(best_rings,self.vmode)
 			best_vels=extract_harmonics(best_rings)
-			best_vals_all = [best_const,best_vels]			
+			best_vals_all = [best_const,best_vels]
 
 			scalar_fields	= ["v_sys","inc","pa","x_center","y_center","phi_bar"]
 			operator 		= [np.mean,circmean,circmean,np.mean,np.mean,circmean]
-			const = {p : opr(best_vals[p]) for p,opr in zip(scalar_fields, operator)}		 			
+			const = {p : opr(best_vals[p]) for p,opr in zip(scalar_fields, operator)}
 
 			# get the final mask
-			W_cur= make_weight_map(mom0_obs,self.psf_lsf, best_rings,alpha=self.weights, r_max_px=rmax_px, n_sigma_z=4)						 			
-			msk = (W_cur !=0).astype(float)								
+			W_cur= make_weight_map(mom0_obs,self.psf_lsf, best_rings,alpha=self.weights, r_max_px=rmax_px, n_sigma_z=4)
+			msk = (W_cur !=0).astype(float)
 			mod_cube*=msk
 
-			
+
 			return mod_cube,best_rings,best_vals_all,result
 
-			
+
 			'''
 			# Minimization
 			fitting = fit_routine(self.obs_cube, self.eobs_cube, self.h, self.mommaps, self.emoms, guess, self.vary, self.vmode, self.config, R, self.ring_space, self.frac_pixel, self.inner_interp, self.m_hrm, N_it=self.n_it0)
@@ -289,7 +292,7 @@ class Harmonic_model:
 				self.n_noncirc = len((self.S_k[0])[self.S_k[0]!=0])
 				self.bootstrap_kin = np.zeros((self.n_boot, (2*self.m_hrm+1)*self.n_circ))
 				self.bootstrap_mom1d = np.zeros((self.n_boot, self.n_circ))
-				
+
 		'''
 	""" Following, the error computation.
 	"""

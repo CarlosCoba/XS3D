@@ -55,7 +55,7 @@ from scipy.ndimage import gaussian_filter
 import matplotlib.pylab as plt
 from scipy import stats
 from .utils import circmean
-	
+
 try:
 	import lmfit
 	from lmfit import Parameters, minimize as lm_minimize, fit_report
@@ -73,22 +73,22 @@ from .cloud_tilted_rings import TiltedRingModel, CubeConfig, Ring, RingBuilder
 def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_z=3, edge_on_threshold=90.0, vertical_weight=False):
 	"""
     Boolean mask of the projected galaxy volume out to r_max_px.
- 
+
     Accounts for three contributions to the sky-plane footprint:
- 
+
     1. Radial extent: disk-plane radius ≤ r_max_px
        → ellipse with semi-major=r_max, semi-minor=r_max×cos(inc)
- 
+
     2. Vertical extent: disk height z ∈ [−n_sigma_z×z_scale, +n_sigma_z×z_scale]
        projects onto the sky minor axis as:
            z_sky = z_disk × sin(inc)
        → adds n_sigma_z × z_scale_arcsec × sin(inc) / dx_arcsec pixels
          of half-width in the minor-axis direction beyond the ellipse
- 
+
     3. Edge-on (inc ≥ 85°): rectangular strip, combining both effects:
            hw = max(r_max_px × cos(inc),
                     n_sigma_z × z_scale_arcsec × sin(inc) / dx,
-                    1.0) 
+                    1.0)
 	Parameters
 	----------
 	psf_cfg : CubeConfig
@@ -103,37 +103,37 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 		In fit_rings() this is set automatically to the radius of the
 		outermost input ring so that extrapolated regions are excluded
 		from the minimisation.
- 
+
 	Returns
 	-------
 	W : np.ndarray, shape (ny, nx),  values in [0, 1]
 	"""
 	(rweight, zweight) 	= alpha
 	vertical_weight		= zweight
-		
+
 	psf_pix 			= psf_cfg.fwhm_psf_pix
 	z_scale_pix 		= psf_cfg.zscale_pix
-	# Observed (PSF-convolved) vertical extent	
+	# Observed (PSF-convolved) vertical extent
 	zscale_pix_obs 		= np.sqrt(z_scale_pix**2 + psf_pix**2)
 	# this capture 95% of the vertical emission
 	#n_sigma_z = 1
 
 	inc_arr = [r.inc for r in rings]
 	pa_arr	= [r.pa%360  for r in rings]
-	inc_deg = float(circmean(inc_arr))	
+	inc_deg = float(circmean(inc_arr))
 	inc = np.radians(circmean(inc_arr))
 	pa  = np.radians(circmean(pa_arr))
 	cx  = np.mean([r.x_center for r in rings])
 	cy  = np.mean([r.y_center for r in rings])
- 
+
 	xs = np.arange(psf_cfg.nx) - cx
 	ys = np.arange(psf_cfg.ny) - cy
 	XX, YY = np.meshgrid(xs, ys)
- 
+
  	# If the disk is warped do not appy radial weight
 	#warp = len(set(inc_arr)) == 1 # This means that all values in inc_arr are the same.
 	#if warp : rweight = 0
-	
+
  # ── Step 2 (inverse): undo PA rotation ───────────────────────────
     # _disk_to_sky Step 2 rotates disk coords to sky coords by PA:
     #   x_sky = -x_inc × sin(PA) - y_inc × cos(PA)
@@ -151,18 +151,18 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
     # (from _disk_to_sky Step 1: y_sky includes -z_disk × sin(inc) term)
     # n_sigma_z Gaussian scale heights span this many pixels on the sky:
 	z_hw_px = n_sigma_z * zscale_pix_obs * np.sin(inc)  if z_scale_pix > 0 else 0.0
-	              	
+
 	sigma_z_sky  = zscale_pix_obs * np.sin(inc)  # pixels
 	if zweight and z_scale_pix>0:
 		W_z = np.exp(-y_rot**2 / (2.0 * sigma_z_sky**2))
 	else:
 		W_z = np.ones_like(y_rot)
 	#plt.imshow(W_z, origin='lower');plt.show()
- 
+
 	 # ----------------------------------------------------------------
 	# CHANGE 1: branch on inclination regime
 	# ----------------------------------------------------------------
-	
+
 	if inc_deg >= edge_on_threshold:
         # Edge-on: rectangular strip.
         # Minor-axis half-width hw combines two physical contributions:
@@ -173,7 +173,7 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 			strip_halfwidth = max(r_max_px * np.cos(inc), z_hw_px, psf_pix/2)
 			inside_strip = (
 				(np.abs(x_rot) <= r_max_px) & (np.abs(y_rot) <= strip_halfwidth)
-			)	
+			)
 			W = inside_strip.astype(float)
 		else:
 			# No r_max: uniform weight everywhere
@@ -185,18 +185,18 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
         # Inverse: y_disk = y_rot / cos(inc)
         # This recovers the disk-plane y coordinate for each sky pixel,
         # allowing us to compute the true disk-plane radius.
- 
+
 		cos_inc = max(np.cos(inc), 1e-3)
 		y_disk  = y_rot / cos_inc					  # deproject minor axis
 		phi	 = np.arctan2(y_disk, x_rot)
 
-        # Disk-plane radius at each sky pixel (midplane z=0)	 
+        # Disk-plane radius at each sky pixel (midplane z=0)
 		r_disk = np.sqrt(x_rot ** 2 + y_disk ** 2)
-				 
+
 		# Component 1: kinematic major-axis weighting
-		W = np.abs(np.cos(phi)) ** rweight	 
+		W = np.abs(np.cos(phi)) ** rweight
 		if r_max_px is not None:
-			#Radial condition: inside disk out to r_max			
+			#Radial condition: inside disk out to r_max
 			in_disk = r_disk <= r_max_px
 
 		    # Vertical extension: pixels within z_hw_px of the projected
@@ -210,9 +210,9 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 				return W_z *W * (in_cilinder).astype(float)
 			else:
 				return W * (in_disk).astype(float)
-        			 
+
 	return W
- 
+
 
 # ---------------------------------------------------------------------------
 # Moment-0 normalisation
@@ -517,14 +517,14 @@ def _make_objective(obs_cube, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, wei
 	chi2_scale=np.var(obs_cube)
 	def objective(params):
 		new_rings = params_to_rings(params, rings)
-		
+
 		# Recompute weight map from current geometry — cheap (<1 ms)
 		r_max_cur	= max(r.radius + bmaj for r in new_rings)
 		r_max_cur_pix 	= r_max_cur/cube_cfg.pix_arcs
 		W_cur			= make_weight_map(mom0_obs,psf_lsf,new_rings,alpha=weight_alpha,r_max_px=r_max_cur_pix)
 		W_cur_sum		= np.sum(W_cur)
 		[nz,ny,nx]		= obs_cube.shape
-										
+
 		# Reset the RNG to the fixed seed so that repeated calls with
 		# the same parameters produce the same cube (deterministic chi2).
 		# We reset only the RNG — the ConvolutionEngine is NOT recreated.
@@ -537,26 +537,23 @@ def _make_objective(obs_cube, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, wei
 			cost = np.ones(obs_cube.size) * 1e15
 			return cost
 
-		mom0_mod_tmp	= cube_oper.obs_mommaps2(mod_cube,return_mom='mom0')
-		mom0_msk		= (mom0_obs > 0) & (mom0_mod_tmp > 0)		
-		mod_cube_norm	= mod_cube*np.divide(mom0_obs,mom0_mod_tmp,where=mom0_msk,out=np.zeros_like(mom0_mod_tmp))		
-		#mom0_mod=cube_oper.obs_mommaps2(mod_cube_norm,return_mom='mom0')					   
-		mom0_mod, mom1_mod, mom2_mod = cube_oper.obs_mommaps2(mod_cube_norm)					   		
-		
+		mom0_mod_tmp	= cube_oper.obs_mommaps(mod_cube,mom_out=(0))
+		mom0_msk		= (mom0_obs > 0) & (mom0_mod_tmp > 0)
+		mod_cube_norm	= mod_cube*np.divide(mom0_obs,mom0_mod_tmp,where=mom0_msk,out=np.zeros_like(mom0_mod_tmp))
+		mom0_mod, mom1_mod = cube_oper.obs_mommaps(mod_cube_norm,mom_out=(0,1))
+
 		obs_n	= obs_cube / obs_peak
 		mod_n 	= mod_cube_norm / obs_peak
 		W 		= W_cur[np.newaxis, :, :]
 		W		= W / W_cur_sum
 		msk 	= (mom0_obs > 0) & (mom0_mod_tmp > 0) & (W_cur > 0)
 		
-		xc,yc = 33, 13
-		xc,yc = nx//2, ny//2
-
+		#xc,yc = nx//2, ny//2
 		#plt.plot(np.arange(mod_cube_norm.shape[0]), obs_n[:, yc, xc], 'k-');plt.plot(np.arange(mod_cube_norm.shape[0]), mod_cube[:, yc, xc], 'r-');plt.show()
 		#plt.imshow(W_cur/msk, origin ='lower',cmap='magma');plt.show()
 		#plt.plot(xc, yc, 'xk')
-		#plt.imshow(mom0_mod_tmp/(W_cur!=0),origin ='lower',cmap='magma');plt.show()								
-		#plt.imshow(mom0_obs*W_cur,origin ='lower');plt.show()						
+		#plt.imshow(mom0_mod_tmp/(W_cur!=0),origin ='lower',cmap='magma');plt.show()
+		#plt.imshow(mom0_obs*W_cur,origin ='lower');plt.show()
 		#plt.imshow(mom2_obs*msk, origin ='lower');plt.show()
 
 		ntotal = ny*nx
@@ -567,17 +564,17 @@ def _make_objective(obs_cube, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, wei
 		N = 1
 		penalty = (ndata-nmodel)/ndata
 		#lmbda = penalty
-		p = np.sqrt(penalty*chi2_scale*nz*ndata*1)	
+		p = np.sqrt(penalty*chi2_scale*nz*ndata*1)
 
 		# Residuals from moment 1 map
 		lmbda		= N
 		dv_norm		= cube_cfg.dv
 		res_moms	= ( np.sqrt(lmbda) * np.sqrt(W_cur/W_cur_sum) * (mom1_obs - mom1_mod) )[msk]
 		res_moms	/= dv_norm
-		
+
 		# Residuals from 3D fitting
 		residuals	= np.sqrt(W) * (obs_n - mod_n) * msk # weighted residuals
-				
+
 		verbose_counter[0] += 1
 		if verbose_counter[0] % 20 == 0:
 			cost = float(np.sum(residuals ** 2))
@@ -609,11 +606,11 @@ def fit_rings(obs_cube, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_l
 			  fit_kws=None):
 	"""
 	Fit the tilted-ring model to an observed datacube using lmfit.
- 
+
 	This is the single entry point for all optimisation methods.  The
 	method parameter selects the algorithm; everything else is handled
 	by lmfit transparently.
- 
+
 	Parameters
 	----------
 	obs_cube	 : np.ndarray, shape (nv, ny, nx)
@@ -646,7 +643,7 @@ def fit_rings(obs_cube, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_l
 		  Nelder-Mead:  {'options': {'xatol': 1e-4, 'fatol': 1e-4}}
 		  Diff. evol.:  {'max_nfev': 10000, 'popsize': 10}
 		  emcee:		{'steps': 1000, 'nwalkers': 50, 'burn': 200}
- 
+
 	Returns
 	-------
 	best_rings : list of Ring
@@ -661,7 +658,7 @@ def fit_rings(obs_cube, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_l
 		For leastsq / emcee, also:
 		  result.covar		 covariance matrix
 		  result.errorbars	 True if uncertainties were estimated
- 
+
 	Examples
 	--------
 	# --- Nelder-Mead (local, gradient-free) ---
@@ -677,7 +674,7 @@ def fit_rings(obs_cube, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_l
 	}
 	best, result = fit_rings(obs_cube, rings, spec, cfg)
 	print(fit_report(result))
- 
+
 	# --- Differential evolution (global search, needs bounds) ---
 	params = build_params(rings, spec)
 	for i in range(len(rings)):
@@ -687,11 +684,11 @@ def fit_rings(obs_cube, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_l
 	params['pa_r0'].max = 360.0
 	best, result = fit_rings(obs_cube, rings, spec, cfg,
 							 method='differential_evolution')
- 
+
 	# --- Levenberg-Marquardt (fast local, gives uncertainties) ---
 	best, result = fit_rings(obs_cube, rings, spec, cfg, method='leastsq')
 	print(fit_report(result))   # prints uncertainties on each parameter
- 
+
 	# --- Toggle a parameter after the fact ---
 	result.params['pa_r0'].vary = False
 	result.params['pa_r0'].value = 120.0
@@ -705,19 +702,19 @@ def fit_rings(obs_cube, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_l
 	params  = build_params(rings, param_spec)
 	bounds = lmfit_prms.lmfit_bounds(params)
 	counter = [0]
-	
+
 	model   = TiltedRingModel(cube_cfg, psf_lsf, seed=seed,planner_effort='FFTW_MEASURE')
-								   
+
 	obj	 = _make_objective(obs_cube, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model)
- 
+
 	if verbose:
 		_print_params_summary(params, rings)
- 
+
 	kws = fit_kws or {}
 	result = lm_minimize(obj, params, method=method, **kws)
- 
+
 	best_rings = params_to_rings(result.params, rings)
- 
+
 	if verbose:
 		print(f"\nConverged : {result.success}")
 		print(f"chi2	  : {result.chisqr:.6f}")
@@ -725,7 +722,7 @@ def fit_rings(obs_cube, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_l
 		if hasattr(result, 'message'):
 			print(f"Message   : {result.message}")
 		_print_results(result.params, rings)
- 
+
 	return best_rings, result
 
 

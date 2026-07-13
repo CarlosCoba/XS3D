@@ -17,17 +17,20 @@ XookSuut3D (XS3D)
 Description
 ===========
 XookSuut3D or XS3D for short, is a python tool developed to model circular and non-circular motions on 3D spectroscopic observations, like those obtained
-from Integral-Field-Spectroscopy, ALMA, VLA, etc. XS3D models a spectral-line cube observation, while corrects for the
-the observational Beam/PSF and spectral broadening (LSF). For this purpose
+from Integral-Field-Spectroscopy, ALMA, VLA, etc.
+It creates a dense, rotating gaseous disk, populated by clouds distributed randomly in space (r, theta, and z).
+XS3D creates a model of the observation by integrating each cloud along the line of sight, while correcting for the
+the observational Beam/PSF and spectral broadening (LSF).
+
+ For this purpose
 it makes use of the [FFTW](https://www.fftw.org/) library via [pyFFTW](https://pypi.org/project/pyFFTW/).
 XS3D is  particularly designed for spectral-line observations on frequency, wavelength and velocity domain, which makes it suitable to
 model a wide variety of spectral-lines from CO, HI, ionized gas and IR lines etc.
-XS3D adopts the same minimization technique as its 2D version, [XookSuut](https://github.com/CarlosCoba/XookSuut-code), but extended to datacubes.
-Furthermore, XS3D includes a set of noncircular rotation models, such as axisymmetric radial flows, free fall, bar-like flows, vertical flows, and a general harmonic decomposition of the LOSV.
-To derive the best set of parameters on each kinematic model XS3D uses all the information from the datacube. Therefore,
-large dimension cubes could take large CPU time to derive the best model.
+XS3D includes a set of noncircular rotation models, such as axisymmetric radial flows, free fall, bar-like flows, vertical flows (lagging), and a general harmonic decomposition of the LOSV.
+To derive the best kinematic model XS3D uses all the information in the datacube. Therefore,
+large dimension cubes might take large CPU time to obtain the best model.
 XS3D is designed to take advantage of multicores, so using them through the XS3D configuration file is advisable.
-Execution times vary depending on the cube dimensions. It can take from a couple of minutes up to 2 hours using 3 cores.
+Execution times vary depending on the cube dimensions. It can take from a couple of minutes up to couple of hours.
 
 Dependencies
 ===========
@@ -63,7 +66,7 @@ pip uninstall XS3D
 Use
 ===========
 
-XS3D is designed to run in command line, although you can easel y set-up a python or shell script to run multiple objects in parallel.
+XS3D is designed to run in command line, although you can easily set-up a python or shell script to run multiple objects in parallel.
 Please read the run_example.txt file to see how to run XS3D.
 XS3D requires as input a 3D cube free of continuum emission. The disk geometry is optional, but desired. If not passed it is estimated from light moments.
 

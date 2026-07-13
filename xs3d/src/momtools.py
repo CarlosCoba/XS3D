@@ -26,10 +26,7 @@ def trapecium3d(flux3d,dx,a=0,b=-1):
 	[nz,ny,nx]=flux3d.shape
 	f_a=flux3d[a]
 	f_b=flux3d[b]
-	#integrl=(dx/2.)*(f_a+f_b+2*np.nansum(flux3d[1:nz-1,:,:],axis=0))
 	integrl=(dx/2.)*(f_a+f_b+2*(flux3d[1:nz-1,:,:]).sum(axis=0))	
-	#msk=integrl!=0
-	#integrl/=msk
 	return integrl
 	
 def GaussProf(wave,lambda0,f0,sigma=None,fwhm=None):

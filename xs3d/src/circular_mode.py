@@ -202,10 +202,13 @@ class Circular_model:
 
 			method = self.fitmethod
 			if method == 'nelder':
-				options = {'xatol'  : 1e-3,'fatol'  : 1e-3,'maxiter': 8000, 'adaptive': True}
+				options = {'xatol'  : 1e-3,'fatol'  : 1e-3,'maxiter': 3000, 'adaptive': True}
 				fit_kws = {'options': options,}
 			if method == 'leastsq':
 				fit_kws = {}
+            if method   == 'powell'
+                options = {'xtol': 1e-2, 'ftol': 1e-2}
+                fit_kws =  {'options': options}
 
 			best_rings, result = fit_rings(
 				self.obs_cube*msk_outliers,
@@ -231,8 +234,8 @@ class Circular_model:
 			res_cube 	= residual_cube(obs_cube, mod_cube)
 			best_vals	= extractp(best_rings)
 
-			mom0_obs,_,_= cube_oper.obs_mommaps2(obs_cube)
-			mom0_mod,_,_= cube_oper.obs_mommaps2(mod_cube)
+			mom0_obs,_,_= cube_oper.obs_mommaps(obs_cube)
+			mom0_mod,_,_= cube_oper.obs_mommaps(mod_cube)
 			#[mom0_mod,mom1_mod,mom2_mod] = mom_mod
 			mod_cube_norm=mod_cube*np.divide(mom0_obs, mom0_mod, where=mom0_mod>0, out=np.zeros_like(mom0_mod))
 
