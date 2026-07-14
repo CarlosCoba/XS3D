@@ -201,9 +201,9 @@ class Harmonic_model:
 			# ============================================================
 			# 5.  Fit using Nelder-Mead
 			# ============================================================
-            if self.fitmethod=='nelder': minmethod='Nelder-Mead'
-            if self.fitmethod=='leastsq': minmethod='Levenberg-Marquardt'
-            if self.fitmethod=='powell': minmethod='Powell' 
+			if self.fitmethod=='nelder': minmethod='Nelder-Mead'
+			if self.fitmethod=='leastsq': minmethod='Levenberg-Marquardt'
+			if self.fitmethod=='powell': minmethod='Powell'
 
 			method = self.fitmethod
 			if method    == 'nelder':
@@ -211,7 +211,7 @@ class Harmonic_model:
 				fit_kws = {'options': options,}
 			if method    == 'leastsq':
 				fit_kws = {}
-            if method   == 'powell'
+            if method   == 'powell':
                 options = {'xtol': 1e-2, 'ftol': 1e-2}
                 fit_kws =  {'options': options}
 
