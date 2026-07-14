@@ -211,9 +211,9 @@ class Harmonic_model:
 				fit_kws = {'options': options,}
 			if method    == 'leastsq':
 				fit_kws = {}
-            if method   == 'powell':
-                options = {'xtol': 1e-2, 'ftol': 1e-2}
-                fit_kws =  {'options': options}
+			if method   == 'powell':
+				options = {'xtol': 1e-2, 'ftol': 1e-2}
+				fit_kws =  {'options': options}
 
 			best_rings, result = fit_rings(
 				self.obs_cube*msk_outliers,
