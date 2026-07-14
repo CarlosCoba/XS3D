@@ -24,7 +24,7 @@ setup(
     keywords="kinematics",
     url="https://github.com/CarlosCoba/XS3D",
     author="C. Lopez-Coba",
-    author_email="calopez@asiaa.sinica.edu.tw",
+    author_email="carlos.lopezcoba@gmail.com",
 	package_data={ '': ['*.txt', '*.ini']},
     license="MIT",
     packages=all_packages,
