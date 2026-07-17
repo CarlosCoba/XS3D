@@ -157,7 +157,6 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 		W_z = np.exp(-y_rot**2 / (2.0 * sigma_z_sky**2))
 	else:
 		W_z = np.ones_like(y_rot)
-	#plt.imshow(W_z, origin='lower');plt.show()
 
 	 # ----------------------------------------------------------------
 	# CHANGE 1: branch on inclination regime

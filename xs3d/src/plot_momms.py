@@ -4,7 +4,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
 import matplotlib.colors as colors
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
-from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,AnchoredSizeBar)
+from matplotlib.patches import Ellipse
 from itertools import product
 from matplotlib.patches import Polygon
 from matplotlib.transforms import Affine2D
@@ -230,24 +230,11 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,ou
 	ax6.plot([xmin*(4/5.),xmin*(4/5.)+bar_scale_arc_norm],[ymin*(5/6),ymin*(5/6)],'k-', lw =3)
 	'''
 
-	from matplotlib.patches import Ellipse
-	from matplotlib.offsetbox import AnchoredOffsetbox, AuxTransformBox
-
-	box = AuxTransformBox(ax.transData)
-	ellipse = Ellipse((0, 0),width=bmin,height=bmaj,angle=bpa,fill=False)
-	box.add_artist(ellipse)
-	ae = AnchoredOffsetbox(loc='lower left',child=box,frameon=False,pad=0.1,borderpad=0.1)
-
 	for Axes in [ax0,ax1,ax3,ax4,ax6,ax7]:
-		#beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0,frameon=False)
-		#beam.ellipse.set(edgecolor='blue', facecolor='none', hatch=5*'.')
-		#Axes.add_artist(beam)
-
-		box = AuxTransformBox(Axes.transData)
-		ellipse = Ellipse((0, 0),width=bmin,height=bmaj,angle=bpa,fill=False)
-		box.add_artist(ellipse)
-		ae = AnchoredOffsetbox(loc='lower left',child=box,frameon=False,pad=0.1,borderpad=0.1)
-		
+		x0 = 0.95*xmax - bmin/2
+		y0 = 0.95*ymin + bmaj/2
+		ellipse = Ellipse((x0, y0),width=bmin,height=bmaj,angle=bpa,fill=0,edgecolor='blue', facecolor='none', hatch=5*'.')
+		Axes.add_patch(ellipse)
 
 
 	for Axes in [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8]:
