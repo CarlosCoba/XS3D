@@ -11,7 +11,7 @@ from .momtools import mask_wave
 from .conv_fftw import fftconv,data_2N
 from .start_messenge import Print
 from .tools_fits import get_fits_data
-from .utils import vparabola3D
+from .utils import vparabola3D,nan2zero,zero2nan
 from .nan_percentile import nan_percentile # this is much faster than nunmpy
 
 def rmse(data_array):
@@ -27,7 +27,7 @@ def rmse(data_array):
 def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	cube = np.copy(data)
 	[nz,ny,nx]=cube.shape
-	
+
 	Print().status("Estimating RMS")
 	config_general = config['general']
 	config_others = config['others']
@@ -164,7 +164,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	# keep zeros from the smoothed cube
 	msk_cube*=iszerosmth
-	
+
 	msk_cube_2d=(msk_cube).sum(axis=0)
 	col, row =np.indices((ny,nx))
 	row=row[msk_cube_2d>0]
@@ -217,10 +217,10 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	msk_cube_tmp = np.sum(msk_cube_tmp, axis = 0)
 	msk_cube*=(msk_cube_tmp>=1)
 	msk_cube=(msk_cube).astype(float)
-						
+
 	plot=0
 	if plot:
-		xc,yc = 107, 112	
+		xc,yc = 107, 112
 		msk_cube_2d=(msk_cube).sum(axis=0)
 		plt.plot(xc, yc, 'rx')
 		plt.imshow(msk_cube_2d,origin='lower');plt.show()
@@ -295,6 +295,42 @@ def cstats(cube,f=10):
 	m1=avg2d>2*rms
 	return m1*np.ones(nz)[:,None,None],rms
 
+
+
+_stat_position = {
+	'mean': 0,
+	'pRMS': 1,
+	'median': 2,
+	'adev': 3,
+	'RMS': 4,
+	'f_err': 5,
+}
+def stats_cube_2d(data, ddof=1, bad=np.nan):
+	# MEAN = sum (x)/ N
+	# PRMS = sqrt( sum( (x-mean(x))^2 )/(N-1))
+	# AADEV = sum( abs(x-mean(x)) )/N
+	# RMS = sqrt(sum( (x-mean(x))^2 )/N)
+	x = np.copy(data)
+	x[x==0]=np.nan
+	[xmean, xpRMS, xmedian, xRMS, f_err] = [bad]*5
+	if np.isfinite(x).any():
+		N	= x.shape[0]
+		Np	= N - ddof
+		xmean	= np.nanmean(x,axis=0)
+		d 		= x-xmean
+		sdd		= np.nansum(d**2,axis=0)
+		xRMS	= np.sqrt(sdd/N)
+		xpRMS	= np.sqrt(sdd/Np)
+		xmedian = np.nanmedian(x,axis=0)
+		p98		= np.nanpercentile(x,98,axis=0)
+		#f_err	= (xmedian + xpRMS**2)*0.4
+		f_err	= (p98 + xpRMS**2)*0.4
+		f_err[~np.isfinite(f_err)]=1
+
+	out_tmp = [xmean, xpRMS, xmedian, xRMS, f_err]
+	out = [nan2zero(out_tmp[k]) for k in range(int(len(out_tmp)))]
+
+	return out
 
 
 from scipy.sparse.linalg import spsolve

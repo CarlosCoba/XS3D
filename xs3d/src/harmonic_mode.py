@@ -26,11 +26,12 @@ from .params import Set_params
 from .extract_prms import extractp,extract_harmonics
 
 class Harmonic_model:
-	def __init__(self, vmode, galaxy, obs_cube, header, mommaps, emoms, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, outdir,cube_class,psf_lsf,m_hrm):
+	def __init__(self, vmode, galaxy, obs_cube, eobs_cube, header, mommaps, emoms, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, outdir,cube_class,psf_lsf,m_hrm):
 
 
 		self.galaxy=galaxy
 		self.obs_cube=obs_cube
+        self.eflux2d=eobs_cube
 		self.hdr=header
 		self.mommaps=mommaps
 		self.vel_copy=np.copy(self.mommaps[1])
@@ -179,19 +180,6 @@ class Harmonic_model:
 			spec = cnf_prms.prms(self.vmode)
 			lmfit_prm=cnf_prms
 
-			#assume 2% outliers
-			mom0_obs=self.mommaps[0]
-			mom1_obs=self.mommaps[1]*(self.mommaps[1]/self.mommaps[1])
-			mom2_obs=self.mommaps[2]
-			msk1 = 	(abs(mom1_obs-self.vsys0)>1e3)
-			msk2 = 	(mom2_obs>1000)
-
-			mom1_obs[msk1*msk2]=0
-			p1=np.nanpercentile(np.unique(mom1_obs),1)
-			p99=np.nanpercentile(np.unique(mom1_obs),99)
-			msk_outliers=(mom1_obs>p1)*(mom1_obs<p99)
-			mom0_obs=mom0_obs*(msk_outliers)
-
 			# ============================================================
 			# 1.  Cube configuration
 			# ============================================================
@@ -216,7 +204,8 @@ class Harmonic_model:
 				fit_kws =  {'options': options}
 
 			best_rings, result = fit_rings(
-				self.obs_cube*msk_outliers,
+				self.obs_cube,
+                self.eflux2d,
 				self.mommaps,
 				guess_rings,
 				spec, cnf_prms,

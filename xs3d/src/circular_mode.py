@@ -30,7 +30,7 @@ class Circular_model:
 
 		self.galaxy		= galaxy
 		self.obs_cube 	= obs_cube
-		self.eobs_cube	= eobs_cube
+		self.eflux2d	= eobs_cube
 		self.hdr		= header
 		self.mommaps	= mommaps
 		self.vel_copy	= np.copy(self.mommaps[1])
@@ -175,19 +175,6 @@ class Circular_model:
 			spec = cnf_prms.prms(self.vmode)
 			lmfit_prm=cnf_prms
 
-
-			#assume 2% outliers
-			mom0_obs=self.mommaps[0]
-			mom1_obs=self.mommaps[1]*(self.mommaps[1]/self.mommaps[1])
-			mom2_obs=self.mommaps[2]
-			msk1 = 	(abs(mom1_obs-self.vsys0)>1e3)
-			msk2 = 	(mom2_obs>1000)
-
-			mom1_obs[msk1*msk2]=0
-			p01=np.nanpercentile(np.unique(mom1_obs),1)
-			p99=np.nanpercentile(np.unique(mom1_obs),99)
-			msk_outliers=(mom1_obs>p01)*(mom1_obs<p99)
-
 			# ============================================================
 			# 1.  Cube configuration
 			# ============================================================
@@ -215,7 +202,8 @@ class Circular_model:
 				fit_kws =  {'options': options}
 
 			best_rings, result = fit_rings(
-				self.obs_cube*msk_outliers,
+				self.obs_cube,
+                self.eflux2d,
 				self.mommaps,
 				guess_rings,
 				spec, cnf_prms,

@@ -153,7 +153,7 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 	z_hw_px = n_sigma_z * zscale_pix_obs * np.sin(inc)  if z_scale_pix > 0 else 0.0
 
 	sigma_z_sky  = zscale_pix_obs * np.sin(inc)  # pixels
-	if zweight and z_scale_pix>0:
+	if z_scale_pix>0:
 		W_z = np.exp(-y_rot**2 / (2.0 * sigma_z_sky**2))
 	else:
 		W_z = np.ones_like(y_rot)
@@ -195,19 +195,43 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 
 		# Component 1: kinematic major-axis weighting
 		W = np.abs(np.cos(phi)) ** rweight
+		# Component 2: spatial mask — EXACT projected cylinder footprint.
+		# A sky pixel (x_rot, y_rot) receives emission from the model
+		# cylinder  {r_disk ≤ r_max, |z| ≤ z_max}  if and only if
+		# there exists a point (x_disk, y_disk, z_disk) inside the
+		# cylinder that projects to it.  Since x_rot = x_disk exactly,
+		# we need |x_rot| ≤ r_max and then:
+		#
+		# y_rot is achievable ↔ ∃ y_disk ∈ [-R, R], z_disk ∈ [-z_max, z_max]
+		# with R = sqrt(r_max^2 - x_rot^2), such that
+		# y_rot = -y_disk * cos(inc) + z_disk * sin(inc)
+		#
+		# The range of achievable y_rot for fixed x_rot is:
+		#	|y_rot| ≤ R * cos(inc) + z_max * sin(inc)
+		#			= sqrt(r_max^2 - x_rot^2) * cos(inc) + z_max * sin(inc)
+		#
+		# This boundary is the MINKOWSKI SUM of the midplane ellipse
+		# (y_boundary = ±R*cos(inc)) and a uniform vertical expansion
+		# of ±z_max*sin(inc) in the y_rot direction.
+		# The resulting shape is a STADIUM (ellipse with flat sides),
+		# NOT a rectangle and NOT a plain ellipse.
+
 		if r_max_px is not None:
 			#Radial condition: inside disk out to r_max
 			in_disk = r_disk <= r_max_px
 
-		    # Vertical extension: pixels within z_hw_px of the projected
-		    # midplane ellipse in the sky minor-axis direction.
-		    # The projected midplane ellipse has minor-axis half-width
-		    # r_max_px × cos(inc). We extend it by z_hw_px to include
-		    # emission from above and below the midplane.
-			if z_scale_pix >= 0 and zweight:
-				in_z = np.abs(y_rot) <= max((r_max_px * np.cos(inc) + z_hw_px),psf_pix/2)
-				in_cilinder = in_disk | (in_z & (np.abs(x_rot) <= r_max_px))
-				return W_z *W * (in_cilinder).astype(float)
+			if z_scale_pix >= 0:
+				#Exact projected cylinder boundary:
+				#	|y_rot| ≤ sqrt(r_max^2 - x_rot^) * cos(inc) + z_max_px * sin(inc)
+				R_sq        = np.maximum(r_max_px**2 - x_rot**2, 0.0)
+				z_max_px	= z_scale_pix * n_sigma_z
+				y_boundary  = (np.sqrt(R_sq) * cos_inc + z_max_px * np.sin(inc))
+				spatial_mask=((np.abs(x_rot) <= r_max_px) &(np.abs(y_rot) <= y_boundary))
+
+				if zweight:
+					return W_z * W * (spatial_mask).astype(float)
+				else:
+					return W * (spatial_mask).astype(float)
 			else:
 				return W * (in_disk).astype(float)
 
@@ -502,7 +526,7 @@ def params_to_rings(params, rings):
 # Objective function for lmfit
 # ---------------------------------------------------------------------------
 
-def _make_objective(obs_cube, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed,
+def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed,
 					verbose_counter, model):
 	"""
 	Return a closure that lmfit.minimize can call.
@@ -537,34 +561,19 @@ def _make_objective(obs_cube, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, wei
 			cost = np.ones(obs_cube.size) * 1e15
 			return cost
 
+		#eflux = obs_peak
+		eflux = obs_emap
+
 		mom0_mod_tmp	= cube_oper.obs_mommaps(mod_cube,mom_out=(0))
 		mom0_msk		= (mom0_obs > 0) & (mom0_mod_tmp > 0)
 		mod_cube_norm	= mod_cube*np.divide(mom0_obs,mom0_mod_tmp,where=mom0_msk,out=np.zeros_like(mom0_mod_tmp))
 		mom0_mod, mom1_mod = cube_oper.obs_mommaps(mod_cube_norm,mom_out=(0,1))
 
-		obs_n	= obs_cube / obs_peak
-		mod_n 	= mod_cube_norm / obs_peak
+		obs_n	= obs_cube / eflux
+		mod_n 	= mod_cube_norm / eflux
 		W 		= W_cur[np.newaxis, :, :]
 		W		= W / W_cur_sum
 		msk 	= (mom0_obs > 0) & (mom0_mod_tmp > 0) & (W_cur > 0)
-		
-		#xc,yc = nx//2, ny//2
-		#plt.plot(np.arange(mod_cube_norm.shape[0]), obs_n[:, yc, xc], 'k-');plt.plot(np.arange(mod_cube_norm.shape[0]), mod_cube[:, yc, xc], 'r-');plt.show()
-		#plt.imshow(W_cur/msk, origin ='lower',cmap='magma');plt.show()
-		#plt.plot(xc, yc, 'xk')
-		#plt.imshow(mom0_mod_tmp/(W_cur!=0),origin ='lower',cmap='magma');plt.show()
-		#plt.imshow(mom0_obs*W_cur,origin ='lower');plt.show()
-		#plt.imshow(mom2_obs*msk, origin ='lower');plt.show()
-
-		ntotal = ny*nx
-		ndata = np.sum((mom0_obs > 0))
-		nmodel = np.sum(((mom0_mod*W_cur*mom0_obs) > 0))
-		N = (ndata*nmodel)/(ndata**2)
-		N = (ndata**2)/	(ndata*nmodel)
-		N = 1
-		penalty = (ndata-nmodel)/ndata
-		#lmbda = penalty
-		p = np.sqrt(penalty*chi2_scale*nz*ndata*1)
 
 		# Residuals from moment 1 map
 		lmbda		= N
@@ -573,7 +582,8 @@ def _make_objective(obs_cube, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, wei
 		res_moms	/= dv_norm
 
 		# Residuals from 3D fitting
-		residuals	= np.sqrt(W) * (obs_n - mod_n) * msk # weighted residuals
+		residuals	= (obs_n - mod_n) * msk
+		wresiduals	= np.sqrt(W) * residuals  # weighted residuals
 
 		verbose_counter[0] += 1
 		if verbose_counter[0] % 20 == 0:
@@ -588,8 +598,8 @@ def _make_objective(obs_cube, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, wei
 		# Return flat residual vector — lmfit sums squares internally.
 		# Works for both scalar methods (nelder, differential_evolution)
 		# and vector methods (leastsq, emcee).
-		return np.concatenate([residuals.ravel(), res_moms.ravel()])
-		#return np.concatenate([residuals.ravel()])
+		#return np.concatenate([residuals.ravel(), res_moms.ravel()])
+		return np.concatenate([wresiduals.ravel()])
 
 	return objective
 
@@ -598,7 +608,7 @@ def _make_objective(obs_cube, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, wei
 # Public fitting functions
 # ---------------------------------------------------------------------------
 
-def fit_rings(obs_cube, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_lsf, cube_oper,
+def fit_rings(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_lsf, cube_oper,
 			  weight_alpha=(2.0,1),
 			  method='nelder',
 			  seed=42,
@@ -705,7 +715,7 @@ def fit_rings(obs_cube, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_l
 
 	model   = TiltedRingModel(cube_cfg, psf_lsf, seed=seed,planner_effort='FFTW_MEASURE')
 
-	obj	 = _make_objective(obs_cube, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model)
+	obj	 = _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model)
 
 	if verbose:
 		_print_params_summary(params, rings)
