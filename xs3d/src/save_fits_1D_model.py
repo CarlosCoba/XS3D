@@ -5,12 +5,12 @@ from .pixel_params import eps_2_inc,e_eps2e_inc,inc_2_eps
 
 def save_model(galaxy,vmode,const,best,result,out):
 	R=best['radius']
-	nrings=len(R)	
+	nrings=len(R)
 	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
 	eps = inc_2_eps(inc)
 	scalar_fields = ["v_rot", "v_rad", "v_2t", "v_2r", "v_disp"]
 	vels = {k:best[k] for k in scalar_fields}
-	vrot = vels['v_rot']		
+	vrot = vels['v_rot']
 
 	if vmode == 'circular':
 		data = np.zeros((5,nrings))
@@ -19,29 +19,29 @@ def save_model(galaxy,vmode,const,best,result,out):
 		data[2][:] = vels['v_rot']
 		data[3][:] = np.zeros_like(vrot)
 		data[4][:] = np.zeros_like(vrot)
-		
+
 	if vmode == 'radial':
 		data = np.zeros((7,nrings))
-		data[0][:] = R			
+		data[0][:] = R
 		data[1][:] = vels['v_disp']
 		data[2][:] = vels['v_rot']
-		data[3][:] = vels['v_rad']		
+		data[3][:] = vels['v_rad']
 		data[4][:] = np.zeros_like(vrot)
-		data[5][:] = np.zeros_like(vrot)	
-		data[6][:] = np.zeros_like(vrot)	
+		data[5][:] = np.zeros_like(vrot)
+		data[6][:] = np.zeros_like(vrot)
 
 	if vmode == 'bisymmetric':
 		data = np.zeros((9,nrings))
-		data[0][:] = R			
+		data[0][:] = R
 		data[1][:] = vels['v_disp']
 		data[2][:] = vels['v_rot']
-		data[3][:] = vels['v_2r']		
-		data[4][:] = vels['v_2t']				
+		data[3][:] = vels['v_2r']
+		data[4][:] = vels['v_2t']
 		data[5][:] = np.zeros_like(vrot)
-		data[6][:] = np.zeros_like(vrot)	
+		data[6][:] = np.zeros_like(vrot)
 		data[7][:] = np.zeros_like(vrot)
 		data[8][:] = np.zeros_like(vrot)
-		
+
 	hdu = fits.PrimaryHDU(data)
 
 	if vmode == "circular":
@@ -84,7 +84,7 @@ def save_model(galaxy,vmode,const,best,result,out):
 			hdu.header['NAME8'] = 'error tangencial velocity (km/s)'
 
 	chi2=result.chisqr
-	hdu.header['chi2'] = chi2
+	hdu.header['chi2_red'] = chi2
 	hdu.header['pa'] = pa
 	hdu.header['e_pa'] = 0
 	hdu.header['eps'] = eps
@@ -102,4 +102,4 @@ def save_model(galaxy,vmode,const,best,result,out):
 		hdu.header['HIERARCH phi_bar'] = phi_bar
 		hdu.header['HIERARCH e_phi_bar'] = 0
 
-	hdu.writeto(f"{out}models/{galaxy}.{vmode}.1D_model.fits.gz",overwrite=True)	
+	hdu.writeto(f"{out}models/{galaxy}.{vmode}.1D_model.fits.gz",overwrite=True)

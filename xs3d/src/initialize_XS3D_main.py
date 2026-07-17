@@ -218,8 +218,16 @@ class XS_out(Run_models):
 		from .save_output import save_rings_fits
 		save_rings_fits(self.galaxy, self.vmode, self.best_rings, self.result, self.psf_lsf, extra_header=None, out=self.outdir)
 
-
 		mom_mod = self.cube_class.obs_mommaps(self.mod_cube)
+
+		# update chisquare
+		msk		= (mom_mod[0]>0) * (self.mom0>0)
+		Ndata 	= np.sum(msk)*self.hdr_info.nz
+		Nvary 	= (self.result).nvarys
+		dof 	= Ndata-Nvary
+		chi2 	= ((((self.datacube-self.mod_cube)/self.eflux2d)**2)*msk).sum()
+		chisqr 	= chi2/dof
+		self.result.chisqr=chisqr
 
 		# remove zeros from moment maps
 		mom_mod=[zero2nan(mom_mod[k]) for k in range(3)]

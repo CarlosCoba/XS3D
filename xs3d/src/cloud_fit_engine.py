@@ -573,6 +573,7 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		W 		= W_cur[np.newaxis, :, :]
 		W		= W / W_cur_sum
 		msk 	= (mom0_obs > 0) & (mom0_mod_tmp > 0) & (W_cur > 0)
+		Ndata	= np.sum(msk)*nz
 
 		# Residuals from moment 1 map
 		lmbda		= N
@@ -589,8 +590,11 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 			cost = float(np.sum(residuals ** 2))
 			free_vals = {k: f"{v.value:.2f}"
 						 for k, v in params.items() if v.vary}
+			Nvary = len(free_vals)
+			dof	  = Ndata-Nvary
+			chisqr= cost/dof
 			print(f"  Iter {verbose_counter[0]:5d}  "
-				  f"chi2={cost:.6f}  "
+				  f"chi2r={chisqr:.6f}  "
 				  + "  ".join(f"{k}={v}" for k, v in
 							   list(free_vals.items())[:6]))
 
