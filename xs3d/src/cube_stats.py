@@ -324,7 +324,7 @@ def stats_cube_2d(data, ddof=1, bad=np.nan):
 		xmedian = np.nanmedian(x,axis=0)
 		p98		= np.nanpercentile(x,98,axis=0)
 		#f_err	= (xmedian + xpRMS**2)*0.4
-		f_err	= (p98 + xpRMS**2)*0.4
+		f_err	= (p98 + xpRMS**2)*0.1
 		f_err[~np.isfinite(f_err)]=1
 
 	out_tmp = [xmean, xpRMS, xmedian, xRMS, f_err]
