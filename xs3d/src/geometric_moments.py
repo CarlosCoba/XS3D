@@ -41,11 +41,16 @@ def Gini(img_flat0):
 
 
 ntries=0
-def geom_moms(image0,pixel=1,plot=False,binary=True, nloops=15):
+def geom_moms(image0,geo,pixel=1,plot=False,binary=True, nloops=15):
 	# compute the geometric moment maps
 	img=np.copy(image0)
 	img[~np.isfinite(img)]=0
 	img[img<0]=0
+
+	[pa_g,inc_g,xc_g,yc_g] = geo
+	# check if xc_g, and yc_g are numbers
+	xc_num = isinstance(xc_g,(int,float))
+	yc_num = isinstance(yc_g,(int,float))
 
 	if binary:
 		# work with a binary image
@@ -67,6 +72,9 @@ def geom_moms(image0,pixel=1,plot=False,binary=True, nloops=15):
 		# centroid of the image
 		xcen=np.nansum(img*pix_x,where=np.isfinite(img))/F
 		ycen=np.nansum(img*pix_y,where=np.isfinite(img))/F
+
+		xcen=xc_g if xc_num else xcen
+		ycen=yc_g if yc_num else ycen
 
 		x2=np.nansum(img*(pix_x)**2,where=np.isfinite(img))/F - xcen**2
 		y2=np.nansum(img*(pix_y)**2,where=np.isfinite(img))/F - ycen**2
@@ -92,12 +100,12 @@ def geom_moms(image0,pixel=1,plot=False,binary=True, nloops=15):
 		theta_deg=theta*180/np.pi
 		inc_rad=np.arccos(1-eps)
 		inc_deg=inc_rad*180/np.pi
-		
+
 		q0 = 0.2 # -> intrinsic thickness of an oblate stellar disk
 		cos2_i = (b_a**2-q0**2)/(1-q0**2)
 		inc_cor_rad = np.arccos(np.sqrt(cos2_i)) if cos2_i > 0 else inc_rad
 		inc_cor_deg = inc_cor_rad*180/np.pi
-		
+
 		pa_astro_deg=theta_deg-90
 		pa_astro_deg=pa_astro_deg % 360
 		pa_astro_rad=pa_astro_deg*np.pi/180
@@ -135,7 +143,7 @@ def geom_moms(image0,pixel=1,plot=False,binary=True, nloops=15):
 		plot=0
 		if plot:
 			print(pa_astro_deg,inc_cor_deg, xcen, ycen,rmax)
-			plt.imshow(image0*(img/img),origin='lower');
+			plt.imshow(np.log10(image0)*(img/img),origin='lower');
 			x,y=ellipse(xcen,ycen,theta_deg,bmaj*2,eps)
 			plt.scatter(xcen,ycen,s=50,c='r')
 			plt.plot(x,y,'r-')

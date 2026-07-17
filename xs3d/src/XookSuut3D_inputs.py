@@ -43,7 +43,7 @@ class input_params:
 	def __init__(self):
 		if (nargs < 19 or nargs > 22):
 
-			print ("USE: XS3D name cube.fits [mask] [PA] [INC] [X0] [Y0] [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_NC_min,R_NC_max] [config_file] [prefix]" )
+			print ("USE: XS3D name cube.fits [mask] [pa] [inc] [xc] [yc] [vsys] vary_pa vary_inc vary_xc vary_yc vary_vsys ring_space [delta] rstart,rfinal cover kin_model [r_nc_min,r_nc_max] [config_file] [prefix]" )
 
 			exit()
 
@@ -76,7 +76,7 @@ class input_params:
 		rstart_rfinal =  sys.argv[16]
 		rstart_rfinal = rstart_rfinal.split(',')
 		rstart,rfinal =	rstart_rfinal
-		rstart = eval(rstart)	
+		rstart = eval(rstart)
 		frac_pixel = eval(sys.argv[17])
 
 		# Kinematic model, minimization method and iterations
@@ -164,7 +164,10 @@ class input_params:
 		config = input_config
 
 		x = XS_out(galaxy, vel_map, mask2D, VSYS, PA, INC, X0, Y0, PHI_BAR, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHIB, delta, rstart, rfinal, ring_space, frac_pixel, v_center, bar_min_max, vmode, survey, config, prefix, osi  )
-		out_xs = x()
+		out_xs = x.results()
+
+	def __str__(self,txt):
+		print(txt)
 
 if __name__ == "__main__":
-	init = input_params()
+	init = input_params('Bye !')

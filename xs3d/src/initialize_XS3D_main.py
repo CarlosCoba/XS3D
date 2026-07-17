@@ -136,7 +136,7 @@ class Run_models:
 		compute_geom=np.any([True if k in geom else False for k in osi])
 		if compute_geom:
 			# estimate geometric moments with mom0 map.
-			geom_start=geom_moms(self.mom0,pixel_scale,binary=False)
+			geom_start=geom_moms(self.mom0,geo,pixel_scale,binary=False)
 			sma=geom_start[-1]
 		if rfinal in osi:
 			rfinal=sma
@@ -271,7 +271,6 @@ class XS_out(Run_models):
 		self.P.status(ttime)
 		print("------------------------------------")
 
-
-	def __call__(self):
-		run=self.results()
-		#return self.results()
+	#def __call__(self):
+	#	run=self.results()
+	#	return self.results()
