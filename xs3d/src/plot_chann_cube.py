@@ -5,7 +5,7 @@ from matplotlib import gridspec
 import matplotlib.colors as colors
 from matplotlib.lines import Line2D
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
-from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,AnchoredSizeBar)
+from matplotlib.patches import Ellipse
 from itertools import product
 
 from matplotlib.offsetbox import AnchoredText
@@ -36,7 +36,7 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	wave_kms=hdr_info.wave_kms
 	[nz,ny,nx]=datacube.shape
 	pixel=hdr_info.scale
-	ext=np.dot([-x_center,nx-x_center,-y_center,ny-y_center],pixel); xc =0; yc =0	
+	ext=np.dot([-x_center,nx-x_center,-y_center,ny-y_center],pixel); xc =0; yc =0
 
 
 	pixelconv=pixel
@@ -57,17 +57,17 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	bmin_arc=psf_lsf.bmin
 	bpa= psf_lsf.bpa
 	psf_arc=psf_lsf.fwhm_psf_arc
-	
+
 	rnorm=1
 	if rmax>80 and np.all(abs(ext)>80):
 		rnorm=60
 		rlabel='$\'$'
 	else:
 		rlabel='$\'\'$'
-		
+
 	ext = ext/rnorm
 	bmin=bmin_arc/rnorm
-	bmaj=bmaj_arc/rnorm	
+	bmaj=bmaj_arc/rnorm
 
 	# Crop the FOV in case the object is too small
 	xlength=nx # in pixels
@@ -84,7 +84,7 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 
 
 	width, height = 17, 17*(5/6) # width [cm]
-	width, height = 18*(5/6), 17 # width [cm]	
+	width, height = 18*(5/6), 17 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
@@ -120,7 +120,7 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	vmax=np.percentile(cube_mod[cube_mod!=0],99.5)
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax) if vmax > 1 else colors.Normalize(vmin=vmin, vmax=vmax)
 	clines = '#279dc5'
-	
+
 	dv=psf_lsf.cdelt3_kms
 	for j,k in enumerate(chanplot):
 		if j<=ngood:
@@ -161,25 +161,26 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 		if vmode == 'edgeon':
 			rec=drawrectangle(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
 			x,y = rec[0], rec[1]
-			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)			
-		else:	
+			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
+		else:
 			elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
 			x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
 			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
 
-		Axes.plot(xc, yc, marker='+', color = 'black', markeredgewidth=1, zorder=100)	
+		Axes.plot(xc, yc, marker='+', color = 'black', markeredgewidth=1, zorder=100)
 
 
 
 	for Axes in axes:
 		Axes.set_xlim(xmin,xmax)
 		Axes.set_ylim(ymin,ymax)
-	
+
 	for Axes in axes:
-		beam=AnchoredEllipse(Axes.transData, width=bmin, height=bmaj, angle=bpa, loc='lower right', pad=0.2, borderpad=0, frameon=False)
-		beam.ellipse.set(edgecolor='blue', facecolor='none', hatch=5*'.')
-		Axes.add_artist(beam)
-						
+		x0 = 0.95*xmax - bmin/2
+		y0 = 0.95*ymin + bmaj/2
+		ellipse = Ellipse((x0, y0),width=bmin,height=bmaj,angle=bpa,fill=0,edgecolor='blue', facecolor='none', hatch=5*'.')
+		Axes.add_patch(ellipse)
+
 
 	indx=(l0**2-l0)
 	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=10,labelpad=0)

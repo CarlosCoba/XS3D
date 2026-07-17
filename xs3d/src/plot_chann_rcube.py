@@ -4,7 +4,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
 import matplotlib.colors as colors
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
-from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,AnchoredSizeBar)
+from matplotlib.patches import Ellipse
 from itertools import product
 
 from matplotlib.offsetbox import AnchoredText
@@ -64,7 +64,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 
 	width, height = 17, 17*(5/6) # width [cm]
 	width, height = 18*(5/6), 17 # width [cm]
-	cm_to_inch = 0.393701 # [inch/cm]	
+	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
 	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
@@ -136,7 +136,7 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 			rec=drawrectangle(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
 			x,y = rec[0], rec[1]
 			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
-		else:		
+		else:
 			elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
 			x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
 			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
@@ -172,17 +172,11 @@ def plot_rchannels(galaxy,datacube,cube_mdl,const,ext,vmode,hdr_cube,hdr_info,co
 	if bmin_arc is not None:
 		bmin=bmin_arc/rnorm
 
-	if psf is not None:
-		for Axes in axes:
-			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0,frameon=True)
-			beam.ellipse.set(color='gray')
-			Axes.add_artist(beam)
-
-	if bmaj_arc is not None and bmin_arc is not None:
-		for Axes in axes:
-			beam=AnchoredEllipse(Axes.transData, width=bmin,height=bmaj, angle=bpa, loc='lower right',pad=0.2, borderpad=0,frameon=True)
-			beam.ellipse.set(color='gray')
-			Axes.add_artist(beam)
+	for Axes in axes:
+		x0 = 0.95*xmax - bmin/2
+		y0 = 0.95*ymin + bmaj/2
+		ellipse = Ellipse((x0, y0),width=bmin,height=bmaj,angle=bpa,fill=0,edgecolor='blue', facecolor='none', hatch=5*'.')
+		Axes.add_patch(ellipse)
 
 
 	indx=(l0**2-l0)

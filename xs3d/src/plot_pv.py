@@ -3,7 +3,7 @@ import matplotlib.pylab as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
-from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredEllipse,AnchoredSizeBar)
+from matplotlib.patches import Ellipse
 from astropy.convolution import Gaussian2DKernel
 from astropy.convolution import convolve
 from itertools import product
@@ -48,18 +48,18 @@ cmap_pvd = vel_map('pvd')
 def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_info,psf_lsf,config,out):
 
 	R=best['radius']
-	nrings=len(R)	
+	nrings=len(R)
 	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
 	eps = inc_2_eps(inc)
 	scalar_fields = ["v_rot"]
 	vels = {k:best[k] for k in scalar_fields}
-	vrot = vels['v_rot']		
-	
+	vrot = vels['v_rot']
+
 
 	mom0_obs,mom1_obs,mom2_obs=moms_obs
-	mom0_mod,mom1_mod,mom2_mod=moms_mod	
+	mom0_mod,mom1_mod,mom2_mod=moms_mod
 
-	pixel 	= hdr_info.scale	
+	pixel 	= hdr_info.scale
 	pvds,ext =out_pvd
 
 	[ext0,ext1,_] = ext
@@ -102,8 +102,8 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 
 	slit_w 		= psf_lsf.slit_w
 	slit_w		= slit_w/rnorm
-	
-	
+
+
 	mom1_mod-=v_sys
 	mom1_obs-=v_sys
 	vmin = abs(np.nanmin(mom1_mod[msk]))
@@ -246,12 +246,15 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 			fwhm_kms=hdr_info.cdelt3_kms
 
 		bmin=bmin_arc/rnorm
-		bmaj=bmaj_arc/rnorm	
+		bmaj=bmaj_arc/rnorm
 
 		for Axes in [ax0, ax1]:
-			beam=AnchoredEllipse(Axes.transData, width=bmaj, height=fwhm_kms, angle=0, loc='lower left', pad=0.2, borderpad=0, frameon=False, zorder=30)
-			beam.ellipse.set(edgecolor='blue', facecolor='none', hatch=5*'.')
-			Axes.add_artist(beam)				
+			ymin_ = min(ext1[2],ext1[3])
+			xmax_ = max(ext1[0],ext1[1])
+			x0 = 0.95*xmax_ - bmaj/2
+			y0 = 0.95*ymin_ + fwhm_kms/2
+			ellipse = Ellipse((x0, y0),width=bmaj,height=fwhm_kms,angle=bpa,fill=0,edgecolor='blue', facecolor='none', hatch=5*'.')
+			Axes.add_patch(ellipse)
 
 		#for Axes in [ax0, ax1]:
 		#	if np.any( abs(np.array([ext0[2],ext0[3]]))  > max_vrot*(4/3.) ):
@@ -278,16 +281,16 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 	im2=ax2.imshow(broadband,norm=norm,cmap=cmap_pvd,aspect='auto',origin='lower',extent=extimg)
 	axs(ax2,rotation='horizontal',remove_xyticks=True)
 	clb=cb(im2, ax2, labelsize=10, colormap = cmap_pvd, bbox=(-0.25, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [], label = "flux", label_pad = -20, colors  = "k",orientation='vertical')
-	
+
 	v_min=round(vmin,1)
 	v_max=round(vmax,1)
 	clb.ax.text(0.5, -0.01, f'{v_min}', transform=clb.ax.transAxes, va='top', ha='center', fontsize=10)
 	clb.ax.text(0.5, 1.0, f'{v_max}', transform=clb.ax.transAxes, va='bottom', ha='center', fontsize=10)
-	
+
 	ax2.text(xmin*(4/5.+1/10),ymax*(7/6)*0.95, '%s${\'\'}$:%s%s'%(bar_scale_arc,bar_scale_u,unit),fontsize=8)
 
 
-	ax3=plt.subplot(gs1[1,0])	
+	ax3=plt.subplot(gs1[1,0])
 	#moment 1
 	vmin = abs(np.nanmin(mom1_obs))
 	vmax = abs(np.nanmax(mom1_obs))
@@ -295,11 +298,11 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 	if vmax < 10 or vmin < 10:
 		base = 0.1
 	vmin,vmax=vmin_vmax(mom1_obs,pmin=2,pmax=98,base=base,symmetric=True)
-		
+
 	im3=ax3.imshow(mom1_obs,cmap=cmap,aspect='auto',vmin=vminv,vmax=vmaxv,origin='lower',extent=extimg)
 	axs(ax3,rotation='horizontal',remove_yticks=True,fontsize_ticklabels=10)
 	clb=cb(im3, ax3, labelsize=10, colormap = cmap, bbox=(-0.25, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [], label = "$\mathrm{V_{LOS}}$/ km\,s$^{-1}$", label_pad = -20, colors  = "k",orientation='vertical')
-	
+
 	v_min=int(round(vminv,1))
 	v_max=int(round(vmaxv,1))
 	clb.ax.text(0.5, -0.01, f'{v_min}', transform=clb.ax.transAxes, va='top', ha='center', fontsize=10)
@@ -321,20 +324,20 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 		t	= Affine2D().rotate(pa_rad+np.pi/2).translate(0, 0) + Axes.transData
 		rect = Polygon(verts, closed=True, fill=False, edgecolor='k', lw=0.6, ls='-', transform=t)
 		Axes.add_patch(rect)
-			
+
 
 	pa_maj_rad = np.radians(pa)
 	pa_mnr_rad = np.radians(pa+90)
 	pas = {'major': pa_maj_rad, 'minor': pa_mnr_rad}
-	
+
 	rmax = rmax_norm
 	slits(ax2,pa_maj_rad, rmax)
 	slits(ax3,pa_maj_rad, rmax)
-	
+
 	rmax = rmax_norm*(1-eps)
-	slits(ax2,pa_mnr_rad, rmax)	
+	slits(ax2,pa_mnr_rad, rmax)
 	slits(ax3,pa_mnr_rad, rmax)
-				
+
 	fig.tight_layout()
 	plt.savefig("%sfigures/pvd_%s_model_%s.png"%(out,vmode,galaxy), bbox_inches='tight')
 	plt.close()
