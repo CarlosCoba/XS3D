@@ -576,7 +576,7 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		Ndata	= np.sum(msk)*nz
 
 		# Residuals from moment 1 map
-		lmbda		= N
+		lmbda		= 1
 		dv_norm		= cube_cfg.dv
 		res_moms	= ( np.sqrt(lmbda) * np.sqrt(W_cur/W_cur_sum) * (mom1_obs - mom1_mod) )[msk]
 		res_moms	/= dv_norm

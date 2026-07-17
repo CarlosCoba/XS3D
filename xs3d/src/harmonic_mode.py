@@ -31,7 +31,7 @@ class Harmonic_model:
 
 		self.galaxy=galaxy
 		self.obs_cube=obs_cube
-        self.eflux2d=eobs_cube
+		self.eflux2d=eobs_cube
 		self.hdr=header
 		self.mommaps=mommaps
 		self.vel_copy=np.copy(self.mommaps[1])

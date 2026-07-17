@@ -85,6 +85,9 @@ def save_vrot_z_fits(name, vmode, rings, z_values, filename, profile=None,
 		# v_c at ring 0, height z_vals[3]:
 		v = vrz[0, 3]
 	"""
+	if not rings[0].vz_gradient:
+		return None
+			
 	z_cale0		= rings[0].z_scale
 	zscale		= z_cale0
 	nhz 		= 6
