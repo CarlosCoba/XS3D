@@ -1,10 +1,10 @@
 import numpy as np
 from astropy.io import fits
-				
+
 # ---------------------------------------------------------------------------
 # FITS table output
 # ---------------------------------------------------------------------------
- 
+
 # Metadata for every Ring attribute that is physically meaningful to save.
 # Each entry: (fits_name, unit, format, description)
 # format follows FITS convention: 'E' = float32, 'D' = float64, 'J' = int32
@@ -54,16 +54,16 @@ _FITTED_ATTRS = frozenset({
 	'inc', 'pa', 'x_center', 'y_center',
 	'z_scale', 'v_2r', 'v_2t', 'phi_bar',
 })
- 
+
 def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None, out = '.'):
 	"""
 	Save the best-fit ring parameters as a FITS binary table.
- 
+
 	Each row corresponds to one anchor ring.  Each fitted kinematic
 	parameter becomes a column with a physical unit.  When a lmfit
 	result object is provided, 1-sigma uncertainties are saved in
 	companion error columns (e.g. VROT_ERR).
- 
+
 	Parameters
 	----------
 	rings : list of Ring
@@ -83,7 +83,7 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 	extra_header : dict or None
 		Extra key-value pairs added to the primary HDU header.
 		Example: {'GALAXY': 'NGC1234', 'REDSHIFT': 0.003}
- 
+
 	Output columns
 	--------------
 	RADIUS	[arcsec]  ring radius
@@ -105,7 +105,7 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 	V2T	   [km/s]	bisymmetric tangential amplitude
 	PHIBAR	[deg]	 bar position angle
 	NCLOUDS   []		number of clouds per ring
- 
+
 	Harmonic decomposition columns (present only when harmonics were fitted):
 	C_M1	  [km/s]	cosine coefficient of order m=1  (= v_rot)
 	S_M1	  [km/s]	sine   coefficient of order m=1  (= -v_rad)
@@ -114,13 +114,13 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 	C_M2	  [km/s]	cosine coefficient of order m=2
 	S_M2	  [km/s]	sine   coefficient of order m=2
 	...				 one pair per harmonic order present in any ring
- 
+
 	Notes
 	-----
 	Tied parameters share the same value across rings.  Their error
 	column reflects the anchor ring's uncertainty for all tied rows.
 	Fixed parameters have NaN in their error column.
- 
+
 	Examples
 	--------
 	best_rings, result = fit_rings(obs_cube, guess_rings, spec, cfg)
@@ -135,20 +135,20 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 	rings = best_rings
 	n = len(rings)
 	dx_arcsec = psf_lsf.pix_arcs
- 
+
 
 
 	# Determine which attributes are irrelevant for this velocity model.
 	# All rings should use the same model (take from the first ring).
 	vel_model   = rings[0].velocity_model
 	irrelevant  = _IRRELEVANT_BY_MODEL.get(vel_model, set())
- 
+
 	# ── Build data arrays ──────────────────────────────────────────────
 	# For each attribute: extract values from rings and, if available,
 	# errors from result.params.
- 
+
 	cols = []
- 
+
 	for attr, (fits_name, unit, fmt, desc) in _RING_COLUMN_META.items():
 		# Irrelevant attributes for this velocity model → NaN column
 		# (NaN only applies to float columns; int columns get -1)
@@ -160,7 +160,7 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 		else:
 			values = np.array([getattr(r, attr) for r in rings],
 							  dtype=np.float32 if fmt == 'E' else np.int32)
- 
+
 		col = fits.Column(
 			name   = fits_name,
 			format = fmt,
@@ -168,11 +168,11 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 			array  = values,
 		)
 		cols.append(col)
- 
+
 		# Error column for fitted kinematic attributes
 		if attr in _FITTED_ATTRS:
 			errs = np.full(n, np.nan, dtype=np.float32)
- 
+
 			if result is not None:
 				for i in range(n):
 					pname = f"{attr}_r{i}"
@@ -190,7 +190,7 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 								anchor_par = result.params[anchor_name]
 								if anchor_par.stderr is not None:
 									errs[i] = float(anchor_par.stderr)
- 
+
 			err_col = fits.Column(
 				name   = f"{fits_name}_ERR",
 				format = 'E',
@@ -198,7 +198,7 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 				array  = errs,
 			)
 			cols.append(err_col)
- 
+
 	# ── Harmonic decomposition columns ────────────────────────────────
 	# Written only for velocity_model='harmonic'.
 	# For all other models (rotation, radial, bisymmetric) harmonic
@@ -221,7 +221,7 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 			if r.harmonics:
 				all_orders.update(r.harmonics.keys())
 		all_orders = sorted(all_orders)   # deterministic column order
- 
+
 		for m in all_orders:
 			# Cosine coefficient c_m
 			c_vals = np.array(
@@ -233,15 +233,15 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 				[r.harmonics[m][1] if (r.harmonics and m in r.harmonics)
 				 else 0.0 for r in rings],
 				dtype=np.float32)
- 
+
 			c_name = f"C_M{m}"
 			s_name = f"S_M{m}"
- 
+
 			cols.append(fits.Column(
 				name=c_name, format='E', unit='km/s', array=c_vals))
 			cols.append(fits.Column(
 				name=s_name, format='E', unit='km/s', array=s_vals))
- 
+
 			# Error columns from lmfit result
 			for coeff, cname in [('c', c_name), ('s', s_name)]:
 				errs = np.full(n, np.nan, dtype=np.float32)
@@ -260,21 +260,21 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 										errs[i] = float(ap.stderr)
 				cols.append(fits.Column(
 					name=f"{cname}_ERR", format='E', unit='km/s', array=errs))
- 
+
 	# ── Build FITS HDU list ────────────────────────────────────────────
 	# HDU 0: empty primary with header metadata
 	# HDU 1: binary table with ring parameters
- 
+
 	primary_hdr = fits.Header()
 	primary_hdr['COMMENT'] = 'XS3D Tilted-ring kinematic model - best-fit parameters'
 	primary_hdr['NRINGS']  = (n, 'Number of anchor rings')
- 
+
 	if dx_arcsec is not None:
 		primary_hdr['CDELT_AS'] = (dx_arcsec, 'Pixel scale [arcsec/pixel]')
- 
+
 	if result is not None:
-		primary_hdr['CHI2']	= (float(result.chisqr),
-								   'Final chi-squared value')
+		primary_hdr['CHI2R']	= (float(result.chisqr),
+								   'Final reduced chi-squared value')
 		primary_hdr['NFEV']	= (int(result.nfev),
 								   'Number of function evaluations')
 		primary_hdr['SUCCESS'] = (bool(result.success),
@@ -282,25 +282,25 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 		if hasattr(result, 'method'):
 			primary_hdr['METHOD'] = (str(result.method),
 									  'Optimisation method')
- 
+
 	# Velocity model (same for all rings — take from first ring)
 	primary_hdr['VELMODEL'] = (rings[0].velocity_model,
 								'Velocity model used in fitting')
 	if irrelevant:
 		primary_hdr['IRREL']  = (', '.join(sorted(irrelevant)),
 								  'Params irrelevant for this model (NaN)')
- 
+
 	# Extra user-supplied header entries
 	if extra_header:
 		for key, val in extra_header.items():
 			primary_hdr[key] = val
- 
+
 	primary_hdu = fits.PrimaryHDU(header=primary_hdr)
- 
+
 	# Binary table
 	table_hdu = fits.BinTableHDU.from_columns(cols)
 	table_hdu.name = 'RINGS'
-	
+
 	# Add column descriptions via TDESC keywords
 	for i, (attr, (fits_name, unit, fmt, desc)) in \
 			enumerate(_RING_COLUMN_META.items(), start=1):
@@ -309,6 +309,6 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 			table_hdu.header[key] = desc
 
 	hdul = fits.HDUList([primary_hdu, table_hdu])
-	hdul.writeto(f"{out}/models/{name}.{vmode}.table.fits",overwrite=True)	
+	hdul.writeto(f"{out}/models/{name}.{vmode}.table.fits",overwrite=True)
 
 	return None
