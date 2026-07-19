@@ -5,6 +5,7 @@ import matplotlib.pylab as plt
 from scipy.stats import circstd,circmean
 from multiprocessing import Pool, cpu_count
 
+from .start_messenge import Print
 from .eval_tab_model import tab_mod_vels
 from .phi_bar_sky import pa_bar_sky
 from .fit_params import Fit_kin_mdls as fit
@@ -29,30 +30,36 @@ class Harmonic_model:
 	def __init__(self, vmode, galaxy, obs_cube, eobs_cube, header, mommaps, emoms, guess0, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, outdir,cube_class,psf_lsf,m_hrm):
 
 
-		self.galaxy=galaxy
-		self.obs_cube=obs_cube
-		self.eflux2d=eobs_cube
-		self.hdr=header
-		self.mommaps=mommaps
-		self.vel_copy=np.copy(self.mommaps[1])
-		self.vel=self.mommaps[1]
-		self.emoms=emoms
-		self.guess0=guess0
-		self.vary=vary
+		self.galaxy       = galaxy
+		self.obs_cube     = obs_cube
+		self.eflux2d      = eobs_cube
+		self.hdr          = header
+		self.mommaps      = mommaps
+		self.vel_copy     = np.copy(self.mommaps[1])
+		self.vel          = self.mommaps[1]
+		self.emoms        = emoms
+		self.guess0       = guess0
+		self.vary         = vary
 		self.n_it,self.n_it0=n_it,n_it
-		self.rstart=rstart
-		self.rfinal=rfinal
-		self.ring_space=ring_space
-		self.frac_pixel=frac_pixel
-		self.inner_interp=inner_interp
-		self.rwidth=delta
-		self.bar_min_max=bar_min_max
-		self.config=config
-		self.m_hrm = m_hrm
-		self.pixel_scale=header.scale
-		self.psf_lsf=psf_lsf
+		self.rstart       = rstart
+		self.rfinal       = rfinal
+		self.ring_space   = ring_space
+		self.frac_pixel   = frac_pixel
+		self.inner_interp = inner_interp
+		self.rwidth       = delta
+		self.bar_min_max  = bar_min_max
+		self.config       = config
+		self.m_hrm        = m_hrm
+		self.pixel_scale  = header.scale
+		self.psf_lsf      = psf_lsf
+        self.vary_params  = {}
+		self.rms          = header.rms
 
 		if self.n_it == 0: self.n_it = 1
+        # print function
+        P=Print()
+        self.P=P
+
 		rend = self.rfinal
 		if (self.rfinal-self.rstart) % self.ring_space == 0 :
 			# To include the last ring :
@@ -131,7 +138,8 @@ class Harmonic_model:
 		"""
 
 
-	def lsq(self, fit_routine=fit):
+	def lsq(self,obs_cube=None, verbose=True, bootstrap=False):
+		if obs_cube is None: obs_cube = self.obs_cube
 
 		c1_tab_it, c3_tab_it, s1_tab_it, s3_tab_it = np.zeros(self.nrings,), np.zeros(self.nrings,), np.zeros(self.nrings,),np.zeros(self.nrings,)
 		for it in np.arange(self.n_it):
@@ -204,7 +212,7 @@ class Harmonic_model:
 				fit_kws =  {'options': options}
 
 			best_rings, result = fit_rings(
-				self.obs_cube,
+				obs_cube,
                 self.eflux2d,
 				self.mommaps,
 				guess_rings,
@@ -215,11 +223,14 @@ class Harmonic_model:
 				weight_alpha = self.weights,
 				method       = method,
 				seed         = self.seed,
-				verbose      = True,
+				verbose      = verbose,
 				fit_kws      = fit_kws,
 			)
 
-			obs_cube = self.obs_cube
+            self.P.status("Best model found !")
+			if bootstrap: return  best_rings, result
+			self.vary_params = spec
+
 			# ============================================================
 			# 7.  Build best-fit model cube for diagnostics
 			# ============================================================
@@ -250,115 +261,56 @@ class Harmonic_model:
 			msk = (W_cur !=0).astype(float)
 			mod_cube*=msk
 
-
 			return mod_cube,best_rings,best_vals_all,result
 
+	def run_boost(self,output=None):
 
-			'''
-			# Minimization
-			fitting = fit_routine(self.obs_cube, self.eobs_cube, self.h, self.mommaps, self.emoms, guess, self.vary, self.vmode, self.config, R, self.ring_space, self.frac_pixel, self.inner_interp, self.m_hrm, N_it=self.n_it0)
-			kin_3D_modls, Vk , self.pa0, self.eps0, self.x0, self.y0, self.vsys0, self.theta_b, out_data, Errors, true_rings = fitting.results()
-			xi_sq = out_data[-1]
+        self.P.status('Computing Errors on parameters')
+        self.P.status('N bootstraps    %s'%self.n_boot )
+        print(self.P.deli)
 
-			disp, c_k, s_k = Vk[-1], Vk[0:self.m_hrm],Vk[self.m_hrm:]
-			self.c_k, self.s_k = c_k, s_k
-			# The first circular and first radial components
-			c1 = c_k[0]
-			s1 = s_k[0]
+		[obs_cube,best_rings,best_vals,result]=output
+		n_boot    = self.n_boot
+		msk       = obs_cube == 0
+		params_ref  = build_params(best_rings, self.vary_params)
+		free_names  = [n for n, p in params_ref.items() if p.vary]
+		samples		= {n: [] for n in free_names}
 
-			# Keep the best fit
-			#if xi_sq < self.chisq_global:
-			if True:
-				self.PA,self.EPS,self.XC,self.YC,self.VSYS = self.pa0, self.eps0, self.x0, self.y0, self.vsys0
-				self.C_k, self.S_k = c_k, s_k
-				self.Disp = np.asarray(disp)
-				self.chisq_global = xi_sq
-				self.aic_bic = out_data
-				self.best_kin_3D_models = kin_3D_modls
-				self.Rings = true_rings
-				self.std_errors = Errors
-				self.GUESS = [self.Disp, self.C_k, self.S_k, self.PA, self.EPS, self.XC, self.YC, self.VSYS,self.theta_b]
-				self.n_circ = len(self.C_k[0])
-				self.n_noncirc = len((self.S_k[0])[self.S_k[0]!=0])
-				self.bootstrap_kin = np.zeros((self.n_boot, (2*self.m_hrm+1)*self.n_circ))
-				self.bootstrap_mom1d = np.zeros((self.n_boot, self.n_circ))
-
-		'''
-	""" Following, the error computation.
-	"""
-
-
-
-	def boots(self,individual_run=0):
-		self.frac_pixel = 0
-		self.n_it,self.n_it0 = 1, 1
-		runs = [individual_run]
-		[mom0_cube,mom1_cube,mom2_cube]=self.momscube
-		[emom0,emom1,emom2]=self.emomscube
-
-		for k in runs:
-			mommaps=[mom0_cube[k],mom1_cube[k],mom2_cube[k]]
-			emommaps=[emom0,emom1,emom2]
-
-			self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b = self.GUESS[-6:]
-			np.random.seed()
-			pa = self.pa0 + 5*np.random.normal()
-			inc= eps_2_inc(self.eps0) + (5*np.pi/180)*np.random.normal() # rad
-			eps=inc_2_eps(inc*180/np.pi)
-			# setting chisq to -inf will preserve the leastsquare results
-			self.chisq_global = -np.inf
+		for k in range(n_boot):
 			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
+			rng 	= np.random.default_rng()
+			noise	= rng.standard_normal(obs_cube.shape)
+			obs_cube_tmp= obs_cube +  self.rms*noise
+			obs_cube_tmp[msk] = self.obs_cube[msk]
 
-			intens_tab,disp_tab, c_tab, s_tab, R_pos = tab_mod_vels(self.Rings,mommaps, emommaps,pa,eps,self.x0,self.y0,self.vsys0,self.theta_b,self.rwidth,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max, self.m_hrm)
-			c_tab=[list(c_tab[j]) for j in range(self.m_hrm)]
-			s_tab=[list(s_tab[j]) for j in range(self.m_hrm)]
-			kin=[c_tab, s_tab, disp_tab]
-			vels=list(chain(*kin))
-			#self.bootstrap_kin[k,:] = np.hstack(vels)
+			best_rings_k, result_k = self.lsq(obs_cube_tmp, verbose=0, bootstrap=True)
 
-			guess = [disp_tab,c_tab,s_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
-			# Minimization
-			R={'R_pos':R_pos, 'R_NC': R_pos>self.r_bar_min }
-			fitting = fit_boots(None, self.h, mommaps, emommaps, guess, self.vary, self.vmode, self.config, R, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
-			# outs
-			_ , pa0, eps0, x0, y0, vsys0, theta_b = fitting.results()
-			# convert PA to rad:
-			pa0=pa0*np.pi/180
-			#self.bootstrap_contstant_prms[k,:] = np.array ([ pa0, eps0, x0, y0, vsys0, theta_b ] )
+			for name in free_names:
+				samples[name].append(result_k.params[name].value)
 
-			return([[ pa0, eps0, x0, y0, vsys0, theta_b ], np.hstack(vels), intens_tab])
+		stderr = {}; median = {}; ci_68 = {}; ci_95 = {}
+		for name in free_names:
+			arr = np.array(samples[name])
+			if len(arr) < 2:
+				stderr[name] = np.nan
+				median[name] = np.nan
+				ci_68[name]  = (np.nan, np.nan)
+				ci_95[name]  = (np.nan, np.nan)
+			else:
+				stderr[name] = float(arr.std())
+				median[name] = float(np.median(arr))
+				ci_68[name]  = (float(np.percentile(arr, 16)),float(np.percentile(arr, 84)))
+				ci_95[name]  = (float(np.percentile(arr,  2.5)),float(np.percentile(arr, 97.5)))
 
-	def run_boost_para(self):
-		ncpu = self.nthreads
-		with Pool(ncpu) as pool:
-			result=pool.map(self.boots,np.arange(self.n_boot),chunksize=1)
-		for k in range(self.n_boot):
-			self.bootstrap_contstant_prms[k,:] = result[k][0]
-			self.bootstrap_kin[k,:] = result[k][1]
-			self.bootstrap_mom1d[k,:] = result[k][2]
-
-		p=np.nanpercentile(self.bootstrap_mom1d,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_mom1d[0])))
-		d=np.diff(p,axis=0)
-		std_mom1d= 0.5 * np.sum(d,axis=0)
-
-		p = np.nanpercentile(self.bootstrap_kin,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_kin[0])))
-		d=np.diff(p,axis=0)
-		std_kin=0.5 * np.sum(d,axis=0)
-		eCSSig=np.array_split(std_kin,2*self.m_hrm+1)
-		eCSS= [eCSSig[0:self.m_hrm],eCSSig[self.m_hrm:-1],eCSSig[-1]]
-
-		p=np.nanpercentile(self.bootstrap_contstant_prms,[15.865, 50, 84.135],axis=0).reshape((3,6))
-		d=np.diff(p,axis=0)
-		std_const= 0.5 * np.sum(d,axis=0)# abs(sigma1u + sigma1l)
-		std_pa=abs(circstd(self.bootstrap_contstant_prms[:,0]))*180/np.pi # rad ---> deg
-		std_phi_bar=abs(circstd(self.bootstrap_contstant_prms[:,-1])) # rad
-		std_const[0],std_const[-1]=std_pa,std_phi_bar
-
-		self.std_errors = [eCSS,std_const,std_mom1d]
+			# Include the standard deviation only in the results file
+			par = result.params[name]
+			std = par.stderr # this is None by default
+			(output[-1].params[name]).stderr  = stderr[name]
+		return None
 
 	def output(self):
-		#least
 		out = self.lsq()
+		if self.n_boot !=0: self.run_boost(out)
 		return out
 
 	def __call__(self):

@@ -526,7 +526,7 @@ def params_to_rings(params, rings):
 # ---------------------------------------------------------------------------
 
 def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed,
-					verbose_counter, model):
+					verbose_counter, model, verbose):
 	"""
 	Return a closure that lmfit.minimize can call.
 
@@ -586,7 +586,7 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		wresiduals	= np.sqrt(W) * residuals  # weighted residuals
 
 		verbose_counter[0] += 1
-		if verbose_counter[0] % 20 == 0:
+		if verbose_counter[0] % 20 == 0 and verbose:
 			cost = float(np.sum(residuals ** 2))
 			free_vals = {k: f"{v.value:.2f}"
 						 for k, v in params.items() if v.vary}
@@ -718,7 +718,7 @@ def fit_rings(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_prms, cube_
 
 	model   = TiltedRingModel(cube_cfg, psf_lsf, seed=seed,planner_effort='FFTW_MEASURE')
 
-	obj	 = _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model)
+	obj	 = _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model, verbose)
 
 	if verbose:
 		_print_params_summary(params, rings)

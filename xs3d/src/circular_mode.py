@@ -5,6 +5,7 @@ import matplotlib.pylab as plt
 from scipy.stats import circstd,circmean
 from multiprocessing import Pool, cpu_count
 
+from .start_messenge import Print
 from .eval_tab_model import tab_mod_vels
 from .phi_bar_sky import pa_bar_sky
 from .fit_params import Fit_kin_mdls as fit
@@ -49,8 +50,13 @@ class Circular_model:
 		self.config		= config
 		self.pixel_scale= header.scale
 		self.psf_lsf	= psf_lsf
+        self.vary_params	= {}
+		self.rms			= header.rms
 
 		if self.n_it == 0: self.n_it =1
+        # print function
+        P=Print()
+        self.P=P
 
 
 		rend = self.rfinal
@@ -117,13 +123,16 @@ class Circular_model:
 		self.seed			= 40
 		self.vary_nc		= config_lsq.getfloat('vary_nc', 2)
 
+
+
 		"""
 
 		 					CIRCULAR MODEL
 
 		"""
 
-	def lsq(self,fit_routine=fit):
+	def lsq(self,obs_cube=None, verbose=True, bootstrap=False):
+		if obs_cube is None: obs_cube = self.obs_cube
 
 		vrad_it, vtan_it = np.zeros(100,), np.zeros(100,)
 		vrot_tab_it, vrad_tab_it, vtan_tab_it = np.zeros(self.nrings,), np.zeros(self.nrings,), np.zeros(self.nrings,)
@@ -202,7 +211,7 @@ class Circular_model:
 				fit_kws =  {'options': options}
 
 			best_rings, result = fit_rings(
-				self.obs_cube,
+				obs_cube,
                 self.eflux2d,
 				self.mommaps,
 				guess_rings,
@@ -213,11 +222,14 @@ class Circular_model:
 				weight_alpha = self.weights,
 				method       = method,
 				seed         = self.seed,
-				verbose      = True,
+				verbose      = verbose,
 				fit_kws      = fit_kws,
 			)
 
-			obs_cube = self.obs_cube
+            self.P.status("Best model found !")
+			if bootstrap: return  best_rings, result
+			self.vary_params = spec
+
 			# ============================================================
 			# 7.  Build best-fit model cube for diagnostics
 			# ============================================================
@@ -248,67 +260,54 @@ class Circular_model:
 
 
 
-	def boots(self,individual_run=0):
-		self.frac_pixel = 0
-		self.n_it,self.n_it0 = 1, 1
-		runs = [individual_run]
-		[mom0_cube,mom1_cube,mom2_cube] = self.momscube
-		[emom0,emom1,emom2] = self.emomscube
+	def run_boost(self,output=None):
 
-		for k in runs:
-			mommaps = [mom0_cube[k],mom1_cube[k],mom2_cube[k]]
-			emommaps = [emom0,emom1,emom2]
+        self.P.status('Computing Errors on parameters')
+        self.P.status('N bootstraps    %s'%self.n_boot )
+        print(self.P.deli)
 
-			self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b = self.GUESS[-6:]
-			np.random.seed()
-			pa = self.pa0 + 5*np.random.normal()
-			inc = eps_2_inc(self.eps0) + (5*np.pi/180)*np.random.normal() # rad
-			eps = inc_2_eps(inc*180/np.pi)
-			# setting chisq to -inf will preserve the leastsquare results
-			self.chisq_global = -np.inf
+		[obs_cube,best_rings,best_vals,result]=output
+		n_boot    = self.n_boot
+		msk       = obs_cube == 0
+		params_ref  = build_params(best_rings, self.vary_params)
+		free_names  = [n for n, p in params_ref.items() if p.vary]
+		samples		= {n: [] for n in free_names}
+
+		for k in range(n_boot):
 			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
-			intens_tab,disp_tab, vrot_tab, vrad_tab, vtan_tab, R_pos = tab_mod_vels(self.Rings,mommaps,emommaps,pa,eps,self.x0,self.y0,self.vsys0,self.theta_b,self.rwidth,self.pixel_scale,self.vmode,self.shape,self.frac_pixel,self.r_bar_min, self.r_bar_max)
-			vels = list(disp_tab)+list(vrot_tab)+list(vrad_tab)+list(vtan_tab)
+			rng 	= np.random.default_rng()
+			noise	= rng.standard_normal(obs_cube.shape)
+			obs_cube_tmp= obs_cube +  self.rms*noise
+			obs_cube_tmp[msk] = self.obs_cube[msk]
 
-			guess = [disp_tab,vrot_tab,vrad_tab,vtan_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
-			R = {'R_pos':R_pos, 'R_NC': R_pos>self.r_bar_min}
-			# Minimization
-			fitting = fit_boots(None, self.h, mommaps, emommaps, guess, self.vary, self.vmode, self.config, R, self.ring_space, self.frac_pixel, self.inner_interp,N_it=1)
-			# outs
-			_ , pa0, eps0, x0, y0, vsys0, theta_b = fitting.results()
-			# convert PA to rad:
-			pa0 = pa0*np.pi/180
+			best_rings_k, result_k = self.lsq(obs_cube_tmp, verbose=0, bootstrap=True)
 
-			return([[ pa0, eps0, x0, y0, vsys0, theta_b ], np.concatenate([disp_tab, vrot_tab, vrad_tab, vtan_tab]), intens_tab])
+			for name in free_names:
+				samples[name].append(result_k.params[name].value)
 
-	def run_boost_para(self):
-		ncpu = self.nthreads
-		with Pool(ncpu) as pool:
-			result=pool.map(self.boots,np.arange(self.n_boot),chunksize=1)
-		for k in range(self.n_boot):
-			self.bootstrap_contstant_prms[k,:] = result[k][0]
-			self.bootstrap_kin[k,:] = result[k][1]
-			self.bootstrap_mom1d[k,:] = result[k][2]
+		stderr = {}; median = {}; ci_68 = {}; ci_95 = {}
+		for name in free_names:
+			arr = np.array(samples[name])
+			if len(arr) < 2:
+				stderr[name] = np.nan
+				median[name] = np.nan
+				ci_68[name]  = (np.nan, np.nan)
+				ci_95[name]  = (np.nan, np.nan)
+			else:
+				stderr[name] = float(arr.std())
+				median[name] = float(np.median(arr))
+				ci_68[name]  = (float(np.percentile(arr, 16)),float(np.percentile(arr, 84)))
+				ci_95[name]  = (float(np.percentile(arr,  2.5)),float(np.percentile(arr, 97.5)))
 
-		p = np.nanpercentile(self.bootstrap_mom1d,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_mom1d[0])))
-		d=np.diff(p,axis=0)
-		std_mom01d=0.5 * np.sum(d,axis=0)
-
-		p = np.nanpercentile(self.bootstrap_kin,[15.865, 50, 84.135],axis=0).reshape((3,len(self.bootstrap_kin[0])))
-		d=np.diff(p,axis=0)
-		std_kin=0.5 * np.sum(d,axis=0)
-
-		p=np.nanpercentile(self.bootstrap_contstant_prms,[15.865, 50, 84.135],axis=0).reshape((3,6))
-		d=np.diff(p,axis=0)
-		std_const= 0.5 * np.sum(d,axis=0)
-		std_pa=abs(circstd(self.bootstrap_contstant_prms[:,0]))*180/np.pi # rad ---> deg
-		std_phi_bar=abs(circstd(self.bootstrap_contstant_prms[:,-1])) # rad
-		std_const[0],std_const[-1]=std_pa,std_phi_bar
-		self.std_errors = [np.array_split(std_kin,4),std_const,std_mom01d]
+			# Include the standard deviation only in the results file
+			par = result.params[name]
+			std = par.stderr # this is None by default
+			(output[-1].params[name]).stderr  = stderr[name]
+		return None
 
 	def output(self):
-		#least
 		out = self.lsq()
+		if self.n_boot !=0: self.run_boost(out)
 		return out
 
 	def __call__(self):

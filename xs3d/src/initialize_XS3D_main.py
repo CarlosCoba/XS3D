@@ -210,8 +210,6 @@ class XS_out(Run_models):
 
 	def results(self):
 
-		self.P.status("Best model found !")
-
 		# plot momment maps and 1D profiles
 		self.P.status("Plotting results")
 
@@ -271,13 +269,13 @@ class XS_out(Run_models):
 
 		save_vrot_z_fits(self.galaxy, self.vmode, self.best_rings, z_values=0, filename='no', out = self.outdir)
 
-		print("Done!. Check the XS3D directory")
+		self.P.status('Done!. Check the XS3D directory')
 		end_time=time.time()
 		total_time=end_time-self.start_time
 		t=strftime("%H:%M:%S", gmtime(total_time))
 		ttime="Total time: "+t+" HMS"
 		self.P.status(ttime)
-		print("------------------------------------")
+		print(self.P.deli)
 
 	#def __call__(self):
 	#	run=self.results()
