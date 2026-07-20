@@ -209,7 +209,7 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 		ax0.scatter(-R,-vrot,s=25,marker='X',c='#ffb703',edgecolor='k',lw=0.3,zorder=20)
 		ax0.plot((ext0[0],ext0[1]),(0,0),color='black',linestyle=dashline,lw=0.5,zorder=10)
 		ax0.plot((0,0),(ext0[2],ext0[3]),color='black',linestyle=dashline,lw=0.5,zorder=10)
-		ax0.set_ylabel('$\mathrm{V_{LOS}~(km\,s^{-1})}$',fontsize=10,labelpad=0)
+		ax0.set_ylabel('$\mathrm{V_{LOS}~(km s^{-1})}$',fontsize=10,labelpad=0)
 		ax0.set_xlabel(f'Offset ({rlabel})',fontsize=10,labelpad=1)
 
 		# PVD minor
@@ -225,7 +225,7 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 		ax1.set_xlabel(f'Offset ({rlabel})',fontsize=10,labelpad=1)
 
 		if nplots==0:
-			ax1.set_ylabel('$\mathrm{V_{LOS}~(km\,s^{-1})}$',fontsize=10,labelpad=0)
+			ax1.set_ylabel('$\mathrm{V_{LOS}~(km s^{-1})}$',fontsize=10,labelpad=0)
 		else:
 			lines = [Line2D([0], [0], color='k',lw=0.8), Line2D([0], [0], color='#279dc5',lw=0.8)];labels=['data','model']
 			ax1.legend(lines,labels,loc='upper left',ncol=2,borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, columnspacing=0.5,fontsize=10,bbox_to_anchor=(
@@ -301,7 +301,7 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 
 	im3=ax3.imshow(mom1_obs,cmap=cmap,aspect='auto',vmin=vminv,vmax=vmaxv,origin='lower',extent=extimg)
 	axs(ax3,rotation='horizontal',remove_yticks=True,fontsize_ticklabels=10)
-	clb=cb(im3, ax3, labelsize=10, colormap = cmap, bbox=(-0.25, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [], label = "$\mathrm{V_{LOS}}$/ km\,s$^{-1}$", label_pad = -20, colors  = "k",orientation='vertical')
+	clb=cb(im3, ax3, labelsize=10, colormap = cmap, bbox=(-0.25, 0.2, 0.05, 0.7), ticksfontsize=0, ticks = [], label = "$\mathrm{V_{LOS}}$/ km s$^{-1}$", label_pad = -20, colors  = "k",orientation='vertical')
 
 	v_min=int(round(vminv,1))
 	v_max=int(round(vmaxv,1))
