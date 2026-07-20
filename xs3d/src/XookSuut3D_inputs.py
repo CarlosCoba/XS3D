@@ -146,7 +146,7 @@ class input_params:
 		vary_VSYS = config_const.getboolean('FIT_VSYS', vary_VSYS)
 		vary_PHIB = config_const.getboolean('FIT_PHI_BAR', vary_PHIB)
 
-		n_it=config_general.getint("n_it", 1)
+		n_it=config_const.getint("n_it", 0)
 		v_center = config_general.get("v_center", 0)
 		survey = config_general.get("dataset", "-")
 

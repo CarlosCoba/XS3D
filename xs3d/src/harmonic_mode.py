@@ -40,7 +40,7 @@ class Harmonic_model:
 		self.emoms        = emoms
 		self.guess0       = guess0
 		self.vary         = vary
-		self.n_it,self.n_it0=n_it,n_it
+		self.n_it         = (n_it+1)
 		self.rstart       = rstart
 		self.rfinal       = rfinal
 		self.ring_space   = ring_space
@@ -53,9 +53,8 @@ class Harmonic_model:
 		self.pixel_scale  = header.scale
 		self.psf_lsf      = psf_lsf
         self.vary_params  = {}
-		self.rms          = header.rms
+		self.rms          = header.rms        
 
-		if self.n_it == 0: self.n_it = 1
         # print function
         P=Print()
         self.P=P
@@ -256,12 +255,15 @@ class Harmonic_model:
 			operator 		= [np.mean,circmean,circmean,np.mean,np.mean,circmean]
 			const = {p : opr(best_vals[p]) for p,opr in zip(scalar_fields, operator)}
 
+            # update inital values
+            [self.pa0,self.inc0,self.x0,self.y0,self.vsys0,self.theta_b]=[const['pa'],const['inc'],const['x_center'],const['y_center'],const['v_sys'],const['phi_bar'] ]
+
 			# get the final mask
 			W_cur= make_weight_map(mom0_obs,self.psf_lsf, best_rings,alpha=self.weights, r_max_px=rmax_px, n_sigma_z=4)
 			msk = (W_cur !=0).astype(float)
 			mod_cube*=msk
 
-			return mod_cube,best_rings,best_vals_all,result
+		return mod_cube,best_rings,best_vals_all,result
 
 	def run_boost(self,output=None):
 
@@ -286,7 +288,10 @@ class Harmonic_model:
 			best_rings_k, result_k = self.lsq(obs_cube_tmp, verbose=0, bootstrap=True)
 
 			for name in free_names:
-				samples[name].append(result_k.params[name].value)
+                try:
+                    samples[name].append(result_k.params[name].value)
+                else KeyError:
+                    samples[name].append(np.nan)
 
 		stderr = {}; median = {}; ci_68 = {}; ci_95 = {}
 		for name in free_names:
@@ -297,10 +302,10 @@ class Harmonic_model:
 				ci_68[name]  = (np.nan, np.nan)
 				ci_95[name]  = (np.nan, np.nan)
 			else:
-				stderr[name] = float(arr.std())
-				median[name] = float(np.median(arr))
-				ci_68[name]  = (float(np.percentile(arr, 16)),float(np.percentile(arr, 84)))
-				ci_95[name]  = (float(np.percentile(arr,  2.5)),float(np.percentile(arr, 97.5)))
+				stderr[name] = float(np.nanstd(arr))
+				median[name] = float(np.nanmedian(arr))
+				ci_68[name]  = (float(np.nanpercentile(arr, 16)),float(np.nanpercentile(arr, 84)))
+				ci_95[name]  = (float(np.nanpercentile(arr,  2.5)),float(np.nanpercentile(arr, 97.5)))
 
 			# Include the standard deviation only in the results file
 			par = result.params[name]

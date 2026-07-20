@@ -39,7 +39,7 @@ class Circular_model:
 		self.emoms		= emoms
 		self.guess0		= guess0
 		self.vary		= vary
-		self.n_it,self.n_it0= n_it,n_it
+		self.n_it       = (n_it+1)
 		self.rstart		= rstart
 		self.rfinal		= rfinal
 		self.ring_space	= ring_space
@@ -240,7 +240,6 @@ class Circular_model:
 
 			mom0_obs,_,_= cube_oper.obs_mommaps(obs_cube)
 			mom0_mod,_,_= cube_oper.obs_mommaps(mod_cube)
-			#[mom0_mod,mom1_mod,mom2_mod] = mom_mod
 			mod_cube_norm=mod_cube*np.divide(mom0_obs, mom0_mod, where=mom0_mod>0, out=np.zeros_like(mom0_mod))
 
 			best_vals['pa'] 		= best_vals['pa'] % 360
@@ -250,13 +249,16 @@ class Circular_model:
 			operator 		= [np.mean,circmean,circmean,np.mean,np.mean,circmean]
 			const = {p : opr(best_vals[p]) for p,opr in zip(scalar_fields, operator)}
 
+            # update initial values
+            [self.pa0,self.inc0,self.x0,self.y0,self.vsys0,self.theta_b]=[const['pa'],const['inc'],const['x_center'],const['y_center'],const['v_sys'],const['phi_bar'] ]
+
 			# get the final mask
 			W_cur= make_weight_map(mom0_obs, self.psf_lsf, best_rings, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=4)
 			msk = (W_cur !=0).astype(float)
 			mod_cube_norm*=msk
 
 
-			return mod_cube_norm,best_rings,best_vals,result
+		return mod_cube_norm,best_rings,best_vals,result
 
 
 
@@ -283,7 +285,10 @@ class Circular_model:
 			best_rings_k, result_k = self.lsq(obs_cube_tmp, verbose=0, bootstrap=True)
 
 			for name in free_names:
-				samples[name].append(result_k.params[name].value)
+                try:
+                    samples[name].append(result_k.params[name].value)
+                except(KeyError):
+                    samples[name].append(np.nan)
 
 		stderr = {}; median = {}; ci_68 = {}; ci_95 = {}
 		for name in free_names:
@@ -294,10 +299,10 @@ class Circular_model:
 				ci_68[name]  = (np.nan, np.nan)
 				ci_95[name]  = (np.nan, np.nan)
 			else:
-				stderr[name] = float(arr.std())
-				median[name] = float(np.median(arr))
-				ci_68[name]  = (float(np.percentile(arr, 16)),float(np.percentile(arr, 84)))
-				ci_95[name]  = (float(np.percentile(arr,  2.5)),float(np.percentile(arr, 97.5)))
+				stderr[name] = float(np.nanstd(arr))
+				median[name] = float(np.nanmedian(arr))
+				ci_68[name]  = (float(np.nanpercentile(arr, 16)),float(np.nanpercentile(arr, 84)))
+				ci_95[name]  = (float(np.nanpercentile(arr,  2.5)),float(np.nanpercentile(arr, 97.5)))
 
 			# Include the standard deviation only in the results file
 			par = result.params[name]
