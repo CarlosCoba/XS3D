@@ -6,7 +6,9 @@ class Header_info:
 
 	def __init__(self,hdr,config):
 
-		self.naxis = hdr['NAXIS']
+		self.hdr	= hdr
+		
+		self.naxis	= hdr['NAXIS']
 
 		self.nv = hdr['NAXIS3'] # <-- velocity channels
 
@@ -148,3 +150,6 @@ class Header_info:
 
 	def read_header(self):
 		return self.crval3,self.cdelt3,self.scale
+
+	def cube_hdr(self):
+		return self.hdr

@@ -215,7 +215,7 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,ou
 	highz=config['high_z']
 	redshift=highz.getfloat('redshift',0)
 	vsysz=vsys + redshift*__c__
-	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,xlength,pixel,config)
+	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,xlength,pixel,config,hdr_info)
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 
 	'''

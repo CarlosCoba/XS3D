@@ -164,7 +164,7 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 	highz=config['high_z']
 	redshift=highz.getfloat('redshift',0)
 	v_sysz=v_sys + redshift*__c__
-	bar_scale_arc,bar_scale_u,unit=bscale(v_sysz,xlength,pixel,config)
+	bar_scale_arc,bar_scale_u,unit=bscale(v_sysz,xlength,pixel,config,hdr_info)
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 
 
