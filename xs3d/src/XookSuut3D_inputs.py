@@ -42,9 +42,12 @@ from .pixel_params import eps_2_inc
 class input_params:
 	def __init__(self):
 		if (nargs < 19 or nargs > 22):
-
-			print ("USE: XS3D name cube.fits [mask] [pa] [inc] [xc] [yc] [vsys] vary_pa vary_inc vary_xc vary_yc vary_vsys ring_space [delta] rstart,rfinal cover kin_model [r_nc_min,r_nc_max] [config_file] [prefix]" )
-
+			print('')
+			print (" USE: XS3D name cube.fits [mask] [pa] [inc] [xc] [yc] [vsys] vary_pa vary_inc vary_xc vary_yc vary_vsys ring_space [delta] rstart,rfinal cover kin_model [r_nc_min,r_nc_max] [config_file] [prefix]" )
+			print(' ~~~~~~~~~~')
+			print(' Copy the config file located at  '
+				'xs3d/config_file/xs_conf.ini and place it in your working directory.')
+			print(' ~~~~~~~~~~')
 			exit()
 
 		#object name
