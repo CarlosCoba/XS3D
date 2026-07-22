@@ -2,6 +2,7 @@ import os
 import numpy as np
 from itertools import product
 import matplotlib.pylab as plt
+import os
 	
 def set_threads(ncores=None):
 	if ncores is None:
@@ -84,4 +85,17 @@ def circmean(data, high=360, low=0):
 	# Ensure the result stays within bounds
 	return (mean_wrapped - low) % (high - low) + low
 
+
+def remove_file(file_path):
+	#Check if the file exists first
+	if os.path.exists(file_path):
+		os.remove(file_path)
+		print(f'  File {file_path} deleted.')
+	else:
+		pass
+	return None
+	
+	
+	
+	
 	

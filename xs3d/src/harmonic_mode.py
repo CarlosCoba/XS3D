@@ -15,7 +15,7 @@ from .create_2D_vlos_model import best_2d_model
 from .read_hdr import Header_info
 from .pixel_params import inc_2_eps, eps_2_inc,e_eps2e_inc, Rings, make_outer_mask_sky
 from .convolve_cube import Cube_creation,Zeropadding,Cube_operations
-from .utils import circmean
+from .utils import circmean,remove_file
 
 from .cloud_tilted_rings import TiltedRingModel, CubeConfig, Ring
 from .cloud_fit_engine import (
@@ -315,6 +315,7 @@ class Harmonic_model:
 			par = result.params[name]
 			std = par.stderr # this is None by default
 			(output[-1].params[name]).stderr  = stderr[name]
+						
 		return None
 
 	def output(self):

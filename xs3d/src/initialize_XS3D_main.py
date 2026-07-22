@@ -39,7 +39,7 @@ from .cube_stats import cstats,baselinecor,ecube,mask_cube,stats_cube_2d
 valid_strings_for_optional_inputs=["", "-", ".", ",", "#","%", "&","None"]
 
 from .psf_lsf import PsF_LsF
-from .utils import nan2zero,zero2nan,circmean
+from .utils import nan2zero,zero2nan,circmean,remove_file
 from .plot_rings import plot_rings_sky
 from .save_vrot_z import save_vrot_z_fits
 
@@ -101,6 +101,7 @@ class Run_models:
 		self.datacube=self.datacube*rms3d
 		self.hdr_ori['RMS']=self.rms_cube
 		self.hdr_info.rms = self.rms_cube
+		self.hdr_info.object=galaxy		
 
 		# psf class
 		self.psf_lsf=PsF_LsF(self.hdr_info, config)
@@ -269,7 +270,11 @@ class XS_out(Run_models):
 
 		save_vrot_z_fits(self.galaxy, self.vmode, self.best_rings, z_values=0, filename='no', out = self.outdir)
 
+		filename = f'fftw_wisdom.{self.galaxy}.pkl'
+		remove_file(filename)
+		
 		self.P.status('Done!. Check the XS3D directory')
+		
 		end_time=time.time()
 		total_time=end_time-self.start_time
 		t=strftime("%H:%M:%S", gmtime(total_time))

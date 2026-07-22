@@ -137,6 +137,7 @@ class Header_info:
 		self.dv=self.cdelt3_kms
 		self.v_min=self.wave_kms[0]
 		self.rms = 1
+		self.object=''
 
 	def cube_dims(self):
 		return self.nz,self.ny,self.nx

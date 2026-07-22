@@ -451,3 +451,65 @@ def apply_psf_3d(cube, cfg, verbose=False):
 	np.ndarray, shape (nv, ny, nx)
 	"""
 	return ConvolutionEngine(cfg).apply(cube, verbose=verbose)
+	
+
+########################################################
+# For bootstrap analysis save the planner to reuse it. #
+#######################################################
+
+def save_fftw_wisdom(cube_config):
+	name = cube_config.object
+	filename = f'fftw_wisdom.{name}.pkl'
+	"""
+	Export the accumulated FFTW wisdom (set of measured FFT plans) to a
+	file.  Call this ONCE after the first fit completes — the planner
+	will have already measured the optimal algorithm for your cube shape.
+	Subsequent runs that load this wisdom skip the measurement entirely.
+ 
+	Parameters
+	----------
+	filename : str  path to save wisdom (e.g. 'fftw_wisdom.pkl')
+ 
+	Usage
+	-----
+	# After the first fit_rings() call:
+	from convolution import save_fftw_wisdom
+	save_fftw_wisdom('fftw_wisdom.pkl')
+ 
+	# At the start of every bootstrap worker (or any subsequent run):
+	from convolution import load_fftw_wisdom
+	load_fftw_wisdom('fftw_wisdom.pkl')
+	"""
+	if not PYFFTW_AVAILABLE:
+		return
+	import pickle
+	wisdom = pyfftw.export_wisdom()
+	with open(filename, 'wb') as f:
+		pickle.dump(wisdom, f)
+ 
+ 
+def load_fftw_wisdom(cube_config):
+	name = cube_config.object
+	filename = f'fftw_wisdom.{name}.pkl'
+	"""
+	Import previously saved FFTW wisdom.  When wisdom covers the
+	exact (shape, dtype, n_threads) combination needed, the planner
+	uses the measured plan immediately without any new measurement.
+	Falls back gracefully if the file does not exist or was built for
+	different parameters.
+ 
+	Parameters
+	----------
+	filename : str  path to wisdom file saved by save_fftw_wisdom()
+	"""
+	if not PYFFTW_AVAILABLE:
+		return
+	import pickle, os
+	if not os.path.exists(filename):
+		return
+	print(f' reading FFTW planner {filename}')
+	with open(filename, 'rb') as f:
+		wisdom = pickle.load(f)
+	pyfftw.import_wisdom(wisdom)
+	
+

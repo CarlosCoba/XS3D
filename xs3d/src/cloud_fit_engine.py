@@ -55,6 +55,7 @@ from scipy.ndimage import gaussian_filter
 import matplotlib.pylab as plt
 from scipy import stats
 from .utils import circmean
+from .conv_fftw2 import save_fftw_wisdom,load_fftw_wisdom
 
 try:
 	import lmfit
@@ -716,10 +717,16 @@ def fit_rings(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_prms, cube_
 	bounds = lmfit_prms.lmfit_bounds(params)
 	counter = [0]
 
+	# before measuring the planner check if there is any available
+	load_fftw_wisdom(cube_cfg)
+	
 	model   = TiltedRingModel(cube_cfg, psf_lsf, seed=seed,planner_effort='FFTW_MEASURE')
 
+	# save the planner to reuse it in the future
+	save_fftw_wisdom(cube_cfg)
+	
 	obj	 = _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model, verbose)
-
+	
 	if verbose:
 		_print_params_summary(params, rings)
 
