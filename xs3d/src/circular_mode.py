@@ -172,7 +172,7 @@ class Circular_model:
 				inc			= self.inc0,
 				pa			= self.pa0 % 360,
 				x_center	= self.x0,
-				y_cente		= self.y0,
+				y_center	= self.y0,
 				z_scale		= self.z_scale,
 				z_profile	= self.z_profile,
 				vz_gradient	= self.lagging,

@@ -272,7 +272,7 @@ class Harmonic_model:
 	def run_boost(self,output=None):
 
 		self.P.status('Computing Errors on parameters')
-		self.P.status('N bootstraps	%s'%self.n_boot )
+		self.P.status('N bootstraps',	self.n_boot )
 		print(self.P.deli)
 
 		[obs_cube,best_rings,best_vals,result]=output
@@ -283,7 +283,7 @@ class Harmonic_model:
 		samples		= {n: [] for n in free_names}
 
 		for k in range(n_boot):
-			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
+			if (k+1) % 5 == 0 : print(" %s/%s \t bootstraps" %((k+1),self.n_boot))
 			rng 	= np.random.default_rng()
 			noise	= rng.standard_normal(obs_cube.shape)
 			obs_cube_tmp= obs_cube +  self.rms*noise

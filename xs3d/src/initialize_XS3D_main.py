@@ -262,9 +262,9 @@ class XS_out(Run_models):
 		plot_channels(self.galaxy,self.datacube,self.mod_cube,const,self.vmode,self.hdr_info,self.psf_lsf,self.config,self.rms_cube,self.outdir)
 
 		if "hrm" in self.vmode:
-			plot_kin_models_h(self.galaxy,self.vmode,self.best_vals,self.best_vels,self.m_hrm,out=self.outdir)
+			plot_kin_models_h(self.galaxy,self.vmode,self.best_vals,self.best_vels,self.result,self.m_hrm,out=self.outdir)
 		else:
-			plot_kin_models(self.galaxy,self.vmode,const,self.best_vals,out=self.outdir)
+			plot_kin_models(self.galaxy,self.vmode,const,self.best_vals,self.result,out=self.outdir)
 
 
 		save_vrot_z_fits(self.galaxy, self.vmode, self.best_rings, z_values=0, filename='no', out = self.outdir)

@@ -5,7 +5,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
 import matplotlib.ticker as ticker
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
-                               AutoMinorLocator)
+							   AutoMinorLocator)
 
 from matplotlib.offsetbox import AnchoredText
 from .axes_params import axes_ambient as axs
@@ -30,31 +30,31 @@ prng =  np.random.RandomState(123)
 cmap = vel_map()
 
 def inter_from_256(x):
-    return np.interp(x=x,xp=[0,255],fp=[0,1])
+	return np.interp(x=x,xp=[0,255],fp=[0,1])
 cdict = {
-    'red':((0.0,inter_from_256(64),inter_from_256(64)),
-           (1/5*1,inter_from_256(112),inter_from_256(112)),
-           (1/5*2,inter_from_256(230),inter_from_256(230)),
-           (1/5*3,inter_from_256(253),inter_from_256(253)),
-           (1/5*4,inter_from_256(244),inter_from_256(244)),
-           (1.0,inter_from_256(169),inter_from_256(169))),
-    'green': ((0.0, inter_from_256(57), inter_from_256(57)),
-            (1 / 5 * 1, inter_from_256(198), inter_from_256(198)),
-            (1 / 5 * 2, inter_from_256(241), inter_from_256(241)),
-            (1 / 5 * 3, inter_from_256(219), inter_from_256(219)),
-            (1 / 5 * 4, inter_from_256(109), inter_from_256(109)),
-            (1.0, inter_from_256(23), inter_from_256(23))),
-    'blue': ((0.0, inter_from_256(144), inter_from_256(144)),
-              (1 / 5 * 1, inter_from_256(162), inter_from_256(162)),
-              (1 / 5 * 2, inter_from_256(246), inter_from_256(146)),
-              (1 / 5 * 3, inter_from_256(127), inter_from_256(127)),
-              (1 / 5 * 4, inter_from_256(69), inter_from_256(69)),
-              (1.0, inter_from_256(69), inter_from_256(69))),
+	'red':((0.0,inter_from_256(64),inter_from_256(64)),
+		   (1/5*1,inter_from_256(112),inter_from_256(112)),
+		   (1/5*2,inter_from_256(230),inter_from_256(230)),
+		   (1/5*3,inter_from_256(253),inter_from_256(253)),
+		   (1/5*4,inter_from_256(244),inter_from_256(244)),
+		   (1.0,inter_from_256(169),inter_from_256(169))),
+	'green': ((0.0, inter_from_256(57), inter_from_256(57)),
+			(1 / 5 * 1, inter_from_256(198), inter_from_256(198)),
+			(1 / 5 * 2, inter_from_256(241), inter_from_256(241)),
+			(1 / 5 * 3, inter_from_256(219), inter_from_256(219)),
+			(1 / 5 * 4, inter_from_256(109), inter_from_256(109)),
+			(1.0, inter_from_256(23), inter_from_256(23))),
+	'blue': ((0.0, inter_from_256(144), inter_from_256(144)),
+			  (1 / 5 * 1, inter_from_256(162), inter_from_256(162)),
+			  (1 / 5 * 2, inter_from_256(246), inter_from_256(146)),
+			  (1 / 5 * 3, inter_from_256(127), inter_from_256(127)),
+			  (1 / 5 * 4, inter_from_256(69), inter_from_256(69)),
+			  (1.0, inter_from_256(69), inter_from_256(69))),
 }
 from matplotlib import colors
 new_cmap = colors.LinearSegmentedColormap('new_cmap',segmentdata=cdict)
 
-def plot_kin_models_h(galaxy,vmode,best_vals,best_vels, m_hrm, out):
+def plot_kin_models_h(galaxy,vmode,best_vals,best_vels,result, m_hrm, out):
 
 	scalar_fields = ["v_disp"]
 	vels = {k:best_vals[k] for k in scalar_fields}
@@ -69,7 +69,9 @@ def plot_kin_models_h(galaxy,vmode,best_vals,best_vels, m_hrm, out):
 	
 	e_Sk=[]
 	e_Ck=[]
-		
+	
+	eNC = [e_Ck,e_Sk]
+	evdisp = []	
 	for m in range(m_hrm):
 		k = str(int(m+1))
 		c_k = best_vels[f'c_m{k}']
@@ -77,9 +79,27 @@ def plot_kin_models_h(galaxy,vmode,best_vals,best_vels, m_hrm, out):
 		Ck.append(c_k)		
 		Sk.append(s_k)				
 
-		e_Ck.append(np.zeros_like(s_k))		
-		e_Sk.append(np.zeros_like(s_k))	
-						
+		vnc = [f'c_m{k}_r',f's_m{k}_r']
+		for w,v in enumerate(vnc):
+			vtmp=[]
+			for n in range(nrings):
+				try:
+					error=result.params[v+f'{n}'].stderr
+					vtmp.append(error if error is not None else 0)
+				except(KeyError):
+					vtmp.append(0)	
+			(eNC[w]).append(vtmp)
+
+	#  dispersion
+	for n in range(nrings):
+		try:
+			error=result.params['v_disp_r'+f'{n}'].stderr
+			evdisp.append(error if error is not None else 0)
+		except(KeyError):
+			evdisp.append(0)	
+			
+
+	[e_Ck,e_Sk] = eNC
 	c1 = Ck[0]
 	e_c1 = e_Ck[0]
 	s_1 = Sk[0]
@@ -116,13 +136,12 @@ def plot_kin_models_h(galaxy,vmode,best_vals,best_vels, m_hrm, out):
 	delta_r = R[-1]-R[-2]
 	max_r = np.max(R)
 
-	ax0.plot(R,c1, color = "#362a1b",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{c_{1}}$")
-	ax0.fill_between(R, c1-e_c1, c1+e_c1, color = "#362a1b", alpha = 0.3, linewidth = 0)
-	ax0.scatter(R,c1,s=20,marker='o',c='#362a1b',edgecolor='k',lw=0.3,zorder=10)
+	ax0.errorbar(R,c1,yerr=e_c1,color="#362a1b",label = "$\mathrm{c_{1}}$",fmt='o',
+		mfc='#362a1b',mec='#362a1b',ms=4,mew=0.5,ecolor='#362a1b',lw=1,ls='-',capsize=2)	
 
-	ax0.plot(R,vdisp, color = "#db6d52",linestyle='--', alpha = 1, linewidth=0.8, label = "$\sigma_{gas}$")
-	ax0.fill_between(R, vdisp-evdisp, vdisp+evdisp, color = "#db6d52", alpha = 0.3, linewidth = 0)
-	ax0.scatter(R,vdisp,s=20,marker='o',c='#db6d52',edgecolor='k',lw=0.3,zorder=10)
+	ax0.errorbar(R,vdisp,yerr=evdisp,color='#db6d52',label="$\sigma_{gas}$",fmt='o',
+		mfc='#db6d52',mec='#db6d52',ms=4,mew=0.5,ecolor='#db6d52',lw=1,ls='--',capsize=2)	
+
 
 	ax0.set_ylim(0, 30*(np.max(c1)//30)+40)
 	ax0.set_xlim(-delta_r*0.1, max_r+delta_r*0.1)
@@ -138,13 +157,13 @@ def plot_kin_models_h(galaxy,vmode,best_vals,best_vels, m_hrm, out):
 			m = int(2*m_hrm)
 			color = new_cmap(np.linspace(0, 1, m))
 			if i >= 1:
-				ax1.plot(r_nc,Ck[i], color = color[i],linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{c_{%s}}$"%(i+1))
-				ax1.fill_between(r_nc, Ck[i]-e_Ck[i], Ck[i]+e_Ck[i], color = color[i], alpha = 0.3, linewidth = 0)
-				ax1.scatter(r_nc,Ck[i],s=20,marker='o',c=color[i],edgecolor='k',lw=0.3,zorder=10)
-			ax1.plot(r_nc,Sk[i], color = color[i+m_hrm],linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{s_{%s}}$"%(i+1))
-			ax1.fill_between(r_nc, Sk[i]-e_Sk[i], Sk[i]+e_Sk[i], color = color[i+m_hrm], alpha = 0.3, linewidth = 0)
-			ax1.scatter(r_nc,Sk[i],s=20,marker='o',c=color[i+m_hrm],edgecolor='k',lw=0.3,zorder=10)
+				ax1.errorbar(r_nc,Ck[i],yerr=e_Ck[i],color=color[i],label="$\mathrm{c_{%s}}$"%(i+1),fmt='o',
+					mfc=color[i],mec=color[i],ms=4,mew=0.5,ecolor=color[i],lw=1,ls='-',capsize=2)	
+			
+			ax1.errorbar(r_nc,Sk[i],yerr=e_Sk[i],color=color[i+m_hrm],label="$\mathrm{s_{%s}}$"%(i+1),fmt='o',
+					mfc=color[i+m_hrm],mec=color[i+m_hrm],ms=4,mew=0.5,ecolor=color[i+m_hrm],lw=1,ls='-',capsize=2)	
 
+			
 	axs(ax1,  rotation = 'horizontal', fontsize_ticklabels=10)
 	vmin_s1 = 5*abs(np.nanmin(Sk[0]))//5
 	vmax_s1 = 5*abs(np.nanmax(Sk[0]))//5

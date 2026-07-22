@@ -18,7 +18,7 @@ with open("requirements.txt", "r") as r:
 all_packages = find_packages()
 setup(
     name="XS3D",
-    version="2.2.0",
+    version="2.2.1",
     description="A Python tool for modeling circular and non-ciruclar motions via emission lines on datacubes.",
     long_description=readme(),
     keywords="kinematics",

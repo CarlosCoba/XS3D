@@ -17,7 +17,7 @@ from .constants import __c__
 
 cmap = vel_map()
 
-def plot_kin_models(galaxy,vmode,const,best,out):
+def plot_kin_models(galaxy,vmode,const,best,result,out):
 
 	R=abs(best['radius'])
 	nrings=len(R)	
@@ -31,11 +31,16 @@ def plot_kin_models(galaxy,vmode,const,best,out):
 	vdisp = vels['v_disp']
 	v_nc_max = np.max( abs(np.concatenate([vrad.ravel(), vtan.ravel()])))
 	
-	evrot = np.zeros_like(vrot)	
-	evrad = np.zeros_like(vrot)	
-	evtan = np.zeros_like(vrot)			
-	evdisp = np.zeros_like(vrot)			
-		
+	p = ['v_rot_r','v_rad_r','v_2t_r','v_disp_r']
+	evrot,evrad,evtan,evdisp=[],[],[],[]
+	ev = [evrot,evrad,evtan,evdisp]
+	for k,v in enumerate(p):
+		for n in range(len(vrot)):
+			try:
+				error=result.params[v+f'{n}'].stderr
+				(ev[k]).append(error if error is not None else 0)
+			except(KeyError):
+				(ev[k]).append(0)		
 	
 	width, height = 10, 6 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
