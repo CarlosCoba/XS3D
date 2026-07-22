@@ -57,7 +57,7 @@ class Run_models:
 		self.start_time=time.time()
 
 		# print start messenge
-		P=Print(); P()
+		P=Print(); P.start()
 
 		self.P=P
 

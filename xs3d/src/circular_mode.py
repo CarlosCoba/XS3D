@@ -19,9 +19,9 @@ from .utils import circmean
 
 from .cloud_tilted_rings import TiltedRingModel, CubeConfig, Ring
 from .cloud_fit_engine import (
-    build_params, fit_rings, make_weight_map,
-    residual_cube, rotation_curve,
-    set_bounds, _print_params_summary
+	build_params, fit_rings, make_weight_map,
+	residual_cube, rotation_curve,
+	set_bounds, _print_params_summary
 )
 from .params import Set_params
 from .extract_prms import extractp
@@ -39,7 +39,7 @@ class Circular_model:
 		self.emoms		= emoms
 		self.guess0		= guess0
 		self.vary		= vary
-		self.n_it       = (n_it+1)
+		self.n_it	   = (n_it+1)
 		self.rstart		= rstart
 		self.rfinal		= rfinal
 		self.ring_space	= ring_space
@@ -50,13 +50,13 @@ class Circular_model:
 		self.config		= config
 		self.pixel_scale= header.scale
 		self.psf_lsf	= psf_lsf
-        self.vary_params	= {}
+		self.vary_params	= {}
 		self.rms			= header.rms
 
 		if self.n_it == 0: self.n_it =1
-        # print function
-        P=Print()
-        self.P=P
+		# print function
+		P=Print()
+		self.P=P
 
 
 		rend = self.rfinal
@@ -111,7 +111,8 @@ class Circular_model:
 		self.nsubclouds = config_clouds.getint('nsubclouds', 50)
 		self.z_scale 	= config_clouds.getfloat('z_scale', 0.1)
 		self.z_profile 	= config_clouds.get('z_profile', 'sech2')
-
+		self.lagging 	= config_clouds.getboolean('lagging', False)
+		
 		self.disp_kms	= 	psf_lsf.sigma_inst_kms
 		self.vary_disp	= 	psf_lsf.vary_disp
 
@@ -119,9 +120,11 @@ class Circular_model:
 		self.rweight		= config_lsq.getint('rweight', 0)
 		self.zweight		= config_lsq.getboolean('zweight', 0)
 		self.weights		= (self.rweight,self.zweight)
-		self.fitmethod 		= config_lsq.get('optimethod', 'nelder')
+		self.fitmethod 		= config_lsq.get('optimethod', 'nelder')	
 		self.seed			= 40
 		self.vary_nc		= config_lsq.getfloat('vary_nc', 2)
+		self.vary_params	= {}
+		self.rms			= header.rms
 
 
 
@@ -165,15 +168,16 @@ class Circular_model:
 			rmax=np.max(R_pos)
 			rmax_px=rmax/self.pixel_scale
 			guess_common = dict(
-				v_sys          = self.vsys0,
-				inc            = self.inc0,
-				pa             = self.pa0 % 360,
-				x_center       = self.x0,
-				y_center       = self.y0,
-				z_scale        = self.z_scale,
-				z_profile      = self.z_profile,
-				n_clouds       = self.nclouds,
-				n_subclouds    = self.nsubclouds,
+				v_sys		= self.vsys0,
+				inc			= self.inc0,
+				pa			= self.pa0 % 360,
+				x_center	= self.x0,
+				y_cente		= self.y0,
+				z_scale		= self.z_scale,
+				z_profile	= self.z_profile,
+				vz_gradient	= self.lagging,
+				n_clouds	= self.nclouds,
+				n_subclouds	= self.nsubclouds,
 				velocity_model = self.vmode,
 				phi_bar		   = 45
 			)
@@ -212,7 +216,7 @@ class Circular_model:
 
 			best_rings, result = fit_rings(
 				obs_cube,
-                self.eflux2d,
+				self.eflux2d,
 				self.mommaps,
 				guess_rings,
 				spec, cnf_prms,
@@ -220,13 +224,13 @@ class Circular_model:
 				self.psf_lsf,
 				cube_oper,
 				weight_alpha = self.weights,
-				method       = method,
-				seed         = self.seed,
-				verbose      = verbose,
-				fit_kws      = fit_kws,
+				method	   = method,
+				seed		 = self.seed,
+				verbose	  = verbose,
+				fit_kws	  = fit_kws,
 			)
 
-            self.P.status("Best model found !")
+			self.P.status("Best model found !")
 			if bootstrap: return  best_rings, result
 			self.vary_params = spec
 
@@ -249,8 +253,8 @@ class Circular_model:
 			operator 		= [np.mean,circmean,circmean,np.mean,np.mean,circmean]
 			const = {p : opr(best_vals[p]) for p,opr in zip(scalar_fields, operator)}
 
-            # update initial values
-            [self.pa0,self.inc0,self.x0,self.y0,self.vsys0,self.theta_b]=[const['pa'],const['inc'],const['x_center'],const['y_center'],const['v_sys'],const['phi_bar'] ]
+			# update initial values
+			[self.pa0,self.inc0,self.x0,self.y0,self.vsys0,self.theta_b]=[const['pa'],const['inc'],const['x_center'],const['y_center'],const['v_sys'],const['phi_bar'] ]
 
 			# get the final mask
 			W_cur= make_weight_map(mom0_obs, self.psf_lsf, best_rings, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=4)
@@ -264,13 +268,13 @@ class Circular_model:
 
 	def run_boost(self,output=None):
 
-        self.P.status('Computing Errors on parameters')
-        self.P.status('N bootstraps    %s'%self.n_boot )
-        print(self.P.deli)
+		self.P.status('Computing Errors on parameters')
+		self.P.status('N bootstraps	%s'%self.n_boot )
+		print(self.P.deli)
 
 		[obs_cube,best_rings,best_vals,result]=output
-		n_boot    = self.n_boot
-		msk       = obs_cube == 0
+		n_boot	= self.n_boot
+		msk	   = obs_cube == 0
 		params_ref  = build_params(best_rings, self.vary_params)
 		free_names  = [n for n, p in params_ref.items() if p.vary]
 		samples		= {n: [] for n in free_names}
@@ -285,10 +289,10 @@ class Circular_model:
 			best_rings_k, result_k = self.lsq(obs_cube_tmp, verbose=0, bootstrap=True)
 
 			for name in free_names:
-                try:
-                    samples[name].append(result_k.params[name].value)
-                except(KeyError):
-                    samples[name].append(np.nan)
+				try:
+					samples[name].append(result_k.params[name].value)
+				except(KeyError):
+					samples[name].append(np.nan)
 
 		stderr = {}; median = {}; ci_68 = {}; ci_95 = {}
 		for name in free_names:
