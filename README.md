@@ -36,7 +36,7 @@ Dependencies
 ===========
 
 ```
-                Python = 3.8
+                Python > 3.8
 ```
 
 Installation
@@ -55,7 +55,7 @@ USE: XS3D name cube.fits [mask] [PA] [INC] [X0] [Y0] [VSYS] vary_PA vary_INC var
 ```
 
 * Make sure FFTW is already installed in your system, otherwise pyFFTW will raise an installation Error.
-* Miniconda users may want to create a python3.8 [environment](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html) to install XS3D.
+* Miniconda users may want to create a Python [environment](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html) to install XS3D.
 
 Uninstall
 ===========
