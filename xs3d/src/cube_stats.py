@@ -32,7 +32,9 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	config_general = config['general']
 	config_others = config['others']
 	if clip is None:
-		clip=config_others.getfloat('clip',6)
+		clip_tmp = config_others.getfloat('clip',6)
+		clip = 1e-1 if clip_tmp==0 else clip_tmp
+		#clip=config_others.getfloat('clip',6)
 
 	if msk_user!=None:
 		msk_usr=get_fits_data(msk_user).astype(bool)
@@ -146,7 +148,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		#the rms on the smoothed cube:
 		global_rmse=sigma_sm
 		#the rms that will be passed
-		rms_cube = global_rmse*clip
+		rms_cube_clean = global_rmse*clip
 
 		rat_sn=cube_smooth / (global_rmse*clip)
 		msk_rms=rat_sn>=1
@@ -160,7 +162,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 					dV=dv//2
 					msk_cube[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1]=True
 	else:
-		msk_cube=cube > rms_cube*clip
+		msk_cube=cube > rms_cube_clean*clip
 
 	# keep zeros from the smoothed cube
 	msk_cube*=iszerosmth
@@ -242,7 +244,10 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		vpeak2D=vparabola3D(cube*msk_cube,wave_cover_kms)
 	else:
 		vpeak2D=None
-	return msk_cube,rms_cube,vpeak2D
+	if clip_tmp == 0:
+		return data,rms_cube,vpeak2D
+			
+	return msk_cube,rms_cube_clean,vpeak2D
 
 
 
