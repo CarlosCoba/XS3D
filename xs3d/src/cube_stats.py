@@ -400,6 +400,7 @@ def baselinecor(cube,config):
 	config_general = config['general']
 	baseline_cor=config_general.getboolean('baseline', False)
 	if baseline_cor:
+		Print().status('Removing baseline. This could take some time.')
 		basecube=np.zeros_like(cube)
 		[nz,ny,nx]=cube.shape
 		for i,j in product(np.arange(nx),np.arange(ny)):

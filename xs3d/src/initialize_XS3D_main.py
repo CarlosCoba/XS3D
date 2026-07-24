@@ -7,7 +7,9 @@ import os.path
 from os import path
 import time
 from time import gmtime,strftime
+import copy
 
+from .get_subcube import sub_mask3D
 from .kinematic_centre_vsys import kincenter as  KC
 from .geometric_moments import geom_moms
 from .cbar import colorbar as cb
@@ -162,15 +164,29 @@ class Run_models:
 
 		# compute velocity gradient
 		vgrad = np.gradient(self.mom1)
-		# magnitude of gradiente
+		# magnitude of gradient
 		magv = np.sqrt(vgrad[0]**2 + vgrad[1]**2)
 		msk_grad = magv < 400
 		self.datacube = self.datacube*msk_grad
 		self.mom_obs=[self.mom_obs[k]*msk_grad for k in range(3)]
+		mom0_tmp = self.mom_obs[0]
+
+		# Crop the datacube in case there are a lot of zeros/empty regions
+		# this will save a lot of time
+		cube_ndim, xy_shift, slices, slicecube = sub_mask3D(self.datacube,mom0_tmp,config)
+		xc_g, yc_g = xc_g + xy_shift[0], yc_g + xy_shift[1]
+		self.xy_shift = xy_shift
+
+		mom_obs_ndim = [(self.mom_obs[k])[slices]  for k in range(3)]
+		
+		# temporary update header and psf info
+		hdr_info_tmp = copy.deepcopy(self.hdr_info)
+		hdr_info_tmp.ny, hdr_info_tmp.nx = mom_obs_ndim[0].shape
+		psf_lsf_tmp = PsF_LsF(hdr_info_tmp, config)		
 
 		stats 	= stats_cube_2d(self.datacube)
+		eflux2d_ndim = (stats[-1])[slices] 
 		self.eflux2d = stats[-1]
-
 
 		guess_prm=guess_vals(pa_g,inc_g,xc_g,yc_g,vsys_g,PHI_B )
 		vary=np.array( [vary_pa_g,vary_inc_g,vary_XC,vary_YC,vary_vsys_g,vary_PHI] )
@@ -198,14 +214,29 @@ class Run_models:
 		self.P.status("Starting Least Squares analysis",line=True)
 
 		if "hrm" not in self.vmode:
-			circ=Circular_model(self.vmode, galaxy, self.datacube, self.eflux2d, self.hdr_info, self.mom_obs, self.emoms, guess_prm, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.outdir,self.cube_class,self.psf_lsf)
+			circ=Circular_model(self.vmode, galaxy, cube_ndim, eflux2d_ndim, hdr_info_tmp, mom_obs_ndim, self.emoms, guess_prm, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.outdir,self.cube_class,psf_lsf_tmp)
 			out=circ()
-			[self.mod_cube,self.best_rings,self.best_vals,self.result]=out
+			[mod_cube,self.best_rings,self.best_vals,self.result]=out
 		else:
-			hrm=Harmonic_model(self.vmode, galaxy, self.datacube, self.eflux2d, self.hdr_info, self.mom_obs, self.emoms, guess_prm, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.outdir,self.cube_class,self.psf_lsf,self.m_hrm)
+			hrm=Harmonic_model(self.vmode, galaxy, cube_ndim, eflux2d_ndim, hdr_info_tmp, mom_obs_ndim, self.emoms, guess_prm, vary, n_it, rstart, rfinal, ring_space, frac_pixel, inner_interp, delta, bar_min_max, config, self.outdir,self.cube_class,psf_lsf_tmp,self.m_hrm)
 			out=hrm()
-			[self.mod_cube,self.best_rings,best,self.result]=out
-			self.best_vals,self.best_vels=best
+			[mod_cube,self.best_rings,best,self.result]=out
+			self.best_vals,self.best_vels=best		
+
+		# shift the center
+		self.mod_cube = np.zeros_like(self.datacube)
+		self.mod_cube[slicecube]=mod_cube
+		self.best_vals['x_center']-=self.xy_shift[0]
+		self.best_vals['y_center']-=self.xy_shift[1]
+		
+		for k,r in enumerate(self.best_rings):
+			#print(getattr(r, 'x_center'))
+			val_x = self.best_rings[k].x_center
+			val_y = self.best_rings[k].y_center
+									
+			self.best_rings[k].x_center = val_x - self.xy_shift[0]
+			self.best_rings[k].y_center = val_y - self.xy_shift[1]
+
 
 class XS_out(Run_models):
 
@@ -260,6 +291,8 @@ class XS_out(Run_models):
 
 		save_pvds(self.galaxy,self.vmode,out_pvd,self.rms_cube,self.hdr_info,self.outdir)
 
+		self.P.status("creating channel maps")
+		
 		plot_channels(self.galaxy,self.datacube,self.mod_cube,const,self.vmode,self.hdr_info,self.psf_lsf,self.config,self.rms_cube,self.outdir)
 
 		if "hrm" in self.vmode:

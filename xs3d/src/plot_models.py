@@ -31,17 +31,22 @@ def plot_kin_models(galaxy,vmode,const,best,result,out):
 	vdisp = vels['v_disp']
 	v_nc_max = np.max( abs(np.concatenate([vrad.ravel(), vtan.ravel()])))
 	
-	p = ['v_rot_r','v_rad_r','v_2t_r','v_disp_r']
-	evrot,evrad,evtan,evdisp=[],[],[],[]
-	ev = [evrot,evrad,evtan,evdisp]
-	for k,v in enumerate(p):
-		for n in range(len(vrot)):
+
+	prm_vel = ["v_rot", "v_rad", "v_2t", "v_2r", "v_disp"]	
+	errv	={l:[] for l in prm_vel}			
+	for k,pvel in enumerate(prm_vel):
+		tmp = []
+		for i in range(nrings):
 			try:
-				error=result.params[v+f'{n}'].stderr
-				(ev[k]).append(error if error is not None else 0)
+				value = result.params[pvel+f'_r{i}'].stderr
+				tmp.append(value if value is not None else 0)					
 			except(KeyError):
-				(ev[k]).append(0)		
-	
+				tmp.append(0)
+		tmp = np.array(tmp)
+		if np.any([tmp==0]):
+			tmp = np.ones_like(tmp)*tmp[0]
+		errv[pvel]=tmp
+								
 	width, height = 10, 6 # width [cm]
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
@@ -79,21 +84,21 @@ def plot_kin_models(galaxy,vmode,const,best,result,out):
 	axs(ax0, rotation='horizontal',remove_axis_lines = True, fontsize_ticklabels=10)
 
 
-	ax0.errorbar(R, vdisp, yerr=evdisp, color = "#db6d52", label = "$\sigma_\mathrm{gas}$",  fmt='o', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
-	ax0.errorbar(R, vrot, yerr=evrot, color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='o', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)	
+	ax0.errorbar(R, vdisp, yerr=errv['v_disp'], color = "#db6d52", label = "$\sigma_\mathrm{gas}$",  fmt='o', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
+	ax0.errorbar(R, vrot, yerr=errv['v_rot'], color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='o', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)	
 	if vmode != 'circular':
-		ax1.errorbar(R, -1e4*vdisp, yerr=evdisp, color = "#db6d52", label = "$\sigma_\mathrm{gas}$",  fmt='o', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
-		ax1.errorbar(R, -1e4*vrot, yerr=evrot, color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='o', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, -1e4*vdisp, yerr=errv['v_disp'], color = "#db6d52", label = "$\sigma_\mathrm{gas}$",  fmt='o', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, -1e4*vrot, yerr=errv['v_rot'], color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='o', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)
 	
 	if vmode == "radial":
-		ax1.errorbar(R, vrad, yerr=evrad, color = "#c73412", label = "$\mathrm{V_{r}}$", fmt='o', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vrad, yerr=errv['v_rad'], color = "#c73412", label = "$\mathrm{V_{r}}$", fmt='o', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
 
 	if vmode == "vertical":
-		ax1.errorbar(R, vrad, yerr=evrad, color = "#b47b50", label = "$\mathrm{V_{z}}$", fmt='o', mfc = '#b47b50', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#b47b50', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vrad, yerr=errv['v_rad'], color = "#b47b50", label = "$\mathrm{V_{z}}$", fmt='o', mfc = '#b47b50', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#b47b50', lw=1, ls = ':', capsize=2)
 
 	if vmode == "bisymmetric":
-		ax1.errorbar(R, vrad, yerr=evrad, color = "#c73412", label = "$\mathrm{V_{2,r}}$", fmt='o', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
-		ax1.errorbar(R, vtan, yerr=evtan, color = "#2fa7ce", label = "$\mathrm{V_{2,t}}$", fmt='o', mfc = '#2fa7ce', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#2fa7ce', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vrad, yerr=errv['v_2r'], color = "#c73412", label = "$\mathrm{V_{2,r}}$", fmt='o', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vtan, yerr=errv['v_2t'], color = "#2fa7ce", label = "$\mathrm{V_{2,t}}$", fmt='o', mfc = '#2fa7ce', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#2fa7ce', lw=1, ls = ':', capsize=2)
 
 	# Move the left and bottom spines to x = 0 and y = 0, respectively.
 	ax0.spines[["left", "bottom"]].set_position(("data", 0))
