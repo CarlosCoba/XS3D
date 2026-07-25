@@ -53,7 +53,7 @@ class Harmonic_model:
 		self.pixel_scale= header.scale
 		self.psf_lsf	= psf_lsf
 		self.vary_params= {}
-		self.rms		= header.rms		
+		self.rms		= header.rms
 
 		# print function
 		P=Print()
@@ -76,6 +76,7 @@ class Harmonic_model:
 		[nz,ny,nx] = obs_cube.shape
 		self.shape = [ny,nx]
 		self.nx,self.ny = nx, ny
+		subclouds_tmp	= int(nz*0.7)
 
 
 
@@ -112,11 +113,11 @@ class Harmonic_model:
 		self.emomscube	= 0
 		self.nthreads	= config_general.getint('nthreads',1)
 		self.nclouds 	= config_clouds.getint('nclouds', 1)
-		self.nsubclouds = config_clouds.getint('nsubclouds', 50)
+		self.nsubclouds = config_clouds.getint('nsubclouds', subclouds_tmp)
 		self.z_scale 	= config_clouds.getfloat('z_scale', 0.1)
 		self.z_profile 	= config_clouds.get('z_profile', 'sech2')
 		self.lagging 	= config_clouds.getboolean('lagging', False)
-		
+
 		self.disp_kms	= 	psf_lsf.sigma_inst_kms
 		self.vary_disp	= 	psf_lsf.vary_disp
 
@@ -124,7 +125,7 @@ class Harmonic_model:
 		self.rweight		= config_lsq.getint('rweight', 0)
 		self.zweight		= config_lsq.getboolean('zweight', 0)
 		self.weights		= (self.rweight,self.zweight)
-		self.fitmethod 		= config_lsq.get('optimethod', 'nelder')	
+		self.fitmethod 		= config_lsq.get('optimethod', 'nelder')
 		self.seed			= 40
 		self.vary_nc		= config_lsq.getfloat('vary_nc', 2)
 		self.vary_params	= {}
@@ -294,7 +295,7 @@ class Harmonic_model:
 			for name in free_names:
 				try:
 					samples[name].append(result_k.params[name].value)
-				except (KeyError): 
+				except (KeyError):
 					samples[name].append(np.nan)
 
 		stderr = {}; median = {}; ci_68 = {}; ci_95 = {}
@@ -315,7 +316,7 @@ class Harmonic_model:
 			par = result.params[name]
 			std = par.stderr # this is None by default
 			(output[-1].params[name]).stderr  = stderr[name]
-						
+
 		return None
 
 	def output(self):

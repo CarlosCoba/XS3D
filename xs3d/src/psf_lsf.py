@@ -16,7 +16,7 @@ class PsF_LsF:
 
 		self.vary_disp=config_general.getint('fit_disp',1)
 
-		self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)
+		#self.fwhm_inst_A=config_general.getfloat('fwhm_inst',None)
 
 		bmaj_hdr=cube_hdr.bmaj
 
