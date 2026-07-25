@@ -26,7 +26,7 @@ class PsF_LsF:
 
 		self.pix_arcs = cube_hdr.pix_arcs
 
-		self.fwhm_psf_arc=bmaj_hdr if bmaj_hdr is not None else config_general.getfloat('psf_fwhm',None)
+		self.fwhm_psf_arc=bmaj_hdr if bmaj_hdr is not None else config_general.getfloat('psf_fwhm',self.pix_arcs)
 
 		self.fwhm_psf_pix=self.fwhm_psf_arc/self.pix_arcs
 

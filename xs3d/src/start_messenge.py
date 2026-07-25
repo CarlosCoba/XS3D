@@ -66,16 +66,22 @@ class Print:
 		bpa= psf_lsf.bpa
 		psf_fwhm=psf_lsf.fwhm_psf_arc
 		lsf_fwhm=psf_lsf.fwhm_inst_kms
+		pixel_arcs=psf_lsf.pix_arcs
 
 		print(self.deli)
 		if psf_fwhm is not None:
-				psf_fwhm=round(psf_fwhm,3)
-				print ('  ' + '{:<20} {:<15}'.format('PSF FWHM:', f'{psf_fwhm} arcsec'))
+				psf_fwhm_rn=round(psf_fwhm,3)
+				print ('  ' + '{:<20} {:<15}'.format('PSF FWHM:', f'{psf_fwhm_rn} arcsec'))
 		if bmaj is not None and bmin is not None:
 				bmaj=round(bmaj,3)
 				bmin=round(bmin,3)
 				print ('  ' + '{:<20} {:<15}'.format('BMAJ:', f'{bmaj} arcsec'))
 				print ('  ' + '{:<20} {:<15}'.format('BMIN:', f'{bmin} arcsec'))
+		if pixel_arcs==psf_fwhm:
+				print('');print('')
+				self.status('WARNING Are you sure PSF = pixel size?!')
+				print('');print('')	
+		
 		if bpa!=0:
 				bpa=round(bpa,1)
 				print ('  ' + '{:<20} {:<15}'.format('BPA:', f'{bpa} deg'))

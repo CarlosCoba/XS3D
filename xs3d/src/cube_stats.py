@@ -32,9 +32,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	config_general = config['general']
 	config_others = config['others']
 	if clip is None:
-		clip_tmp = config_others.getfloat('clip',6)
-		clip = 1e-1 if clip_tmp==0 else clip_tmp
-		#clip=config_others.getfloat('clip',6)
+		clip=config_others.getfloat('clip',6)
 
 	if msk_user!=None:
 		msk_usr=get_fits_data(msk_user).astype(bool)
@@ -88,7 +86,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	sigma_inst_pix_spec=dv/2.355
 	sigma_inst_pix_spat=ds/2.355
 
-	if dv!=0 or ds!=0:
+	if (dv!=0 or ds!=0) and clip !=0 :
 		psd2d=np.ones((ny,nx))
 		lsf1d=np.ones(nz)
 		if dv!=0:
@@ -148,7 +146,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		#the rms on the smoothed cube:
 		global_rmse=sigma_sm
 		#the rms that will be passed
-		rms_cube_clean = global_rmse*clip
+		rms_cube = global_rmse*clip
 
 		rat_sn=cube_smooth / (global_rmse*clip)
 		msk_rms=rat_sn>=1
@@ -162,7 +160,8 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 					dV=dv//2
 					msk_cube[k-dV:k+dV+1,j-dS:j+dS+1,i-dS:i+dS+1]=True
 	else:
-		msk_cube=cube > rms_cube_clean*clip
+		msk_cube=cube > rms_cube*clip
+		iszerosmth=np.ones_like(cube).astype(bool)
 
 	# keep zeros from the smoothed cube
 	msk_cube*=iszerosmth
@@ -194,7 +193,7 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 
 	# Evaluate spectra with 2 or more peaks.
 	# Keep the spectrum with the maximum intensity, hopefully will be signal, not noise.
-	if ds>1 and dv>1:
+	if ds>1 and dv>1 and clip > 0:
 		for i,j in zip(row,col):
 			arr0=msk_cube[:,j,i]
 			arr=cube_smooth[:,j,i]
@@ -244,10 +243,8 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		vpeak2D=vparabola3D(cube*msk_cube,wave_cover_kms)
 	else:
 		vpeak2D=None
-	if clip_tmp == 0:
-		return data,rms_cube,vpeak2D
-			
-	return msk_cube,rms_cube_clean,vpeak2D
+
+	return msk_cube,rms_cube,vpeak2D
 
 
 
@@ -327,8 +324,9 @@ def stats_cube_2d(data, ddof=1, bad=np.nan):
 		xRMS	= np.sqrt(sdd/N)
 		xpRMS	= np.sqrt(sdd/Np)
 		xmedian = np.nanmedian(x,axis=0)
-		p98		= np.nanpercentile(x,98,axis=0)
-		#f_err	= (xmedian + xpRMS**2)*0.4
+		f_err	= (xmedian + xpRMS**2)*0.4
+
+		p98 	= np.nanpercentile(x,98,axis=0)
 		f_err	= (p98 + xpRMS**2)*0.1
 		f_err[~np.isfinite(f_err)]=1
 
@@ -336,6 +334,10 @@ def stats_cube_2d(data, ddof=1, bad=np.nan):
 	out = [nan2zero(out_tmp[k]) for k in range(int(len(out_tmp)))]
 
 	return out
+
+
+
+
 
 
 from scipy.sparse.linalg import spsolve
@@ -405,7 +407,7 @@ def baselinecor(cube,config):
 	config_general = config['general']
 	baseline_cor=config_general.getboolean('baseline', False)
 	if baseline_cor:
-		Print().status('Removing baseline. This could take some time.')
+		Print().status('Removing baseline ..')
 		basecube=np.zeros_like(cube)
 		[nz,ny,nx]=cube.shape
 		for i,j in product(np.arange(nx),np.arange(ny)):

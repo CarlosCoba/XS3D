@@ -117,7 +117,6 @@ def save_model(galaxy,vmode,const,best,result,out):
 	hdu.header['pa'] 	= pa
 	hdu.header['e_pa'] 	= err_p['pa']
 	hdu.header['eps'] 	= eps
-	hdu.header['e_pa'] 	= 0
 	hdu.header['inc'] 	= inc
 	hdu.header['e_inc'] = err_p['inc']
 	hdu.header['v_sys'] = v_sys

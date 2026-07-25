@@ -4,10 +4,11 @@ import matplotlib.pylab as plt
 from matplotlib.gridspec import GridSpec
 from matplotlib import gridspec
 import matplotlib.ticker as ticker
-from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
-							   AutoMinorLocator)
-
+from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
+import itertools
+from matplotlib import colors	
 from matplotlib.offsetbox import AnchoredText
+
 from .axes_params import axes_ambient as axs
 from .cbar import colorbar as cb
 from .colormaps_CLC import vel_map
@@ -33,28 +34,28 @@ def inter_from_256(x):
 	return np.interp(x=x,xp=[0,255],fp=[0,1])
 cdict = {
 	'red':((0.0,inter_from_256(64),inter_from_256(64)),
-		   (1/5*1,inter_from_256(112),inter_from_256(112)),
-		   (1/5*2,inter_from_256(230),inter_from_256(230)),
-		   (1/5*3,inter_from_256(253),inter_from_256(253)),
-		   (1/5*4,inter_from_256(244),inter_from_256(244)),
-		   (1.0,inter_from_256(169),inter_from_256(169))),
+		(1/5*1,inter_from_256(112),inter_from_256(112)),
+		(1/5*2,inter_from_256(230),inter_from_256(230)),
+		(1/5*3,inter_from_256(253),inter_from_256(253)),
+		(1/5*4,inter_from_256(244),inter_from_256(244)),
+		(1.0,inter_from_256(169),inter_from_256(169))),
 	'green': ((0.0, inter_from_256(57), inter_from_256(57)),
-			(1 / 5 * 1, inter_from_256(198), inter_from_256(198)),
-			(1 / 5 * 2, inter_from_256(241), inter_from_256(241)),
-			(1 / 5 * 3, inter_from_256(219), inter_from_256(219)),
-			(1 / 5 * 4, inter_from_256(109), inter_from_256(109)),
-			(1.0, inter_from_256(23), inter_from_256(23))),
+		(1 / 5 * 1, inter_from_256(198), inter_from_256(198)),
+		(1 / 5 * 2, inter_from_256(241), inter_from_256(241)),
+		(1 / 5 * 3, inter_from_256(219), inter_from_256(219)),
+		(1 / 5 * 4, inter_from_256(109), inter_from_256(109)),
+		(1.0, inter_from_256(23), inter_from_256(23))),
 	'blue': ((0.0, inter_from_256(144), inter_from_256(144)),
-			  (1 / 5 * 1, inter_from_256(162), inter_from_256(162)),
-			  (1 / 5 * 2, inter_from_256(246), inter_from_256(146)),
-			  (1 / 5 * 3, inter_from_256(127), inter_from_256(127)),
-			  (1 / 5 * 4, inter_from_256(69), inter_from_256(69)),
-			  (1.0, inter_from_256(69), inter_from_256(69))),
+		(1 / 5 * 1, inter_from_256(162), inter_from_256(162)),
+		(1 / 5 * 2, inter_from_256(246), inter_from_256(146)),
+		(1 / 5 * 3, inter_from_256(127), inter_from_256(127)),
+		(1 / 5 * 4, inter_from_256(69), inter_from_256(69)),
+		(1.0, inter_from_256(69), inter_from_256(69))),
 }
-from matplotlib import colors
+
 new_cmap = colors.LinearSegmentedColormap('new_cmap',segmentdata=cdict)
 
-def plot_kin_models_h(galaxy,vmode,best_vals,best_vels,result, m_hrm, out):
+def plot_kin_models_h(galaxy,vmode,best_vals,best_vels, m_hrm, result, out):
 
 	scalar_fields = ["v_disp"]
 	vels = {k:best_vals[k] for k in scalar_fields}
@@ -64,46 +65,40 @@ def plot_kin_models_h(galaxy,vmode,best_vals,best_vels,result, m_hrm, out):
 	R=abs(best_vals['radius'])
 	nrings=len(R)	
 
-	Sk=[]
-	Ck=[]
+	prm_vel_list = [[f'c_m{k}' for k in range(1,m_hrm+1)], [f's_m{k}' for k in range(1,m_hrm+1)], ['v_disp']]
+	prm_vel = list(itertools.chain.from_iterable(prm_vel_list))
+		
+	errv	={l:[] for l in prm_vel}			
+	for k,pvel in enumerate(prm_vel):
+		tmp = []
+		for i in range(nrings):
+			try:
+				value = result.params[pvel+f'_r{i}'].stderr
+				tmp.append(value if value is not None else 0)					
+			except(KeyError):
+				tmp.append(0)
+		tmp = np.array(tmp)
+		if np.any([tmp==0]):
+			tmp = np.ones_like(tmp)*tmp[0]
+		errv[pvel]=tmp
+
+	vhrm	={l:[] for l in prm_vel}			
+	for k,pvel in enumerate(prm_vel):
+		tmp = []
+		for i in range(nrings):
+			try:
+				value = result.params[pvel+f'_r{i}'].value
+				tmp.append(value if value is not None else 0)					
+			except(KeyError):
+				tmp.append(0)
+		tmp = np.array(tmp)
+		vhrm[pvel]=tmp		
+										
 	
-	e_Sk=[]
-	e_Ck=[]
+	c1,s1,vdisp	= vhrm['c_m1'], vhrm['s_m1'], vhrm['v_disp']
+	e_c1		= errv['c_m1']
 	
-	eNC = [e_Ck,e_Sk]
-	evdisp = []	
-	for m in range(m_hrm):
-		k = str(int(m+1))
-		c_k = best_vels[f'c_m{k}']
-		s_k = best_vels[f's_m{k}']
-		Ck.append(c_k)		
-		Sk.append(s_k)				
-
-		vnc = [f'c_m{k}_r',f's_m{k}_r']
-		for w,v in enumerate(vnc):
-			vtmp=[]
-			for n in range(nrings):
-				try:
-					error=result.params[v+f'{n}'].stderr
-					vtmp.append(error if error is not None else 0)
-				except(KeyError):
-					vtmp.append(0)	
-			(eNC[w]).append(vtmp)
-
-	#  dispersion
-	for n in range(nrings):
-		try:
-			error=result.params['v_disp_r'+f'{n}'].stderr
-			evdisp.append(error if error is not None else 0)
-		except(KeyError):
-			evdisp.append(0)	
-			
-
-	[e_Ck,e_Sk] = eNC
-	c1 = Ck[0]
-	e_c1 = e_Ck[0]
-	s_1 = Sk[0]
-	R_noncirc = R*(s_1/s_1)
+	R_noncirc = R*(s1/s1)
 
 	width, height = 11, 9 # width [cm]
 	#width, height = 3, 15 # width [cm]
@@ -136,37 +131,51 @@ def plot_kin_models_h(galaxy,vmode,best_vals,best_vels,result, m_hrm, out):
 	delta_r = R[-1]-R[-2]
 	max_r = np.max(R)
 
-	ax0.errorbar(R,c1,yerr=e_c1,color="#362a1b",label = "$\mathrm{c_{1}}$",fmt='o',
-		mfc='#362a1b',mec='#362a1b',ms=4,mew=0.5,ecolor='#362a1b',lw=1,ls='-',capsize=2)	
+	color = "#db6d52"
+	ax0.errorbar(R, vdisp, yerr=errv['v_disp'], color = color, fmt='o', mfc = color,
+		mec = color,ms = 4,mew = 0.5, ecolor=color, lw=1, ls = ':', capsize=2)
+	ax1.errorbar(R, -1e6*vdisp, yerr=errv['v_disp'], color = color, fmt='o', mfc = color,
+		mec = color,ms = 4,mew = 0.5, ecolor=color, lw=1, ls = '-', capsize=2, label = "$\sigma_{gas}$")
 
-	ax0.errorbar(R,vdisp,yerr=evdisp,color='#db6d52',label="$\sigma_{gas}$",fmt='o',
-		mfc='#db6d52',mec='#db6d52',ms=4,mew=0.5,ecolor='#db6d52',lw=1,ls='--',capsize=2)	
+	color = "#362a1b"
+	ax0.errorbar(R, c1, yerr=errv['c_m1'], color = color, fmt='o', mfc = color,
+		mec = color,ms = 4,mew = 0.5, ecolor=color, lw=1, ls = '-', capsize=2)
+	ax1.errorbar(R, -1e6*c1, yerr=errv['c_m1'], color = color, fmt='o', mfc = color,
+		mec = color,ms = 4,mew = 0.5, ecolor=color, lw=1, ls = '-', capsize=2, label = "$\mathrm{c_{1}}$")
 
-
-	ax0.set_ylim(0, 30*(np.max(c1)//30)+40)
+	color = "g"
+	ax1.errorbar(R, s1, yerr=errv['s_m1'], color = color, fmt='o', mfc = color,
+		mec = color,ms = 4,mew = 0.5, ecolor=color, lw=1, ls = '-', capsize=2, label = "$\mathrm{s_{1}}$")
+				
+	max_v = np.maximum(c1,vdisp).max()
+	ax0.set_ylim(0, 30*(max_v//30)+40)
 	ax0.set_xlim(-delta_r*0.1, max_r+delta_r*0.1)
 	axs(ax0, remove_xticks= True, rotation = 'horizontal', fontsize_ticklabels=10)
 
-
-	# plot the 1D velocities with the predefined colors
-	ax1.plot(R,-1e4*np.ones(len(c1)), color = "#db6d52",linestyle='--', alpha = 1, linewidth=0.8, label = "$\sigma_\mathrm{gas}$")
-	ax1.plot(R,-1e4*np.ones(len(c1)), color = "#362a1b",linestyle='-', alpha = 1, linewidth=0.8, label = "$\mathrm{c_{1}}$")
 	ax1.plot([0,np.nanmax(R)],[0,0],color = "k",linestyle='-', alpha = 0.6,linewidth = 0.3)
+	
+	# plot the 1D velocities with the predefined colors
+	if m_hrm > 1:
+		ncolors = 2*int(m_hrm - 1)
+		color = new_cmap(np.linspace(0, 1, ncolors))			
+		for i in range(2,m_hrm+1):
+			j = (i-2)			
+			s_m = vhrm[f's_m{i}']
+			c_m = vhrm[f'c_m{i}']
 
-	for i in range(m_hrm):
-			m = int(2*m_hrm)
-			color = new_cmap(np.linspace(0, 1, m))
-			if i >= 1:
-				ax1.errorbar(r_nc,Ck[i],yerr=e_Ck[i],color=color[i],label="$\mathrm{c_{%s}}$"%(i+1),fmt='o',
-					mfc=color[i],mec=color[i],ms=4,mew=0.5,ecolor=color[i],lw=1,ls='-',capsize=2)	
-			
-			ax1.errorbar(r_nc,Sk[i],yerr=e_Sk[i],color=color[i+m_hrm],label="$\mathrm{s_{%s}}$"%(i+1),fmt='o',
-					mfc=color[i+m_hrm],mec=color[i+m_hrm],ms=4,mew=0.5,ecolor=color[i+m_hrm],lw=1,ls='-',capsize=2)	
+			es_m = errv[f's_m{i}']
+			ec_m = errv[f'c_m{i}']
 
-			
+			ax1.errorbar(r_nc, c_m, yerr=ec_m, color = color[j], fmt='o', mfc = color[j],
+					mec = color[j],ms = 4,mew = 0.5, ecolor=color[j], lw=1, ls = '-', capsize=2, label="$\mathrm{c_{%s}}$"%(i))
+
+			ax1.errorbar(r_nc, s_m, yerr=es_m, color = color[j+1], fmt='o', mfc = color[j+1],
+					mec = color[j+1],ms = 4,mew = 0.5, ecolor=color[j+1], lw=1, ls = '-', capsize=2, label="$\mathrm{s_{%s}}$"%(i))
+
+				
 	axs(ax1,  rotation = 'horizontal', fontsize_ticklabels=10)
-	vmin_s1 = 5*abs(np.nanmin(Sk[0]))//5
-	vmax_s1 = 5*abs(np.nanmax(Sk[0]))//5
+	vmin_s1 = 5*abs(np.nanmin(s1))//5
+	vmax_s1 = 5*abs(np.nanmax(s1))//5
 	max_vel_s1 = np.nanmax([vmin_s1,vmax_s1])
 	
 	dashline = (5, (10, 3))
@@ -182,7 +191,7 @@ def plot_kin_models_h(galaxy,vmode,best_vals,best_vels,result, m_hrm, out):
 	ax1.xaxis.set_major_locator(ticker.MaxNLocator(5))		
 	ax1.yaxis.set_major_locator(ticker.MaxNLocator(3))
 	
-	ax1.legend(loc="upper left", fontsize=10, bbox_to_anchor=(1,1), ncol=1, bbox_transform=ax0.transAxes, labelspacing=0.1, handlelength=1, handletextpad=0.3, columnspacing=0.8, frameon=False)
+	ax1.legend(loc="upper left", fontsize=10, bbox_to_anchor=(1,1), ncol=1, bbox_transform=ax0.transAxes, labelspacing=0.35, handlelength=1, handletextpad=0.3, columnspacing=0.8, frameon=False)
 		
 	ax1.grid(visible = True, which = "major", axis = "both", color='gray', linestyle='-', linewidth=0.5, zorder = 1, alpha = 0.5)
 
