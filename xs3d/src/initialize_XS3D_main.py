@@ -246,12 +246,12 @@ class XS_out(Run_models):
 		self.P.status("Plotting results")
 
 		from .save_output import save_rings_fits
-		save_rings_fits(self.galaxy, self.vmode, self.best_rings, self.result, self.psf_lsf, extra_header=None, out=self.outdir)
+		save_rings_fits(self.galaxy, self.vmode, self.best_rings, self.result, self.hdr_info, extra_header=None, out=self.outdir)
 
 		mom_mod = self.cube_class.obs_mommaps(self.mod_cube)
 
 		# update chisquare
-		msk		= (mom_mod[0]>0) * (self.mom0>0)
+		msk		= (mom_mod[0]>0) * (self.mom_obs[0]>0)
 		Ndata 	= np.sum(msk)*self.hdr_info.nz
 		Nvary 	= (self.result).nvarys
 		dof 	= Ndata-Nvary
@@ -260,14 +260,15 @@ class XS_out(Run_models):
 		self.result.chisqr=chisqr
 
 		# remove zeros from moment maps
-		mom_mod=[zero2nan(mom_mod[k]) for k in range(3)]
+		mom_mod=[zero2nan(mom_mod[k]*msk) for k in range(3)]
 		self.mom_obs=[zero2nan(self.mom_obs[k]) for k in range(3)]
 
 		# extract avg constant parameters
 		scalar_fields	= ["v_sys","inc","pa","x_center","y_center","phi_bar"]
 		operator 		= [np.mean,circmean,circmean,np.mean,np.mean,circmean]
 		const = {k : op(self.best_vals[k]) for k,op in zip(scalar_fields, operator)}
-		const['rmax'] = np.max(self.best_vals['radius'])
+		const['rmax']	= np.max(self.best_vals['radius'])
+		const['pa_NE']	= (const['pa'] + self.hdr_info.pa_north) % 360
 
 		plot_rings_sky(self.galaxy,self.mom_obs,self.best_rings,const,self.vmode,self.psf_lsf,self.hdr_info,self.config,self.rms_cube,self.outdir)
 		# save 1d models

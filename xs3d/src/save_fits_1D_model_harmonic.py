@@ -9,7 +9,7 @@ def save_model_h(galaxy,vmode,const,best,best_vels,result,m_hrm,out):
 
 	R=best['radius']
 	nrings=len(R)	
-	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
+	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa_NE'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
 	eps = inc_2_eps(inc)
 		
 	prm_vel_list = [[f'c_m{k}' for k in range(1,m_hrm+1)], [f's_m{k}' for k in range(1,m_hrm+1)], ['v_disp']]

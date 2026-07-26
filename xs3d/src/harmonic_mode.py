@@ -160,8 +160,10 @@ class Harmonic_model:
 			#disp_tab=list(disp_tab)
 			disp_tab = np.clip(disp_tab, self.disp_kms, None)
 			disp_tab = np.sqrt(disp_tab**2 - self.disp_kms**2)
-			if not self.vary_disp:
+			if self.vary_disp==0:
 				disp_tab = np.ones_like(disp_tab)*self.disp_kms
+			if self.vary_disp==1:
+				disp_tab = np.ones_like(disp_tab)*np.mean(disp_tab)			
 
 			guess = [disp_tab,c_tab,s_tab,self.pa0,self.eps0,self.x0,self.y0,self.vsys0,self.theta_b]
 

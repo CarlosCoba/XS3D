@@ -141,8 +141,8 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		sn_temp=rms_mean_all/sigma_sm
 		if sn_temp > 50:
 			rat=int(sn_temp)
-			print(f'Warning ! Your data does not seem to contain a proper noise, SN_temp = {rat}')
-			print(f'Consider increasing the clipping level if you have not already.')
+			Print().long(f'Warning ! Your data does not seem to contain a proper noise, SN_temp = {rat} '
+			'Consider increasing the clipping level if you have not already.')
 		#the rms on the smoothed cube:
 		global_rmse=sigma_sm
 		#the rms that will be passed

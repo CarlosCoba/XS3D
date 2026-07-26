@@ -149,8 +149,10 @@ class Circular_model:
 
 			disp_tab = np.clip(disp_tab, self.disp_kms, None)
 			disp_tab = np.sqrt(disp_tab**2 - self.disp_kms**2)
-			if not self.vary_disp:
+			if self.vary_disp==0:
 				disp_tab = np.ones_like(disp_tab)*self.disp_kms
+			if self.vary_disp==1:
+				disp_tab = np.ones_like(disp_tab)*np.mean(disp_tab)			
 
 			# Try to correct the PA if velocities are negative
 			if np.nanmean(vrot_tab) < 0 :

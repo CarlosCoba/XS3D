@@ -6,7 +6,7 @@ from .pixel_params import eps_2_inc,e_eps2e_inc,inc_2_eps
 def save_model(galaxy,vmode,const,best,result,out):
 	R = best['radius']
 	nrings = len(R)	
-	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
+	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa_NE'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
 	eps	= inc_2_eps(inc)
 	scalar_fields = ["v_rot", "v_rad", "v_2t", "v_2r", "v_disp"]
 	vels = {k:best[k] for k in scalar_fields}

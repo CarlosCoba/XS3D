@@ -55,7 +55,7 @@ _FITTED_ATTRS = frozenset({
 	'z_scale', 'v_2r', 'v_2t', 'phi_bar',
 })
 
-def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None, out = '.'):
+def save_rings_fits(name, vmode, best_rings, result, hdr_info, extra_header=None, out = '.'):
 	"""
 	Save the best-fit ring parameters as a FITS binary table.
 
@@ -134,7 +134,8 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 
 	rings = best_rings
 	n = len(rings)
-	dx_arcsec = psf_lsf.pix_arcs
+	dx_arcsec	= hdr_info.pix_arcs
+	pa_N		= hdr_info.pa_north # position angle shift 
 
 
 
@@ -158,8 +159,11 @@ def save_rings_fits(name, vmode, best_rings, result, psf_lsf, extra_header=None,
 			else:
 				values = np.full(n, -1, dtype=np.int32)
 		else:
-			values = np.array([getattr(r, attr) for r in rings],
-							  dtype=np.float32 if fmt == 'E' else np.int32)
+			if attr == 'pa':
+				# shift position angle
+				values = np.array([ (getattr(r, attr)+pa_N)%360 for r in rings ],dtype=np.float32 if fmt == 'E' else np.int32)			
+			else:		
+				values = np.array([ getattr(r, attr) for r in rings ],dtype=np.float32 if fmt == 'E' else np.int32)
 
 		col = fits.Column(
 			name   = fits_name,

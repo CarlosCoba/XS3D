@@ -49,7 +49,7 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 
 	R=best['radius']
 	nrings=len(R)
-	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
+	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa_NE'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
 	eps = inc_2_eps(inc)
 	scalar_fields = ["v_rot"]
 	vels = {k:best[k] for k in scalar_fields}
