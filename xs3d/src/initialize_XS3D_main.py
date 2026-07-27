@@ -9,6 +9,7 @@ import time
 from time import gmtime,strftime
 import copy
 
+from .gradient2d import masked_gradient
 from .get_subcube import sub_mask3D
 from .kinematic_centre_vsys import kincenter as  KC
 from .geometric_moments import geom_moms
@@ -162,11 +163,15 @@ class Run_models:
 		else:
 			vsys_g=eval(vsys_g)
 
-		# compute velocity gradient
-		vgrad = np.gradient(self.mom1)
-		# magnitude of gradient
-		magv = np.sqrt(vgrad[0]**2 + vgrad[1]**2)
+		# compute the gradient to exclude 
+		# potential bad pixels,
+		#vgrad = np.gradient(self.mom1)
+		#magv = np.sqrt(vgrad[0]**2 + vgrad[1]**2)
+		# custom gradient handling zeros
+		vgrad = masked_gradient(self.mom1)
+		magv = np.sqrt(vgrad[0]**2 + vgrad[1]**2)	
 		msk_grad = magv < 400
+				
 		self.datacube = self.datacube*msk_grad
 		self.mom_obs=[self.mom_obs[k]*msk_grad for k in range(3)]
 		mom0_tmp = self.mom_obs[0]
