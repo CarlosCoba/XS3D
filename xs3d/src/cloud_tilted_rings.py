@@ -39,7 +39,7 @@ from scipy.interpolate import interp1d
 
 
 # Convolution engine (pyfftw or scipy fallback) lives in convolution.py
-from .conv_fftw2 import ConvolutionEngine, PYFFTW_AVAILABLE, ADVISOR_AVAILABLE
+from .conv_fftw2 import ConvolutionEngine, PYFFTW_AVAILABLE, ADVISOR_AVAILABLE, optimal_sizes
  
 
 
@@ -734,11 +734,15 @@ class TiltedRingModel:
 		self.cfg_lsf   = psf_lsf		
 		self.rng   = np.random.default_rng(seed)
 		self._rb   = RingBuilder(cube_config, self.rng)
-		
+
+		# Precompute padding if necessary.
+		# We compute this just once.
+		new_size   = optimal_sizes(cube_config, psf_lsf)
+				
 		# ConvolutionEngine owns the FFT plan and PSF cache.
 		# It is created once and reused across all build() calls so
 		# that pyfftw planning cost is paid only on the first call.
-		self._conv = ConvolutionEngine(cube_config, psf_lsf, planner_effort=planner_effort)
+		self._conv = ConvolutionEngine(cube_config, psf_lsf, planner_effort=planner_effort, pad_size=new_size)
 	
 	# ------------------------------------------------------------------
 	# Public API

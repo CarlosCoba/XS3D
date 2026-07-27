@@ -173,7 +173,7 @@ class Run_models:
 
 		# Crop the datacube in case there are a lot of zeros/empty regions
 		# this will save a lot of time
-		cube_ndim, xy_shift, slices, slicecube = sub_mask3D(self.datacube,mom0_tmp,config)
+		cube_ndim, xy_shift, slices, slicecube = sub_mask3D(self.datacube,mom0_tmp,config,self.psf_lsf)
 		xc_g, yc_g = xc_g + xy_shift[0], yc_g + xy_shift[1]
 		self.xy_shift = xy_shift
 

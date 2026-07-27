@@ -71,7 +71,7 @@ from .cloud_tilted_rings import TiltedRingModel, CubeConfig, Ring, RingBuilder
 # Spatial weight map
 # ---------------------------------------------------------------------------
 
-def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_z=3, edge_on_threshold=90.0, vertical_weight=False):
+def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_z=3, edge_on_threshold=88.0, vertical_weight=False):
 	"""
     Boolean mask of the projected galaxy volume out to r_max_px.
 
@@ -163,7 +163,7 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 	# CHANGE 1: branch on inclination regime
 	# ----------------------------------------------------------------
 
-	if inc_deg >= edge_on_threshold:
+	if inc_deg > edge_on_threshold:
         # Edge-on: rectangular strip.
         # Minor-axis half-width hw combines two physical contributions:
         #   r_max_px × cos(inc) : radial extent projected onto minor axis

@@ -109,7 +109,7 @@ class ConvolutionEngine:
 	>>> cube_convolved = engine.apply(cube, verbose=True)
 	"""
 
-	def __init__(self, cfg, psf_lsf, planner_effort='FFTW_ESTIMATE'):
+	def __init__(self, cfg, psf_lsf, new_cube_dims, planner_effort='FFTW_ESTIMATE'):
 		self.cfg 		= cfg
 		pixel 			= cfg.pix_arcs
 		self.beam_fwhm	= psf_lsf.bmaj/pixel
@@ -119,7 +119,7 @@ class ConvolutionEngine:
 		self.sigma_kms	= psf_lsf.sigma_inst_kms
 		self.nthreads	= psf_lsf.nthreads
 
-
+		self.optimal_cube_size = new_cube_dims
 		self.planner_effort = planner_effort
         
 		# Cached state — populated lazily on first apply() call
@@ -198,7 +198,8 @@ class ConvolutionEngine:
 				  f"threads={self.nthreads}")
 
 		# Step 1: optimal FFT sizes
-		nx_fft, ny_fft, nv_fft = self._optimal_sizes(nx, ny, nv, cfg)
+		#nx_fft, ny_fft, nv_fft = self._optimal_sizes(nx, ny, nv, cfg)
+		nx_fft, ny_fft, nv_fft = self.optimal_cube_size	# No need to recompute every time	
 
 		if verbose and (nx_fft, ny_fft, nv_fft) != (nx, ny, nv):
 			print(f"  [PSF] padding {nx}×{ny}×{nv} → "
@@ -452,6 +453,31 @@ def apply_psf_3d(cube, cfg, verbose=False):
 	"""
 	return ConvolutionEngine(cfg).apply(cube, verbose=verbose)
 	
+
+
+def optimal_sizes(cfg,psf_lsf):
+	'''
+	Precompute the optimal size of the datacube to pass to the convolution
+	'''
+	nx =cfg.nx
+	ny =cfg.ny
+	nv =cfg.nv
+	pixel 		= cfg.pix_arcs
+	beam_fwhm	= psf_lsf.bmaj/pixel
+	dv			= psf_lsf.cdelt3_kms
+	sigma_kms	= psf_lsf.sigma_inst_kms
+								
+	"""Return (nx_fft, ny_fft, nv_fft) — padded sizes if beneficial."""
+	if not ADVISOR_AVAILABLE:
+		return nx, ny, nv
+	sigma_chan = sigma_kms / dv if sigma_kms > 0 else 0.0
+	return _optimal_fft_size(
+			nx, ny, nv,
+			beam_fwhm_pix  = beam_fwhm,
+			chan_sigma_chan = sigma_chan,
+			verbose		= False,
+		)
+
 
 ########################################################
 # For bootstrap analysis save the planner to reuse it. #

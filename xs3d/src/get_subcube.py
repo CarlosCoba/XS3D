@@ -3,17 +3,19 @@ import matplotlib.pylab as plt
 from .start_messenge import Print
 
 
-def sub_mask3D(cube, mom, config, f = 0.02, plot = False):
+def sub_mask3D(cube, mom, config, psf_lsf, f = 0.02, plot = 0):
 
 	P=Print()
 			
 	config_general = config['general']
-	get_subcube = config_general.getboolean('subcube',1)
+	f_trim_tmp	= config_general.getfloat('f_trim',0.5)
+	f_trim		= np.clip(f_trim_tmp,0,1)
+	psf_pix		= psf_lsf.fwhm_psf_pix
 
 	xy_shift = [0,0]
 	slices2D = tuple([slice(None,None) for k in range(2)])	
 	slices3D = tuple([slice(None,None,None) for k in range(3)])	
-	if not get_subcube:
+	if f_trim == 0:
 		return cube,xy_shift,slices2D,slices3D
 
 	shape_ori = cube.shape
@@ -26,20 +28,27 @@ def sub_mask3D(cube, mom, config, f = 0.02, plot = False):
 	nx_frac = np.sum(mask, axis = 0) / ntotx
 	ny_frac = np.sum(mask, axis = 1) / ntoty
 	
-	f1 = np.std(nx_frac)*0.5
-	f2 = np.std(ny_frac)*0.5
+	f1 = np.std(nx_frac)*f_trim
+	f2 = np.std(ny_frac)*f_trim
 	
 	indx_x = np.argwhere(nx_frac>f1)
 	indx_y = np.argwhere(ny_frac>f2)
 
-	x1,x2 = min(indx_x)[0], max(indx_x)[0]
-	y1,y2 = min(indx_y)[0], max(indx_y)[0]
+	pad	=	int(psf_pix)
+	x1,x2 = int(min(indx_x)[0]-pad), int(max(indx_x)[0]+pad)
+	y1,y2 = int(min(indx_y)[0]-pad), int(max(indx_y)[0]+pad)
+	x1,x2 = np.clip(x1,0,None),np.clip(x2,None,nx_ori)
+	y1,y2 = np.clip(y1,0,None),np.clip(y2,None,ny_ori)
 	
 	if np.any([x1==x2,y1==y2]):
 		return cube,xy_shift,slices2D,slices3D
 					
 	newcube = cube[:,y1:y2, x1:x2]
-	
+	msk 	= np.ones(newcube.shape[1:])
+	pad0	= pad
+	msk[0:pad0,:]=0;msk[-pad0:,:]=0;msk[:,0:pad0]=0;msk[:,-pad0:]=0
+	newcube *= msk.astype(float)
+
 	xshift, yshift = -x1, -y1
 
 	xy_shift = [xshift, yshift]
