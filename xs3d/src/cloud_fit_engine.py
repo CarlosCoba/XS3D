@@ -71,7 +71,7 @@ from .cloud_tilted_rings import TiltedRingModel, CubeConfig, Ring, RingBuilder
 # Spatial weight map
 # ---------------------------------------------------------------------------
 
-def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_z=3, edge_on_threshold=88.0, vertical_weight=False):
+def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_z=2, edge_on_threshold=89.0, vertical_weight=False):
 	"""
     Boolean mask of the projected galaxy volume out to r_max_px.
 
@@ -225,7 +225,8 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 				#	|y_rot| ≤ sqrt(r_max^2 - x_rot^) * cos(inc) + z_max_px * sin(inc)
 				R_sq        = np.maximum(r_max_px**2 - x_rot**2, 0.0)
 				z_max_px	= z_scale_pix * n_sigma_z
-				y_boundary  = (np.sqrt(R_sq) * cos_inc + z_max_px * np.sin(inc))
+				#y_boundary  = (np.sqrt(R_sq) * cos_inc + z_max_px * np.sin(inc))
+				y_boundary  = (np.sqrt(R_sq) * cos_inc + z_hw_px)				
 				spatial_mask=((np.abs(x_rot) <= r_max_px) &(np.abs(y_rot) <= y_boundary))
 
 				if zweight:
