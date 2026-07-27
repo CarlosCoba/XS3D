@@ -742,7 +742,7 @@ class TiltedRingModel:
 		# ConvolutionEngine owns the FFT plan and PSF cache.
 		# It is created once and reused across all build() calls so
 		# that pyfftw planning cost is paid only on the first call.
-		self._conv = ConvolutionEngine(cube_config, psf_lsf, planner_effort=planner_effort, pad_size=new_size)
+		self._conv = ConvolutionEngine(cube_config, psf_lsf, planner_effort=planner_effort, new_cube_dims=new_size)
 	
 	# ------------------------------------------------------------------
 	# Public API
