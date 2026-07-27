@@ -206,6 +206,8 @@ class Harmonic_model:
 			if self.fitmethod=='nelder': minmethod='Nelder-Mead'
 			if self.fitmethod=='leastsq': minmethod='Levenberg-Marquardt'
 			if self.fitmethod=='powell': minmethod='Powell'
+			
+			if not bootstrap: print(f"Running {minmethod} fit (velocity_model='{self.vmode}')...")			
 
 			method = self.fitmethod
 			if method	== 'nelder':
@@ -233,7 +235,7 @@ class Harmonic_model:
 				fit_kws	  = fit_kws,
 			)
 
-			self.P.status("Best model found !")
+			if not bootstrap: self.P.status("Best model found !")
 			if bootstrap: return  best_rings, result
 			self.vary_params = spec
 

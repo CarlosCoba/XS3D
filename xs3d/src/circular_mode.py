@@ -152,7 +152,7 @@ class Circular_model:
 			if self.vary_disp==0:
 				disp_tab = np.ones_like(disp_tab)*self.disp_kms
 			if self.vary_disp==1:
-				disp_tab = np.ones_like(disp_tab)*np.mean(disp_tab)			
+				disp_tab = np.ones_like(disp_tab)*np.mean(disp_tab)
 
 			# Try to correct the PA if velocities are negative
 			if np.nanmean(vrot_tab) < 0 :
@@ -205,7 +205,7 @@ class Circular_model:
 			if self.fitmethod=='leastsq': minmethod='Levenberg-Marquardt'
 			if self.fitmethod=='powell': minmethod='Powell'
 
-			print(f"Running {minmethod} fit (velocity_model='{self.vmode}')...")
+			if not bootstrap: print(f"Running {minmethod} fit (velocity_model='{self.vmode}')...")
 
 			method = self.fitmethod
 			if method == 'nelder':
@@ -233,7 +233,7 @@ class Circular_model:
 				fit_kws	  = fit_kws,
 			)
 
-			self.P.status("Best model found !")
+			if not bootstrap: self.P.status("Best model found !")
 			if bootstrap: return  best_rings, result
 			self.vary_params = spec
 
@@ -283,7 +283,7 @@ class Circular_model:
 		samples		= {n: [] for n in free_names}
 
 		for k in range(n_boot):
-			if (k+1) % 5 == 0 : print("%s/%s \t bootstraps" %((k+1),self.n_boot))
+			if (k+1) % 5 == 0 : print("  %s/%s \t bootstraps" %((k+1),self.n_boot))
 			rng 	= np.random.default_rng()
 			noise	= rng.standard_normal(obs_cube.shape)
 			obs_cube_tmp= obs_cube +  self.rms*noise
