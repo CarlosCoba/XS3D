@@ -56,10 +56,6 @@ def save_model_h(galaxy,vmode,const,best,best_vels,result,m_hrm,out):
 		tmp = np.array(tmp)
 		vhrm[pvel]=tmp		
 
-	
-
-	print(vhrm)		
-	print(errv)	
 			
 	nx, ny = len(R), 4*m_hrm + 1 + 2
 	data = np.zeros((ny,nx))

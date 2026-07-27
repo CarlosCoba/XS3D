@@ -55,7 +55,7 @@ cdict = {
 
 new_cmap = colors.LinearSegmentedColormap('new_cmap',segmentdata=cdict)
 
-def plot_kin_models_h(galaxy,vmode,best_vals,best_vels, m_hrm, result, out):
+def plot_kin_models_h(galaxy,vmode,best_vals,best_vels,result,m_hrm,out):
 
 	scalar_fields = ["v_disp"]
 	vels = {k:best_vals[k] for k in scalar_fields}
