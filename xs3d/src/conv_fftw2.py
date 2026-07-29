@@ -297,7 +297,8 @@ class ConvolutionEngine:
 
 		# Allocate output buffer matching forward FFT output shape
 		cube_f_shape = self._fft_plan.output_array.shape
-		cube_f_buf   = pyfftw.empty_aligned(cube_f_shape, dtype='complex128')
+		c_dtype = ('complex64' if cube_pad.dtype == np.float32 else 'complex128')		
+		cube_f_buf   = pyfftw.empty_aligned(cube_f_shape, dtype=c_dtype)
 
 		# Inverse: complex → real, output shape = original padded cube shape
 		self._ifft_plan = _fftw_builders.irfftn(

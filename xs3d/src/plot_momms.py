@@ -12,10 +12,10 @@ from matplotlib.offsetbox import AnchoredText
 import matplotlib.ticker as ticker
 from matplotlib.transforms import blended_transform_factory
 
+from .draw_compass import compass
 from .axes_params import axes_ambient as axs
 from .cbar import colorbar as cb
 from .colormaps_CLC import vel_map
-from .barscale import bscale
 from .ellipse import drawellipse, drawrectangle
 from .psf_lsf import PsF_LsF
 from .constants import __c__
@@ -33,7 +33,7 @@ def zero2nan(data):
 cmap = vel_map()
 cmap_mom0 = vel_map('mom0')
 
-def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,out):
+def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,dist,out):
 
 	pixel = hdr_info.pix_arcs
 	nx = hdr_info.nx
@@ -47,7 +47,8 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,ou
 	psf_pix=psf_lsf.fwhm_psf_pix
 	config_clouds=config['clouds']
 	zscale=config_clouds.getfloat('z_scale', 0)
-
+	hdr_cube = hdr_info.hdr
+	
 
 	mom0_mod,mom1_mod,mom2_mod= mom_mod
 	mom0,mom1,mom2=momms_obs
@@ -212,10 +213,8 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,ou
 	cb6=cb(im8,ax8,orientation = "horizontal", colormap = cmap, bbox= (0.1,1,0.8,1),width = "100%", height = '5%',label_pad = -31, label = "$\mathrm{\Delta Mom\,2}$  ($\mathrm{km\,s^{-1}}$)",labelsize=11, ticksfontsize=11)
 	cb6.ax.xaxis.set_ticks_position('top')
 
-	highz=config['high_z']
-	redshift=highz.getfloat('redshift',0)
-	vsysz=vsys + redshift*__c__
-	bar_scale_arc,bar_scale_u,unit=bscale(vsysz,xlength,pixel,config,hdr_info)
+	# barscale
+	bar_scale_arc,bar_scale_u,unit=dist['bar_scale_arc'],dist['bar_scale_u'],dist['unit']
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 
 	'''
@@ -295,7 +294,7 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,ou
 			transform=blended, ha='center', va='bottom',
 			color='k', fontsize=9, clip_on=False)
 
-
+	compass(ax0,hdr_cube)
 	#fig.tight_layout()
 	plt.savefig("%sfigures/mommaps_%s_model_%s.png"%(out,vmode,galaxy),bbox_extra_artists=cb2)
 	#plt.clf()

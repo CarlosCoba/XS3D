@@ -104,7 +104,7 @@ class Angdist:
 
 			# then Vcorrected = Vsys + Vapex*cos theta
 		else:
-			print('No CRVAL1/CRVAL2 was found in the cube Header. No reference frame change was applied.')
+			self.P.long('No CRVAL1/CRVAL2 was found in the cube Header. No reference frame change was applied.')
 
 		return vcor_tmp
 

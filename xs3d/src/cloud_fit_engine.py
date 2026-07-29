@@ -226,7 +226,7 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 				R_sq        = np.maximum(r_max_px**2 - x_rot**2, 0.0)
 				z_max_px	= z_scale_pix * n_sigma_z
 				#y_boundary  = (np.sqrt(R_sq) * cos_inc + z_max_px * np.sin(inc))
-				y_boundary  = (np.sqrt(R_sq) * cos_inc + z_hw_px)				
+				y_boundary  = (np.sqrt(R_sq) * cos_inc + z_hw_px)
 				spatial_mask=((np.abs(x_rot) <= r_max_px) &(np.abs(y_rot) <= y_boundary))
 
 				if zweight:
@@ -537,9 +537,13 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 	differential_evolution) or a flattened residual array (for leastsq /
 	emcee).
 	"""
+	cfg	= cube_cfg
 	[mom0_obs,mom1_obs,mom2_obs]=moms_obs
 	bmaj = psf_lsf.bmaj
-	chi2_scale=np.var(obs_cube)
+	nz	= cfg.nz
+	ny	= cfg.ny
+	nz	= cfg.nx
+
 	def objective(params):
 		new_rings = params_to_rings(params, rings)
 
@@ -547,8 +551,7 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		r_max_cur	= max(r.radius + bmaj for r in new_rings)
 		r_max_cur_pix 	= r_max_cur/cube_cfg.pix_arcs
 		W_cur			= make_weight_map(mom0_obs,psf_lsf,new_rings,alpha=weight_alpha,r_max_px=r_max_cur_pix)
-		W_cur_sum		= np.sum(W_cur)
-		[nz,ny,nx]		= obs_cube.shape
+		W_cur_sum		= np.sum( W_cur*(mom0_obs>0) )
 
 		# Reset the RNG to the fixed seed so that repeated calls with
 		# the same parameters produce the same cube (deterministic chi2).
@@ -577,12 +580,6 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		msk 	= (mom0_obs > 0) & (mom0_mod_tmp > 0) & (W_cur > 0)
 		Ndata	= np.sum(msk)*nz
 
-		# Residuals from moment 1 map
-		lmbda		= 1
-		dv_norm		= cube_cfg.dv
-		res_moms	= ( np.sqrt(lmbda) * np.sqrt(W_cur/W_cur_sum) * (mom1_obs - mom1_mod) )[msk]
-		res_moms	/= dv_norm
-
 		# Residuals from 3D fitting
 		residuals	= (obs_n - mod_n) * msk
 		wresiduals	= np.sqrt(W) * residuals  # weighted residuals
@@ -603,7 +600,6 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		# Return flat residual vector — lmfit sums squares internally.
 		# Works for both scalar methods (nelder, differential_evolution)
 		# and vector methods (leastsq, emcee).
-		#return np.concatenate([residuals.ravel(), res_moms.ravel()])
 		return np.concatenate([wresiduals.ravel()])
 
 	return objective
@@ -720,14 +716,14 @@ def fit_rings(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_prms, cube_
 
 	# before measuring the planner check if there is any available
 	load_fftw_wisdom(cube_cfg)
-	
+
 	model   = TiltedRingModel(cube_cfg, psf_lsf, seed=seed,planner_effort='FFTW_MEASURE')
 
 	# save the planner to reuse it in the future
 	save_fftw_wisdom(cube_cfg)
-	
+
 	obj	 = _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model, verbose)
-	
+
 	if verbose:
 		_print_params_summary(params, rings)
 

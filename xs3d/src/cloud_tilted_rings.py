@@ -772,7 +772,10 @@ class TiltedRingModel:
 				  f"{len(fine_rings)} fine rings "
 				  f"(step = {cfg.radial_step})")
 
-		cube = np.zeros((cfg.nv, cfg.ny, cfg.nx), dtype=np.float64)
+		# reduce the precision from float64 to float32 for cubes
+		# larger than MUSE. This will reduce the memory allocation.
+		f_dtype = np.float32 if cfg.ny * cfg.nx <= 9e4 else np.float64 
+		cube = np.zeros((cfg.nv, cfg.ny, cfg.nx), dtype=f_dtype)
 		for i, ring in enumerate(fine_rings):
 			if verbose and (i % max(1, len(fine_rings) // 10) == 0):
 				print(f"  Ring {i+1:4d}/{len(fine_rings)} "

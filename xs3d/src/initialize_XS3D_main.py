@@ -9,6 +9,7 @@ import time
 from time import gmtime,strftime
 import copy
 
+from .barscale import bscale
 from .gradient2d import masked_gradient
 from .get_subcube import sub_mask3D
 from .kinematic_centre_vsys import kincenter as  KC
@@ -247,9 +248,6 @@ class XS_out(Run_models):
 
 	def results(self):
 
-		# plot momment maps and 1D profiles
-		self.P.status("Plotting results")
-
 		from .save_output import save_rings_fits
 		save_rings_fits(self.galaxy, self.vmode, self.best_rings, self.result, self.hdr_info, extra_header=None, out=self.outdir)
 
@@ -274,6 +272,12 @@ class XS_out(Run_models):
 		const = {k : op(self.best_vals[k]) for k,op in zip(scalar_fields, operator)}
 		const['rmax']	= np.max(self.best_vals['radius'])
 		const['pa_NE']	= (const['pa'] + self.hdr_info.pa_north) % 360
+		
+		# distance and scale bar
+		dist = bscale(const,self.config,self.hdr_info)		
+
+		# plot momment maps and 1D profiles
+		self.P.status("Plotting results")
 
 		plot_rings_sky(self.galaxy,self.mom_obs,self.best_rings,const,self.vmode,self.psf_lsf,self.hdr_info,self.config,self.rms_cube,self.outdir)
 		# save 1d models
@@ -284,7 +288,7 @@ class XS_out(Run_models):
 
 		self.P.status("Creating 0th, 1st and 2nd momment maps")
 
-		plot_mommaps(self.galaxy,mom_mod,self.mom_obs,const,self.vmode,self.psf_lsf,self.hdr_info,self.config,self.outdir)
+		plot_mommaps(self.galaxy,mom_mod,self.mom_obs,const,self.vmode,self.psf_lsf,self.hdr_info,self.config,dist,self.outdir)
 
 		# save moment maps and cube model
 		save_momments(self.galaxy,self.vmode,self.mom_obs,mom_mod,self.datacube,self.mod_cube,self.baselcube,self.hdr_ori,out=self.outdir)
@@ -293,7 +297,7 @@ class XS_out(Run_models):
 
 		out_pvd=pv_array2(self.datacube,self.mod_cube,self.mom_obs,mom_mod,self.hdr_info,self.psf_lsf,self.rms_cube,const)
 
-		plot_pvd(self.galaxy,out_pvd,self.best_vals,const,self.vmode,self.rms_cube,mom_mod,self.mom_obs,self.datacube,self.hdr_info,self.psf_lsf,self.config,self.outdir)
+		plot_pvd(self.galaxy,out_pvd,self.best_vals,const,self.vmode,self.rms_cube,mom_mod,self.mom_obs,self.datacube,self.hdr_info,self.psf_lsf,self.config,dist,self.outdir)
 
 		save_pvds(self.galaxy,self.vmode,out_pvd,self.rms_cube,self.hdr_info,self.outdir)
 

@@ -42,7 +42,7 @@ def save_vrot_z_fits(name, vmode, rings, z_values, filename, profile=None,
 		Output FITS filename.
 	profile : str or None
 		Vertical profile to use ('gaussian', 'exponential', 'sech2').
-		If None (default), each ring's own vertical_vrot_profile
+		If None (default), each ring's own vz_profile
 		attribute is used (rings may differ); if rings disagree, a
 		per-ring choice is honoured and PROFILE in the header is set
 		to 'mixed'.  Pass an explicit profile to override every ring's
@@ -85,9 +85,10 @@ def save_vrot_z_fits(name, vmode, rings, z_values, filename, profile=None,
 		# v_c at ring 0, height z_vals[3]:
 		v = vrz[0, 3]
 	"""
+
 	if not rings[0].vz_gradient:
 		return None
-			
+		
 	z_cale0		= rings[0].z_scale
 	zscale		= z_cale0
 	nhz 		= 6
@@ -110,7 +111,7 @@ def save_vrot_z_fits(name, vmode, rings, z_values, filename, profile=None,
 		zscale_vals[i] = ring.z_scale
  
 		ring_profile = profile if profile is not None \
-					   else ring.vertical_vrot_profile
+					   else ring.vz_profile
 		profile_vals[i] = ring_profile
  
 		if ring.radius <= 0 or ring.z_scale <= 0:

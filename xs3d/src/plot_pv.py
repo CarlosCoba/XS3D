@@ -16,7 +16,6 @@ from matplotlib.offsetbox import AnchoredText
 from .axes_params import axes_ambient as axs
 from .cbar import colorbar as cb
 from .colormaps_CLC import vel_map
-from .barscale import bscale
 from .constants import __c__
 from .ellipse import drawellipse
 from .conv import conv2d,gkernel,gkernel1d
@@ -45,7 +44,7 @@ new_cmap = truncate_colormap(cmap, 0, 0.6)
 cmap = vel_map()
 cmap_pvd = vel_map('pvd')
 
-def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_info,psf_lsf,config,out):
+def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_info,psf_lsf,config,dist,out):
 
 	R=best['radius']
 	nrings=len(R)
@@ -161,10 +160,7 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 		ymin,ymax=-rmax_norm*(4/3.),rmax_norm*(4/3.)
 
 	# bar scale
-	highz=config['high_z']
-	redshift=highz.getfloat('redshift',0)
-	v_sysz=v_sys + redshift*__c__
-	bar_scale_arc,bar_scale_u,unit=bscale(v_sysz,xlength,pixel,config,hdr_info)
+	bar_scale_arc,bar_scale_u,unit=dist['bar_scale_arc'],dist['bar_scale_u'],dist['unit']
 	bar_scale_arc_norm=bar_scale_arc/rnorm
 
 
