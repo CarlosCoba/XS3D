@@ -16,7 +16,6 @@ import matplotlib.patheffects as pe
 
 
 def compass(ax, header=None,
-				 CD1_1=None, CD1_2=None, CD2_1=None, CD2_2=None,
 				 length_frac=0.10,
 				 anchor=(0.85, 0.85),
 				 color='k',
@@ -71,10 +70,10 @@ def compass(ax, header=None,
 	dx_E_px, dy_E_px =  c22/det, -c21/det   # East:  CD^{-1}@(+1,0)
 
 	# ── 3. Normalise to equal physical length in display pixels ───
-	#fig	= ax.figure
-	#bbox   = ax.get_window_extent(renderer=fig.canvas.get_renderer())
-	ax_w   = 1#bbox.width
-	ax_h   = 1#bbox.height
+	fig	= ax.figure
+	bbox   = ax.get_window_extent(renderer=fig.canvas.get_renderer())
+	ax_w   = bbox.width
+	ax_h   = bbox.height
 	target = length_frac * min(ax_w, ax_h)   # display pixels
 
 	xlim = ax.get_xlim();  ylim = ax.get_ylim()
@@ -82,18 +81,24 @@ def compass(ax, header=None,
 	sx   = ax_w / max(xr, 1e-30);   sy = ax_h / max(yr, 1e-30)
 
 	def normalise(dx_px, dy_px):
-		"""Return display-pixel unit vector scaled to target length,
-		then back in axes-fraction."""
-		disp = np.array([dx_px*sx, dy_px*sy])
-		disp = disp / np.linalg.norm(disp) * target
-		return np.array([disp[0]/ax_w, disp[1]/ax_h])
+		"""Normalise to target display-pixel length.
+		Returns (axes-fraction vector, display-pixel unit vector).
+		The display-pixel unit vector is used for the rotation angle —
+		it gives the angle the arrow VISUALLY appears on screen,
+		regardless of axes aspect ratio or data-range distortion.
+		"""
+		disp	  = np.array([dx_px * sx, dy_px * sy])
+		unit_disp = disp / np.linalg.norm(disp)
+		disp_norm = unit_disp * target
+		ax_frac   = np.array([disp_norm[0] / ax_w, disp_norm[1] / ax_h])
+		return ax_frac, unit_disp
 
-	dN = normalise(dx_N_px, dy_N_px)
-	dE = normalise(dx_E_px, dy_E_px)
-	print(dN,dE)
+	dN, uN = normalise(dx_N_px, dy_N_px)
+	dE, uE = normalise(dx_E_px, dy_E_px)
+
 	# ── 4. Anchor clamping — keep tips+labels inside [m, 1-m] ─────
-	margin	= 0.01
-	label_gap = 0.04		  # label centre offset beyond the tip
+	margin	= 0.02
+	label_gap = 0.01		  # label centre offset beyond the tip
 
 	base = np.array(anchor, dtype=float)
 
@@ -108,49 +113,50 @@ def compass(ax, header=None,
 	tip_N = base + dN
 	tip_E = base + dE
 
-	# ── 5. Label: position + rotation ─────────────────────────────
-	# Place the label centre at (tip + unit*gap) and rotate it to
-	# align with the arrow direction.
+	# ── 5. Label: position and alignment (text always upright) ────
+	# The letter N or E should always be readable — never rotated.
+	# Instead of rotating the text, we:
+	#   1. Place it BEYOND the arrow tip, offset along the arrow direction
+	#   2. Choose ha/va from the arrow's display-space quadrant so the
+	#	  label sits cleanly outside the arrowhead without overlapping it.
 	#
-	# Rotation angle = angle of the arrow from axes +x (CCW degrees).
-	# Clamped to [-90°, 90°] so the text is never upside-down:
-	#   arrows pointing left (angle ∈ (90°,270°)) are flipped by 180°.
-	# Alignment: ha='center', va='bottom' — the text baseline sits just
-	# above the arrow tip, centred on the arrow axis.  This keeps the
-	# label close to the arrowhead regardless of rotation.
+	# This matches standard astronomical compass roses (HST, MUSE
+	# pipeline outputs, aplpy): letters are always upright; their
+	# position relative to the tip conveys the direction.
 
-	def label_info(tip, d_ax):
-		unit = d_ax / np.linalg.norm(d_ax)
-		pos  = tip + unit * label_gap
+	def label_info(tip, d_ax, u_disp):
+		"""
+		tip	: axes-fraction tip of arrow
+		d_ax   : axes-fraction arrow vector (for gap offset direction)
+		u_disp : display-pixel unit vector (for quadrant → ha/va)
+		"""
+		unit_ax = d_ax / np.linalg.norm(d_ax)
+		pos	 = tip + unit_ax * label_gap
 
-		# Arrow angle in DISPLAY space (not axes-fraction, to account
-		# for non-square display — same scale factors sx, sy used above)
-		dx_disp = d_ax[0] * ax_w
-		dy_disp = d_ax[1] * ax_h
-		angle_raw = np.degrees(np.arctan2(dy_disp, dx_disp))
+		# Choose alignment so label sits beyond the tip, not on top of it.
+		# Threshold 0.3 avoids ambiguous corners (diagonal arrows).
+		ux, uy = u_disp		   # display-space direction
+		ha = ('left'   if ux >  0.3 else
+			  'right'  if ux < -0.3 else 'center')
+		va = ('bottom' if uy >  0.3 else
+			  'top'	if uy < -0.3 else 'center')
+		return pos, ha, va
 
-		# Clamp to [-90, 90] — never upside-down
-		if   angle_raw >  90: angle_text = angle_raw + 180
-		elif angle_raw < -90: angle_text = angle_raw + 180
-		else:				 angle_text = angle_raw + 90
-
-		return pos, angle_text
-
-	pos_N, rot_N = label_info(tip_N, dN)
-	pos_E, rot_E = label_info(tip_E, dE)
+	pos_N, ha_N, va_N = label_info(tip_N, dN, uN)
+	pos_E, ha_E, va_E = label_info(tip_E, dE, uE)
 
 	# ── 6. Draw ───────────────────────────────────────────────────
 	outline = [pe.withStroke(linewidth=3.0, foreground='w')]
 	trans   = ax.transAxes
 	artists = []
 
-	for tip, (pos, rot), label in [
-		(tip_N, (pos_N, rot_N), 'N'),
-		(tip_E, (pos_E, rot_E), 'E'),
+	for tip, (pos, ha, va), label in [
+		(tip_N, (pos_N, ha_N, va_N), 'N'),
+		(tip_E, (pos_E, ha_E, va_E), 'E'),
 	]:
 		arr = ax.annotate(
 			'',
-			xy	  = tuple(tip),
+			xy	  	= tuple(tip),
 			xytext  = tuple(base),
 			xycoords='axes fraction',
 			textcoords='axes fraction',
@@ -166,18 +172,13 @@ def compass(ax, header=None,
 
 		txt = ax.text(
 			pos[0], pos[1], label,
-			ha='center', va='bottom',   # bottom = above the baseline
-			rotation=rot,
-			rotation_mode='anchor',
+			ha=ha, va=va,
 			transform=trans,
 			color=color,
 			fontsize=fontsize,
-			fontweight='bold',
 			clip_on=False,
 		)
-		#txt.set_path_effects(outline)
+		txt.set_path_effects(outline)
 		artists.append(txt)
 
 	return artists
-	
-	

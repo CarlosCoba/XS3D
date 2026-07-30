@@ -7,9 +7,10 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,AutoMinorLocator)
 from matplotlib.patches import Ellipse
 from itertools import product
-
 from matplotlib.offsetbox import AnchoredText
 from .axes_params import axes_ambient as axs
+
+from .start_messenge import Print
 from .cbar import colorbar as cb
 from .colormaps_CLC import vel_map
 from .barscale import bscale
@@ -32,24 +33,25 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 
 
 	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
-	eps = inc_2_eps(inc)
-	wave_kms=hdr_info.wave_kms
-	[nz,ny,nx]=datacube.shape
-	pixel=hdr_info.scale
+	eps 	= inc_2_eps(inc)
+	wave_kms= hdr_info.wave_kms
+	[nz,ny,nx] = datacube.shape
+	pixel	= hdr_info.scale
+	P		= Print()
 	ext=np.dot([-x_center,nx-x_center,-y_center,ny-y_center],pixel); xc =0; yc =0
 
 
-	pixelconv=pixel
-	bmajconv=bminconv=2*pixel
-	tmp=np.isfinite(cube_mod)
-	tmp_mdl=np.copy(cube_mod)
+	pixelconv	= pixel
+	bmajconv	= bminconv=2*pixel
+	tmp			= np.isfinite(cube_mod)
+	tmp_mdl		= np.copy(cube_mod)
 	tmp_mdl[~tmp]=0
-	psf2d=gkernel([ny,nx],fwhm=None,bmaj=bmajconv,bmin=bminconv,pixel_scale=pixelconv)
+	psf2d		= gkernel([ny,nx],fwhm=None,bmaj=bmajconv,bmin=bminconv,pixel_scale=pixelconv)
 	padded_mdl, cube_slices = data_2N(tmp_mdl, axes=[1, 2])
-	psf3d=np.ones_like(cube_mod)*psf2d
+	psf3d		= np.ones_like(cube_mod)*psf2d
 	padded_psf, _ = data_2N(psf3d, axes=[1, 2])
-	dft=fftconv(padded_mdl,padded_psf,threads=2,axes = [1,2])
-	cube_mod_conv=dft.conv_DFT(cube_slices)
+	dft			= fftconv(padded_mdl,padded_psf,threads=2,axes = [1,2])
+	cube_mod_conv= dft.conv_DFT(cube_slices)
 	del tmp_mdl, tmp
 
 	# plot PSF ellipse ?
@@ -90,8 +92,9 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	figHeight = height * cm_to_inch # width [inch]
 	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
 
-	meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]!=0) & (np.isfinite(datacube[k]))) )/rms for k in range(nz)])
-	chan_sig=(meanflux_chan>0.5) & np.isfinite(meanflux_chan)
+	chan_sig	= np.sum(cube_mod, axis = (1,2)) > rms
+	#meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]!=0) & (np.isfinite(datacube[k]))) )/rms for k in range(nz)])
+	#chan_sig=(meanflux_chan>0.5) & np.isfinite(meanflux_chan)
 	ngood=np.sum(chan_sig)
 
 	l0=7
@@ -113,7 +116,7 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	dup = u[c > 1]
 	if len(dup)>0:
 		chanplot=np.arange(ngood)
-		print('Too many channels to show: Channels wont be displayed in multiples of the channel width')
+		P.long('Too many channels to show: Channels might not be displayed in multiples of the channel width.')
 	chanplot=chanplot.astype(int)
 
 	vmin=rms*(2**-1)
@@ -168,7 +171,6 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
 
 		Axes.plot(xc, yc, marker='+', color = 'black', markeredgewidth=1, zorder=100)
-
 
 
 	for Axes in axes:

@@ -33,6 +33,8 @@ def pv_array(datacube,hdr_cube,momms_mods,vt,r,pa,eps,x0,y0,vsys,pixel,rms,confi
 	#meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]!=0) & (np.isfinite(datacube[k]))) )/rms for k in range(nz)])
 	#chan_sig=(meanflux_chan>0.01) & np.isfinite(meanflux_chan)
 
+	channels = np.sum(cube_mod, axis=(1,2))	
+	
 	# first, select and average those channels with fluxes above 10% the rms noise
 	meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]>=0.1*rms) & (np.isfinite(datacube[k]))) ) for k in range(nz)])
 	# select those channels with fluxes above 10% the rms noise
@@ -169,22 +171,22 @@ def pv_array2(datacube,cube_mod,mom_obs,mom_mod,cube_config,psf_lsf,rms,const):
 	# The following is to avoid plotting all channels from the cube.
 	# Otherwise it is time consuming and not all channels contain signal.
 	#######################################################################
-	#meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]!=0) & (np.isfinite(datacube[k]))) )/rms for k in range(nz)])
-	#chan_sig=(meanflux_chan>0.01) & np.isfinite(meanflux_chan)
-
 	# first, select and average those channels with fluxes above 10% the rms noise
 	meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]>=0.1*rms) & (np.isfinite(datacube[k]))) ) for k in range(nz)])
 	# select those channels with fluxes above 50% the rms noise
-	chan_sig=(meanflux_chan>=0.5*rms) & np.isfinite(meanflux_chan)
-	vchan=wave_kms[chan_sig]
-	vmin, vmax=np.min(vchan), np.max(vchan)
-	chan_msk=(wave_kms>=vmin) & (wave_kms<=vmax)
+	#chan_sig=(meanflux_chan>=0.5*rms) & np.isfinite(meanflux_chan)
+	chan_sig	= np.sum(cube_mod, axis = (1,2)) > rms
+	vchan		= wave_kms[chan_sig]
+	vmin,vmax	= np.min(vchan), np.max(vchan)
+	chan_msk	= (wave_kms>=vmin) & (wave_kms<=vmax)
+	chan_slice	= (np.arange(nz).astype(int))[chan_msk]
+	minz,maxz	= chan_slice.min(), chan_slice.max()
+	slices		= tuple([ slice(minz,maxz+1,None), slice(None,None,None), slice(None,None,None) ])
 	datacube_tmp = np.copy(datacube)
 	cube_mod_tmp = np.copy(cube_mod)
-	datacube_tmp = datacube_tmp
 	wave_kms_tmp = wave_kms[chan_msk]
-	cube_mod_tmp = cube_mod_tmp[:,None][chan_msk[:,None]]
-	datacube_tmp = datacube_tmp[:,None][chan_msk[:,None]]
+	cube_mod_tmp = cube_mod_tmp[slices]#[:,None][chan_msk[:,None]]
+	datacube_tmp = datacube_tmp[slices]#[:,None][chan_msk[:,None]]
 	[nz,ny,nx]=datacube_tmp.shape
 	dv=wave_kms[chan_msk]
 	#######################################################################

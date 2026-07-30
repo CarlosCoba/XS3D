@@ -36,19 +36,19 @@ cmap_mom0 = vel_map('mom0')
 def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,dist,out):
 
 	pixel = hdr_info.pix_arcs
-	nx = hdr_info.nx
-	ny = hdr_info.ny
-	nz = hdr_info.nz
+	nx	= hdr_info.nx
+	ny	= hdr_info.ny
+	nz	= hdr_info.nz
 
-	bmaj_arc=psf_lsf.bmaj
-	bmin_arc=psf_lsf.bmin
-	bpa= psf_lsf.bpa
-	psf_arc=psf_lsf.fwhm_psf_arc
-	psf_pix=psf_lsf.fwhm_psf_pix
+	bmaj_arc	= psf_lsf.bmaj
+	bmin_arc	= psf_lsf.bmin
+	bpa			= psf_lsf.bpa
+	psf_arc		= psf_lsf.fwhm_psf_arc
+	psf_pix		= psf_lsf.fwhm_psf_pix
 	config_clouds=config['clouds']
-	zscale=config_clouds.getfloat('z_scale', 0)
-	hdr_cube = hdr_info.hdr
-	
+	zscale		= config_clouds.getfloat('z_scale', 0)
+	hdr_cube 	= hdr_info.hdr
+	pa_ne 		= hdr_info.pa_north
 
 	mom0_mod,mom1_mod,mom2_mod= mom_mod
 	mom0,mom1,mom2=momms_obs
@@ -74,7 +74,7 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 	else:
 		rlabel='$\'\'$'
 
-	ext = ext/rnorm
+	ext	= ext/rnorm
 	bmin=bmin_arc/rnorm
 	bmaj=bmaj_arc/rnorm
 	z_scale=zscale/rnorm
@@ -177,8 +177,10 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 		#	axs(axes[k],remove_xticks= True)
 
 
-	for k in range(-3,0,1): axes[k].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=12,labelpad=0)
-	for k in range(1,10,3): axes[k-1].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=12,labelpad=0)
+	deltax = 'RA'  if pa_ne == 0 else 'x'
+	deltay = 'Dec' if pa_ne == 0 else 'y'		
+	for k in range(-3,0,1): axes[k].set_xlabel('$\mathrm{ \Delta %s}$ (%s)'%(deltax,rlabel),fontsize=12,labelpad=0)
+	for k in range(1,10,3): axes[k-1].set_ylabel('$\mathrm{ \Delta %s}$ (%s)'%(deltay,rlabel),fontsize=12,labelpad=0)
 
 
 	txt0=['Mom0','Mom1', 'Mom2']
@@ -294,7 +296,11 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 			transform=blended, ha='center', va='bottom',
 			color='k', fontsize=9, clip_on=False)
 
-	compass(ax0,hdr_cube)
+	try:
+		compass(ax0,hdr_cube)
+	except Exception as e:
+		pass
+	
 	#fig.tight_layout()
 	plt.savefig("%sfigures/mommaps_%s_model_%s.png"%(out,vmode,galaxy),bbox_extra_artists=cb2)
 	#plt.clf()

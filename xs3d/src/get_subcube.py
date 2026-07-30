@@ -3,7 +3,7 @@ import matplotlib.pylab as plt
 from .start_messenge import Print
 
 
-def sub_mask3D(cube, mom, config, psf_lsf, f = 0.02, plot = 0):
+def sub_mask3D(cube, mom, config, psf_lsf, f = 0.02, plot = False):
 
 	P=Print()
 			
@@ -35,18 +35,22 @@ def sub_mask3D(cube, mom, config, psf_lsf, f = 0.02, plot = 0):
 	indx_y = np.argwhere(ny_frac>f2)
 
 	pad	=	int(psf_pix)
-	x1,x2 = int(min(indx_x)[0]-pad), int(max(indx_x)[0]+pad)
-	y1,y2 = int(min(indx_y)[0]-pad), int(max(indx_y)[0]+pad)
-	x1,x2 = np.clip(x1,0,None),np.clip(x2,None,nx_ori)
-	y1,y2 = np.clip(y1,0,None),np.clip(y2,None,ny_ori)
+	x1,x2 = int(min(indx_x)[0]-pad), int(max(indx_x)[0]+pad+1) # Index. We need to add 1 cause `slice` last indice is exclusive.
+	y1,y2 = int(min(indx_y)[0]-pad), int(max(indx_y)[0]+pad+1) # Index. We need to add 1 cause `slice` last indice is exclusive.
+	x1,x2 = np.clip(x1,0,None),np.clip(x2,None,nx_ori) # Index
+	y1,y2 = np.clip(y1,0,None),np.clip(y2,None,ny_ori) # Index
 	
 	if np.any([x1==x2,y1==y2]):
 		return cube,xy_shift,slices2D,slices3D
-					
-	newcube = cube[:,y1:y2, x1:x2]
+
+	new_slice = tuple([slice(None,None,None),slice(y1,y2,None), slice(x1,x2,None)])					
+	newcube = cube[new_slice]
 	msk 	= np.ones(newcube.shape[1:])
 	pad0	= pad
 	msk[0:pad0,:]=0;msk[-pad0:,:]=0;msk[:,0:pad0]=0;msk[:,-pad0:]=0
+	
+	#[_,nyy, nxx] = newcube.shape
+	#plt.imshow(msk, origin='lower', extent=[0,nxx,0,nyy]);plt.grid(True);plt.show()
 	newcube *= msk.astype(float)
 
 	xshift, yshift = -x1, -y1
@@ -65,9 +69,12 @@ def sub_mask3D(cube, mom, config, psf_lsf, f = 0.02, plot = 0):
 	
 	if plot:
 		mom_t = mom[slices2D]
+		yc,xc = ny_ori/2, nx_ori/2
 		fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
 		ax1.imshow(np.log10(mom), origin = 'lower')
+		ax1.plot(xc,yc, 'xk')
 		ax2.imshow(np.log10(mom_t), origin = 'lower')
+		ax2.plot(xc+xshift,yc+yshift, 'xk')		
 		ax1.set_title('Original')		
 		ax2.set_title('Cropped')			
 		plt.show()
