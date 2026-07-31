@@ -612,6 +612,7 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 	return objective
 
 
+
 def regularize(params,cube_cfg,smooth_params=['v_rot','v_disp','c_m1']):
 	cfg 	= cube_cfg
 	fitcfg	= cfg.fitting
@@ -631,9 +632,15 @@ def regularize(params,cube_cfg,smooth_params=['v_rot','v_disp','c_m1']):
 		if len(keys) < 3:
 			continue   # need at least 3 points for second differences
 		vals	= np.array([params[k].value for k in keys])
-		v_scale	= max(np.std(vals), 10.0)   # floor at 10 km/s
-		d2		= np.diff(vals, n=2)		 # second differences
+		global_v= np.std(vals) 
+		d1		= np.abs(np.diff(vals))		# first differences, len n-1		
+		d2		= np.diff(vals, n=2)		# second differences, len n-2
+		local_v	= np.maximum(d1[:-1], d1[1:])
+		v_floor	= 10 # km/s
+
 		#pen_vals = np.sqrt(lambda_smooth * chi2_scale) * d2 / v_scale
+		# There are two possible normalization: Global or Local		
+		v_scale	 = np.maximum(local_v,v_floor)
 		pen_vals =  d2 / v_scale		
 		extra_smooth_list.append(pen_vals)
 	if extra_smooth_list:
