@@ -72,7 +72,15 @@ class Run_models:
 		self.galaxy=galaxy
 
 		self.datacube, self.hdr_ori=fits.getdata(datacube,header=True)
+		
+		# Crop cube spectraly
+		msk_w,hdr_tmp,cut_spec=mask_wave(self.hdr_ori,config)
 
+		if cut_spec:
+			self.datacube= self.datacube[msk_w]
+			# Change header if axes are cut
+			self.hdr_ori= hdr_tmp	
+	
 		# Read header information
 		self.hdr_info=Header_info(self.hdr_ori, config)
 
@@ -84,16 +92,6 @@ class Run_models:
 
 		# remove NaN values
 		self.datacube[~np.isfinite(self.datacube)]=0
-
-		#if cut wavelenghts apply here
-		msk_w,hdr_tmp,cut_spec=mask_wave(self.hdr_ori,config)
-
-		if cut_spec:
-			self.datacube= self.datacube[:,None][msk_w[:,None]]
-			# Change header if axes are cut
-			self.hdr_ori= hdr_tmp
-			# update header
-			self.hdr_info=Header_info(self.hdr_ori, config)
 
 		#baseline correction
 		self.datacube,self.baselcube=baselinecor(self.datacube,config)

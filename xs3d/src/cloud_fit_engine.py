@@ -546,9 +546,12 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 
 	def objective(params):
 		new_rings = params_to_rings(params, rings)
+		
+		# Second order differences
+		so_diff	= regularize(params,cfg)
 
 		# Recompute weight map from current geometry — cheap (<1 ms)
-		r_max_cur	= max(r.radius + bmaj for r in new_rings)
+		r_max_cur		= max(r.radius + bmaj for r in new_rings)
 		r_max_cur_pix 	= r_max_cur/cube_cfg.pix_arcs
 		W_cur			= make_weight_map(mom0_obs,psf_lsf,new_rings,alpha=weight_alpha,r_max_px=r_max_cur_pix)
 		W_cur_sum		= np.sum( W_cur*(mom0_obs>0) )
@@ -584,6 +587,9 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		residuals	= (obs_n - mod_n) * msk
 		wresiduals	= np.sqrt(W) * residuals  # weighted residuals
 
+		# penalize second order differences on vrot and sigma
+		p = np.sqrt(1e-3*np.var(obs_n*msk))*so_diff
+		
 		verbose_counter[0] += 1
 		if verbose_counter[0] % 20 == 0 and verbose:
 			cost = float(np.sum(residuals ** 2))
@@ -600,10 +606,41 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		# Return flat residual vector — lmfit sums squares internally.
 		# Works for both scalar methods (nelder, differential_evolution)
 		# and vector methods (leastsq, emcee).
-		return np.concatenate([wresiduals.ravel()])
+		#return np.concatenate([wresiduals.ravel()])
+		return np.concatenate([wresiduals.ravel(), p.ravel()])		
 
 	return objective
 
+
+def regularize(params,cube_cfg,smooth_params=['v_rot','v_disp','c_m1']):
+	cfg 	= cube_cfg
+	fitcfg	= cfg.fitting
+	reg		= fitcfg.getboolean('regularize',False)
+	if not reg:
+		return np.array([0.0])	
+	
+	extra_smooth_list=[]	
+	for pname in smooth_params:
+		extra_smooth = np.array([0.0])	
+
+		# Collect all per-ring values of this parameter in
+		# radius order: param names are e.g. 'v_rot_r0', 'v_rot_r1'
+		keys = sorted([k for k in params if k.startswith(pname + '_r')
+			and params[k].vary],
+		   key=lambda k: int(k.split('_r')[-1]))
+		if len(keys) < 3:
+			continue   # need at least 3 points for second differences
+		vals	= np.array([params[k].value for k in keys])
+		v_scale	= max(np.std(vals), 10.0)   # floor at 10 km/s
+		d2		= np.diff(vals, n=2)		 # second differences
+		#pen_vals = np.sqrt(lambda_smooth * chi2_scale) * d2 / v_scale
+		pen_vals =  d2 / v_scale		
+		extra_smooth_list.append(pen_vals)
+	if extra_smooth_list:
+		extra_smooth = np.concatenate(extra_smooth_list)
+	else:
+		extra_smooth = np.array([0.0])
+	return extra_smooth
 
 # ---------------------------------------------------------------------------
 # Public fitting functions

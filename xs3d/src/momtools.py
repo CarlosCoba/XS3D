@@ -59,37 +59,46 @@ def GaussProf_V(wave_kms,V0,f0,sigma=None,fwhm=None):
 	return fi
 
 
-
 def mask_wave(h,config):
 	config_general = config['general']
-	wmin,wmax=config_general.getfloat('wmin',None),config_general.getfloat('wmax',None)
-	cut = False										
-	if wmin is None and wmax is None:
-		return None, None, False
-
-	hdr=Header_info(h,config)
-	[nz,ny,nx]=hdr.cube_dims()
-	wave_cover=hdr.spectral_axis()
-
-	msk=np.ones_like(wave_cover,dtype=bool)
-	if wmin is not None:
-		msk[:] = wave_cover >= wmin
-	if wmax is not None:		
-		wmax_i = wave_cover <= wmax
-		for j,val in enumerate(wmax_i):
-			if not val: msk[j]=False
-
-	crval3=(wave_cover[msk])[0]
-	cdelt3=wave_cover[1]-wave_cover[0]
+	wmin,wmax =config_general.getfloat('wmin',None),config_general.getfloat('wmax',None)
+	crop 	  = False										
+	if (wmin is None) and (wmax is None):
+		return None, None, crop
 	
+	if wmin is not None and wmax is not None:
+		pass
+	elif wmin is None:
+		wmin=-np.inf
+	else:
+		wmax=np.inf
 	
+	crop = True
+	hdr			= Header_info(h,config)
+	[nz,ny,nx]	= hdr.cube_dims()
+	wave_cover	= hdr.spectral_axis()
+		
+	msk 	= (wave_cover >= wmin) * (wave_cover <= wmax)
+	indices = (np.arange(nz).astype(int))[msk]	
+
+	minz	= np.min(indices)
+	maxz	= np.max(indices)+1
+	minz	= np.clip(minz,0,None)
+	maxz	= np.clip(maxz,None,nz)
+	
+	slices	= tuple([slice(minz,maxz,None),slice(None,None,None),slice(None,None,None)])
+	
+	crval3	= (wave_cover[msk]).min()
+	cdelt3	= wave_cover[1]-wave_cover[0]
+
 	# update header
 	h['CRVAL3']=crval3
 	h['CRPIX3']=1
 	h['CDELT3']=cdelt3
-	h['NAXIS3']=len(wave_cover[msk])
-				
-	return msk,h,True
+	h['NAXIS3']=msk.sum()	
+
+	return slices,h,crop
+
 
 def mommaps(cube,h,config,rms=0):
 	#[nz,ny,nx]=cube.shape
