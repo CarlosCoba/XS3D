@@ -151,9 +151,6 @@ class input_params:
 
 		n_it=config_const.getint("n_it", 0)
 		v_center = config_general.get("v_center", 0)
-		survey = config_general.get("dataset", "-")
-
-
 
 		try:
 			v_center = float(v_center)
@@ -166,7 +163,7 @@ class input_params:
 
 		config = input_config
 
-		x = XS_out(galaxy, vel_map, mask2D, VSYS, PA, INC, X0, Y0, PHI_BAR, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHIB, delta, rstart, rfinal, ring_space, frac_pixel, v_center, bar_min_max, vmode, survey, config, prefix, osi  )
+		x = XS_out(galaxy, vel_map, mask2D, VSYS, PA, INC, X0, Y0, PHI_BAR, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHIB, delta, rstart, rfinal, ring_space, frac_pixel, v_center, bar_min_max, vmode, config, prefix, osi  )
 		out_xs = x.results()
 
 	def __str__(self,txt):

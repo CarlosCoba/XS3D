@@ -55,7 +55,7 @@ def guess_vals(pa_g,inc_g,xc_g,yc_g,vsys_g,PHI_B ):
 
 class Run_models:
 
-	def __init__(self, galaxy, datacube, msk_cube, vsys_g, pa_g, inc_g, xc_g, yc_g, PHI_B, n_it, vary_pa_g, vary_inc_g, vary_XC, vary_YC, vary_vsys_g, vary_PHI, delta, rstart, rfinal, ring_space, frac_pixel, inner_interp, bar_min_max, vmode, survey, config, prefix, osi):
+	def __init__(self, galaxy, datacube, msk_cube, vsys_g, pa_g, inc_g, xc_g, yc_g, PHI_B, n_it, vary_pa_g, vary_inc_g, vary_XC, vary_YC, vary_vsys_g, vary_PHI, delta, rstart, rfinal, ring_space, frac_pixel, inner_interp, bar_min_max, vmode, config, prefix, osi):
 
 		#set time
 		self.start_time=time.time()
@@ -128,7 +128,6 @@ class Run_models:
 		pixel_scale=self.hdr_info.scale
 
 		self.PA_bar_mjr,self.PA_bar_mnr,self.PHI_BAR=0,0,0
-		self.survey=survey
 		self.m_hrm=3
 		self.config=config
 
@@ -195,11 +194,6 @@ class Run_models:
 		guess_prm=guess_vals(pa_g,inc_g,xc_g,yc_g,vsys_g,PHI_B )
 		vary=np.array( [vary_pa_g,vary_inc_g,vary_XC,vary_YC,vary_vsys_g,vary_PHI] )
 
-		self.osi=osi
-		if self.survey not in self.osi :
-			self.kin_params_table="%sana_kin_%s_model.%s.csv"%(self.outdir,self.vmode,self.survey)
-		else:
-			self.kin_params_table="%sana_kin_%s_model.%s.csv"%(self.outdir,self.vmode,self.galaxy)
 
 		if "hrm_" in vmode:
 			try:
