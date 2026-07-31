@@ -587,8 +587,9 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		residuals	= (obs_n - mod_n) * msk
 		wresiduals	= np.sqrt(W) * residuals  # weighted residuals
 
-		# penalize second order differences on vrot and sigma
-		p = np.sqrt(1e-3*np.var(obs_n*msk))*so_diff
+		# penalize second order differences on vrot, sigma, and cm_1
+		lambda_smooth = 1e-3
+		p = np.sqrt(lambda_smooth*np.var(obs_n[:,msk]))*so_diff
 		
 		verbose_counter[0] += 1
 		if verbose_counter[0] % 20 == 0 and verbose:
@@ -611,18 +612,17 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 
 	return objective
 
-
-
 def regularize(params,cube_cfg,smooth_params=['v_rot','v_disp','c_m1']):
 	cfg 	= cube_cfg
 	fitcfg	= cfg.fitting
 	reg		= fitcfg.getboolean('regularize',False)
+	v_floor	= max(cfg.dv/2,5)
+
 	if not reg:
 		return np.array([0.0])	
 	
 	extra_smooth_list=[]	
 	for pname in smooth_params:
-		extra_smooth = np.array([0.0])	
 
 		# Collect all per-ring values of this parameter in
 		# radius order: param names are e.g. 'v_rot_r0', 'v_rot_r1'
@@ -632,21 +632,29 @@ def regularize(params,cube_cfg,smooth_params=['v_rot','v_disp','c_m1']):
 		if len(keys) < 3:
 			continue   # need at least 3 points for second differences
 		vals	= np.array([params[k].value for k in keys])
-		global_v= np.std(vals) 
-		d1		= np.abs(np.diff(vals))		# first differences, len n-1		
+		global_v= np.std(vals)
+		# d1 is the velocity step between ring i and ring i+1 
+		d1		= np.abs(np.diff(vals))		# first differences, len n-1
+		# d2 measures the curvature at interior ring i+1 - how much
+		# ring i+1 deviates from the straight line connecting its two neighbours.		
 		d2		= np.diff(vals, n=2)		# second differences, len n-2
 		local_v	= np.maximum(d1[:-1], d1[1:])
-		v_floor	= 10 # km/s
 
 		#pen_vals = np.sqrt(lambda_smooth * chi2_scale) * d2 / v_scale
-		# There are two possible normalization: Global or Local		
+		# There are two possible normalization: Global or Local.
+		# Taking the maximum of the two adjacent steps gives the largest
+		# possible local_scale, which gives the smallest possible penalty.		
 		v_scale	 = np.maximum(local_v,v_floor)
 		pen_vals =  d2 / v_scale		
 		extra_smooth_list.append(pen_vals)
+
+	# In any container in a boolean context evaluates to True if it
+	# is non-empty and False if it is empty.		
 	if extra_smooth_list:
 		extra_smooth = np.concatenate(extra_smooth_list)
 	else:
 		extra_smooth = np.array([0.0])
+		
 	return extra_smooth
 
 # ---------------------------------------------------------------------------

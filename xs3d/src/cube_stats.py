@@ -148,13 +148,21 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		#the rms that will be passed
 		rms_cube = global_rmse*clip
 
-		rat_sn=cube_smooth / (global_rmse*clip)
-		msk_rms=rat_sn>=1
+		rat_sn	= cube_smooth / (global_rmse*clip)
+		msk_rms	= rat_sn >= 1
+		msk_cube= np.copy(msk_rms)
+		
+		# just search where msk_cube is True
+		msk_tmp	= msk_rms.sum(axis=0) > 0
+		zz		= np.arange(nz)[msk_rms.sum(axis=(1,2))>0]		
+		yy		= np.arange(ny)[msk_tmp.sum(axis=1)>0]
+		xx		= np.arange(nx)[msk_tmp.sum(axis=0)>0]
+					
 
-		msk_cube=np.copy(msk_rms)
-		# add neighbor pixels since they contribute to the beam(ds,dv)
+		# Add neighbor pixels since they contribute to the beam(ds,dv)
 		if ds>1 and dv>1:
-			for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
+			#for i,j,k in product(np.arange(nx),np.arange(ny),np.arange(nz)):
+			for i,j,k in product(xx,yy,zz):			
 				if msk_rms[k,j,i] :
 					dS=ds//2
 					dV=dv//2

@@ -297,7 +297,7 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 			color='k', fontsize=9, clip_on=False)
 
 	try:
-		compass(ax0,hdr_cube)
+		compass(ax0,hdr_cube,pa)
 	except Exception as e:
 		pass
 	

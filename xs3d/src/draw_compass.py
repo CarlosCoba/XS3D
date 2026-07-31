@@ -15,9 +15,8 @@ import numpy as np
 import matplotlib.patheffects as pe
 
 
-def compass(ax, header=None,
+def compass(ax, header=None, pa=0,
 				 length_frac=0.10,
-				 anchor=(0.85, 0.85),
 				 color='k',
 				 fontsize=9,
 				 lw=1.5):
@@ -49,7 +48,16 @@ def compass(ax, header=None,
 			pass
 	else:
 		return None
-	
+
+	quadrant= ( ((pa+90) % 360) // 90 ) + 1
+	pos		= 	(quadrant % 4) + 1
+	if pos == 2:
+		pos+=1
+	if pos == 1: anchor=(0.85, 0.85)
+	if pos == 3: anchor=(0.15, 0.15)
+	if pos == 4: anchor=(0.85, 0.15)	
+
+	print(pa, quadrant, pos)	
 	# ── 1. CD matrix ──────────────────────────────────────────────
 	def _g(k, pc, cd, fb):
 		if k  in header: return float(header[k])
@@ -182,3 +190,5 @@ def compass(ax, header=None,
 		artists.append(txt)
 
 	return artists
+	
+# ( ((-1+90) % 360) // 90 ) + 1	
