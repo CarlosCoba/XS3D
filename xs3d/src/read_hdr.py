@@ -53,7 +53,7 @@ class Header_info:
 		others	= self.config['others']
 		highz	= self.config['high_z']
 		header	= self.config['header']
-		self.fitting	= self.config['header']		
+		self.fitting	= self.config['fitting']		
 
 				
 		self.redshift=highz.getfloat('redshift',None)
