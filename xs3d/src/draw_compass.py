@@ -57,7 +57,6 @@ def compass(ax, header=None, pa=0,
 	if pos == 3: anchor=(0.15, 0.15)
 	if pos == 4: anchor=(0.85, 0.15)	
 
-	print(pa, quadrant, pos)	
 	# ── 1. CD matrix ──────────────────────────────────────────────
 	def _g(k, pc, cd, fb):
 		if k  in header: return float(header[k])
