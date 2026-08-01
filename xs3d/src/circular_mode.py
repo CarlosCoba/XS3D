@@ -186,7 +186,7 @@ class Circular_model:
 			)
 
 
-			cnf_prms=Set_params(self.vmode, self.psf_lsf, R, self.ring_space, self.vary, self.hdr,guess_common)
+			cnf_prms=Set_params(self.vmode, self.psf_lsf, R, self.ring_space, self.rwidth, self.vary, self.hdr,guess_common)
 			guess_rings = cnf_prms.circular(vels)
 			spec = cnf_prms.prms(self.vmode)
 			lmfit_prm=cnf_prms

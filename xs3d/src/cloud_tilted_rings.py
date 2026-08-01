@@ -156,6 +156,7 @@ class Ring:
 	"""
 	radius:		 	float
 	width:		  	float
+	hwidth:			float
 	v_rot:		  	float
 	v_disp:		 	float
 	v_sys:		  	float
@@ -282,7 +283,7 @@ class VerticalProfile:
 # Radial interpolation
 # ---------------------------------------------------------------------------
 
-def _interpolate_rings(rings, radial_step):
+def _interpolate_rings(rings):
 	"""
 	Linearly interpolate all ring parameters onto a fine radial grid.
  
@@ -347,7 +348,8 @@ def _interpolate_rings(rings, radial_step):
 	# For r = 0 (central disk) use the filled-circle area  A = pi*(w/2)^2.
 	# If the first ring is at r=0, use the first ring with r>0 as the
 	# density reference to avoid the degenerate r=0 case dominating.
-	rwidth = ring.width
+	rwidth 		= ring.width
+	rad_step	= ring.hwidth
 	ref_candidates = [r for r in rings if r.radius > 0]
 	ref_ring	   = ref_candidates[0] if ref_candidates else rings[0]
 	ref_area	   = 2.0 * np.pi * ref_ring.radius * ref_ring.width
@@ -356,7 +358,7 @@ def _interpolate_rings(rings, radial_step):
 	# --- Build fine grid ---
 	r_min	  = radii[0]
 	r_max	  = radii[-1]
-	fine_radii = np.arange(r_min, r_max + radial_step, radial_step)
+	fine_radii = np.arange(r_min, r_max + rad_step, rad_step)
  
 	fine_rings = []
 	for k, r in enumerate(fine_radii):
@@ -371,6 +373,7 @@ def _interpolate_rings(rings, radial_step):
  
 		ref_cloud_den=clouds[0]
 		n_cl  = max(int(ref_cloud_den * area), 1000)
+		n_cl  = max(int(ref_cloud_den * area), 1)		
  
 		# Interpolate harmonic coefficients at this radius
 		h = {m: (float(harm_interps[(m, 'c')](r)),
@@ -387,6 +390,7 @@ def _interpolate_rings(rings, radial_step):
 		fine_rings.append(Ring(
 			radius		= float(r),
 			width	   	= float(width),
+			hwidth	   	= float(rad_step),			
 			v_rot	   	= v_rot_r,
 			v_disp	  	= float(interps["v_disp"](r)),
 			v_sys	   	= float(interps["v_sys"](r)),
@@ -457,8 +461,8 @@ class RingBuilder:
 			r[0]=0
 		else:
 			r = ring.radius + self.rng.uniform(
-					-0.5 * ring.width, 0.5 * ring.width, n)
-					
+					-0.5 * ring.hwidth, 0.5 * ring.hwidth, n)
+
 		x_disk = r * np.cos(phi)
 		y_disk = r * np.sin(phi)
 		z_disk = VerticalProfile.sample(
@@ -661,8 +665,11 @@ class RingBuilder:
 		x_disk, y_disk, z_disk, phi 	= self._sample_ring_positions(ring, n)
 		x_pix, y_pix			   		= self._disk_to_sky(
 										 x_disk, y_disk, z_disk, ring)
-										 
-
+		
+		# Check plot :  Plot 3D cloud distribution.
+		#fig = plt.figure()
+		#ax = fig.add_subplot(projection='3d')
+		#ax.scatter(x_disk, y_disk, z_disk, marker = 'o');plt.show()
 		vrot_scale = None
 		if ring.vz_gradient and ring.z_scale > 0 and ring.radius > 0:
 			from .vertical_rotation import get_table
@@ -766,7 +773,7 @@ class TiltedRingModel:
 		cfg = self.cfg
 		cfg_lsf = self.cfg_lsf
 		# Interpolate onto fine radial grid to eliminate gaps
-		fine_rings = _interpolate_rings(rings, cfg_lsf.radial_step)
+		fine_rings = _interpolate_rings(rings)
 		if verbose:
 			print(f"  Interpolated {len(rings)} input rings → "
 				  f"{len(fine_rings)} fine rings "
@@ -786,14 +793,20 @@ class TiltedRingModel:
 			self._rb.build_ring(ring, cube)
 
 		# Delegate convolution to ConvolutionEngine (convolution.py)
-		#xc,yc = 28, 37
-		#plt.plot(np.arange(cube.shape[0]), cube[:, yc, xc], 'k-');plt.show()
-		#plt.imshow(np.sum(cube, axis = 0), origin = 'lower');plt.show()						
-		#msk = np.sum(cube, axis = 0) =! 0
+		
+		# Check plot: Plot raw moment 0 map
+		#xc, yc	= cfg.ny//2, cfg.nx//2
+		#w		= np.arange(cfg.nz)
+		#mom0_tmp = cube.sum(axis=0)								
+		#plt.plot(w, cube[:, yc, xc], 'k-',label='raw cube');plt.show()
+		
 		cube = self._conv.apply(cube, verbose=False)
-		#plt.imshow(np.sum(cube, axis = 0), origin = 'lower');plt.show()				
-		#plt.plot(np.arange(cube.shape[0]), cube[:, yc, xc], 'r-');plt.show()
-		return cube#*msk
+		
+		#mom0_tmp_conv = cube.sum(axis=0)												
+		#plt.imshow(mom0_tmp*(mom0_tmp/mom0_tmp), origin = 'lower');plt.show()				
+		#plt.plot(w, cube[:, yc, xc], 'r-',label='conv. cube');plt.show()
+		
+		return cube
 
 	def velocity_axis(self) -> np.ndarray:
 		"""Return velocity axis [km/s] for all channels."""

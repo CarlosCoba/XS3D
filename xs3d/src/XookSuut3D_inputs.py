@@ -30,6 +30,7 @@ set_threads(nthreads)
 import numpy as np
 from .initialize_XS3D_main import XS_out
 from .pixel_params import eps_2_inc
+from .man import print_manual
 """
 #################################################
 # 				XookSuut3D (XS3D)				#
@@ -41,9 +42,13 @@ from .pixel_params import eps_2_inc
 
 class input_params:
 	def __init__(self):
+		if nargs == 2:
+			if sys.argv[1] == '-help':
+				print_manual()
+				quit()
 		if (nargs < 19 or nargs > 22):
 			print('')
-			print (" USE: XS3D name cube.fits [mask] [pa] [inc] [xc] [yc] [vsys] vary_pa vary_inc vary_xc vary_yc vary_vsys ring_space [delta] rstart,rfinal cover kin_model [r_nc_min,r_nc_max] [config_file] [prefix]" )
+			print (" USE: XS3D name cube.fits [mask] [pa] [inc] [xc] [yc] [vsys] vary_pa vary_inc vary_xc vary_yc vary_vsys ring_space [delta] rstart,rfinal cover kin_model [r_nc_min,r_nc_max] config_file [prefix]" )
 			print(' ~~~~~~~~~~')
 			print(' Copy the config file located at  '
 				'xs3d/config_file/xs_conf.ini and place it in your working directory.')
@@ -73,9 +78,8 @@ class input_params:
 		vary_PHIB = 1
 
 		# Rings configuration
-		ring_space = float(sys.argv[14])
-		delta = sys.argv[15]
-		#rstart, rfinal =  eval(sys.argv[16])
+		ring_space	= float(sys.argv[14])
+		delta		= sys.argv[15]
 		rstart_rfinal =  sys.argv[16]
 		rstart_rfinal = rstart_rfinal.split(',')
 		rstart,rfinal =	rstart_rfinal
@@ -105,9 +109,10 @@ class input_params:
 
 
 		if delta in osi:
-			delta = ring_space/2.
+			delta_tmp = ring_space/2.
 		else:
-			delta = float(delta)
+			delta_tmp = float(delta)		
+		delta	= np.clip(delta_tmp,0,ring_space)
 
 		if r_bar_min_max in osi: r_bar_min_max = np.inf
 		if vmode not in ["circular","radial","bisymmetric","vertical", "ff"] and "hrm_" not in vmode: print("XookSuut: choose a proper kinematic model !"); quit()
@@ -135,20 +140,6 @@ class input_params:
 		config_const = input_config['fitting']
 		config_general = input_config['general']
 
-		PA = config_const.get('PA', PA)
-		INC = config_const.get('INC', INC)
-		X0 = config_const.get('X0', X0)
-		Y0 = config_const.get('Y0', Y0)
-		VSYS = config_const.get('VSYS', VSYS)
-		PHI_BAR = config_const.getfloat('PHI_BAR', 45)
-
-		vary_PA = config_const.getboolean('FIT_PA', vary_PA)
-		vary_INC = config_const.getboolean('FIT_INC', vary_INC)
-		vary_XC = config_const.getboolean('FIT_X0', vary_XC)
-		vary_YC = config_const.getboolean('FIT_Y0', vary_YC)
-		vary_VSYS = config_const.getboolean('FIT_VSYS', vary_VSYS)
-		vary_PHIB = config_const.getboolean('FIT_PHI_BAR', vary_PHIB)
-
 		n_it=config_const.getint("n_it", 0)
 		v_center = config_general.get("v_center", 0)
 
@@ -161,6 +152,7 @@ class input_params:
 			quit()
 
 
+		PHI_BAR = 45
 		config = input_config
 
 		x = XS_out(galaxy, vel_map, mask2D, VSYS, PA, INC, X0, Y0, PHI_BAR, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHIB, delta, rstart, rfinal, ring_space, frac_pixel, v_center, bar_min_max, vmode, config, prefix, osi  )

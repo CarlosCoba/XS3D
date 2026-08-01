@@ -41,17 +41,18 @@ Dependencies
 
 Installation
 ===========
+0. Download or clone the repository. Then unzip the files.
 
 1. Go to the XS3D directory
 cd /XS3D/
 
 2.  pip install .
 
-3. Try it. Go to any folder and type XS3D
+3. Try it. Go to any directory and type XS3D, or type XS3D -help for  help. 
 
 you must get the following :
 ```
-USE: XS3D name cube.fits [mask] [PA] [INC] [X0] [Y0] [VSYS] vary_PA vary_INC vary_X0 vary_Y0 vary_VSYS ring_space [delta] Rstart,Rfinal cover kin_model [R_bar_min,R_bar_max] [config_file] [prefix]
+USE: XS3D name cube.fits [mask] [pa] [inc] [xc] [yc] [vsys] vary_pa vary_inc vary_xc vary_yc vary_vsys ring_space [delta] rstart,rfinal cover kin_model [r_nc_min,r_nc_max] config_file [prefix]
 ```
 
 * Make sure FFTW is already installed in your system, otherwise pyFFTW will raise an installation Error.

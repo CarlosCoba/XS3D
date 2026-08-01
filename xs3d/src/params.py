@@ -9,18 +9,21 @@ from .cloud_fit_engine import (
 
 class Set_params:
 	
-	def __init__(self, vmode, psf_lsf, rings, rwidth, vary, hdr, guess_common, m_hrm=0):
+	def __init__(self, vmode, psf_lsf, rings, rwidth, delta, vary, hdr, guess_common, m_hrm=0):
 		self.R = rings
 		R_nc = self.R['R_nc']		
 		self.nrings = len(self.R['R_pos'])
 		bmaj = psf_lsf.bmaj
 		# width is the radial extent of a single anchor ring in the galaxy disk plane.
-		self.width = rwidth
+		self.width	= rwidth
+		self.hwidth = delta
+		
 		# When ring_spacing < PSF_FWHM :
-		if rwidth < bmaj:
+		#if rwidth < bmaj:
 			# This means each fine ring is thinner than one beam:	
-			self.width 			= bmaj # (never wider than the spacing)
-			psf_lsf.radial_step = bmaj # (fine grid matches the spacing)
+		#	self.width 			= bmaj # (never wider than the spacing)
+		#	psf_lsf.radial_step = bmaj # (fine grid matches the spacing)
+
 		
 		self.common = guess_common
 		self.nx 	= hdr.nx
@@ -37,17 +40,17 @@ class Set_params:
 		#self.vary_nc = ['free' if R_nc[k] else 0 for k in range(self.nrings) ]
 		self.vary_nc = [replacements.get(x, x) for k,x in enumerate(R_nc)  ]
 				
-		self.vary_disp =  replacements[fit_disp]
-		nclouds = guess_common['n_clouds']
-		self.inc = guess_common['inc']
+		self.vary_disp	=  replacements[fit_disp]
+		nclouds 		= guess_common['n_clouds']
+		self.inc		= guess_common['inc']
 		
 		nclouds_per_pix = nclouds/self.dx**2 
-		self.nclouds = [ nclouds_per_pix for k in range(self.nrings)]		
+		self.nclouds	= [ nclouds_per_pix for k in range(self.nrings)]		
 			
 	def circular(self,vels):
 		disp_tab,vrot_tab,vrad_tab,vtan_tab = vels
 		guess_rings = [
-					Ring(radius= self.R['R_pos'][k], nclouds=self.nclouds[k], width=self.width, v_rot=vrot_tab[k], v_disp=disp_tab[k],\
+					Ring(radius= self.R['R_pos'][k], nclouds=self.nclouds[k], width=self.width, hwidth=self.hwidth, v_rot=vrot_tab[k], v_disp=disp_tab[k],\
 					v_rad=vrad_tab[k], v_2r=vrad_tab[k], v_2t=vtan_tab[k], **self.common) for k in range(self.nrings)
 				]				
 		return guess_rings
@@ -65,7 +68,7 @@ class Set_params:
 
 		guess_rings=[]
 		for k in range(self.nrings):
-				ring_k = Ring( radius= self.R['R_pos'][k], width=self.width, v_rot=vrot[k],v_disp=vdisp[k], harmonics={(m+1): (c_k[m,:][k], s_k[m,:][k]) for m in range(m_hrm)}, **self.common )
+				ring_k = Ring( radius= self.R['R_pos'][k], width=self.width, hwidth=self.hwidth, v_rot=vrot[k],v_disp=vdisp[k], harmonics={(m+1): (c_k[m,:][k], s_k[m,:][k]) for m in range(m_hrm)}, **self.common )
 				guess_rings.append(ring_k)
 		return guess_rings
 
