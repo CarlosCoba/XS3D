@@ -49,13 +49,22 @@ def compass(ax, header=None, pa=0,
 	else:
 		return None
 
-	quadrant= ( ((pa+90) % 360) // 90 ) + 1
-	pos		= 	(quadrant % 4) + 1
+	quadrant	= ( ((pa+90) % 360) // 90 ) + 1
+	quad_mjr_res = quadrant			# position of m.a. residing side
+	quad_mjr_apr= quad_mjr_res+2	# position of m.a. approching side.
+	pos		= 	(quad_mjr_res % 4) + 1
 	if pos == 2:
 		pos+=1
-	if pos == 1: anchor=(0.85, 0.85)
-	if pos == 3: anchor=(0.15, 0.15)
-	if pos == 4: anchor=(0.85, 0.15)	
+	if pos == quad_mjr_apr:
+		pos+=1
+	if pos == 1:
+		anchor=(0.85, 0.85)
+	elif pos == 3:
+		anchor=(0.15, 0.15)
+	elif pos == 4:
+		anchor=(0.85, 0.15)
+	else:
+		anchor=(0.15, 0.85)		
 
 	# ── 1. CD matrix ──────────────────────────────────────────────
 	def _g(k, pc, cd, fb):

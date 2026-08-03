@@ -55,7 +55,7 @@ except ImportError:
 	PYFFTW_AVAILABLE = False
 
 try:
-	from fft_size_advisor import (
+	from .fft_size_advisor import (
 		pad_cube		as _pad_cube,
 		unpad_cube	  as _unpad_cube,
 		optimal_fft_size as _optimal_fft_size,
@@ -109,8 +109,9 @@ class ConvolutionEngine:
 	>>> cube_convolved = engine.apply(cube, verbose=True)
 	"""
 
-	def __init__(self, cfg, psf_lsf, new_cube_dims, planner_effort='FFTW_ESTIMATE'):
+	def __init__(self, cfg, psf_lsf, new_cube_dims=None, planner_effort='FFTW_ESTIMATE'):
 		self.cfg 		= cfg
+		self.psf_lsf	= psf_lsf
 		pixel 			= cfg.pix_arcs
 		self.beam_fwhm	= psf_lsf.bmaj/pixel
 		self.bmin_fwhm	= psf_lsf.bmin/pixel
@@ -185,7 +186,8 @@ class ConvolutionEngine:
 		7. Inverse FFT.
 		8. Trim back to original shape.
 		"""
-		cfg = self.cfg
+		cfg 	= self.cfg
+		cfg_lsf = self.psf_lsf	
 		nv, ny, nx = cube.shape
 
 		if verbose:
@@ -197,16 +199,27 @@ class ConvolutionEngine:
 				  f"chan_width={self.sigma_kms:.2f} km/s  "
 				  f"threads={self.nthreads}")
 
-		# Step 1: optimal FFT sizes
-		#nx_fft, ny_fft, nv_fft = self._optimal_sizes(nx, ny, nv, cfg)
-		nx_fft, ny_fft, nv_fft = self.optimal_cube_size	# No need to recompute every time	
 
-		if verbose and (nx_fft, ny_fft, nv_fft) != (nx, ny, nv):
+        # Step 0: Spectral padding to prevent wrap-around artifacts
+		sp			  = spec_pad(cfg,cfg_lsf)
+		cube_spec_pad = np.pad(cube, ((sp, sp), (0, 0), (0, 0)),
+                                   mode='constant', constant_values=0.0)
+                                   		                
+		nv_pad		= nv + 2 * sp # new size of spectral axis.
+		
+		# Step 1: optimal FFT sizes
+
+		if self.optimal_cube_size is not None:
+			nx_fft, ny_fft, nv_fft = self.optimal_cube_size
+		else:
+			nx_fft, ny_fft, nv_fft = self._optimal_sizes(nx, ny, nv_pad, cfg)		
+
+		if verbose and (nx_fft, ny_fft, nv_fft) != (nx, ny, nv_pad):
 			print(f"  [PSF] padding {nx}×{ny}×{nv} → "
 				  f"{nx_fft}×{ny_fft}×{nv_fft} (FFTW-optimal)")
 
 		# Step 2: zero-pad
-		cube_pad, orig_shape = self._pad(cube, nx_fft, ny_fft, nv_fft)
+		cube_pad, orig_shape = self._pad(cube_spec_pad, nx_fft, ny_fft, nv_fft)
 
 		# Step 3: plan FFT (once only)
 		if self._needs_replanning(nx_fft, ny_fft, nv_fft):
@@ -235,7 +248,8 @@ class ConvolutionEngine:
 		result_pad = self._ifft_plan()
 
 		# Step 8: trim back
-		result = self._unpad(result_pad, orig_shape)
+		result_tmp	= self._unpad(result_pad, orig_shape)	# shape: (nv_pad, ny, nx)
+		result		= result_tmp[sp:sp + nv]				# shape: (nv_pad, ny, nx)
 		
 		return np.ascontiguousarray(result)
 
@@ -455,7 +469,23 @@ def apply_psf_3d(cube, cfg, verbose=False):
 	return ConvolutionEngine(cfg).apply(cube, verbose=verbose)
 	
 
-
+def spec_pad(cfg,psf_lsf):
+	'''
+	Always padd along spectral axis to avoid artifacts.
+	This is importan if the emission line is located at one of the
+	two extremes along the spectral axis.
+	
+	Returns
+	---------
+	sp		: the pading needed to be applied at each extreme of the z axis.
+	'''
+	nv 			= cfg.nv
+	dv			= psf_lsf.cdelt3_kms
+	sigma_kms	= psf_lsf.sigma_inst_kms
+	sigma_chan	= sigma_kms/dv if sigma_kms > 0 else 0.0
+	sp			= int(np.ceil(3.0 * sigma_chan))   # e.g. sp=4 for sigma_ch=1
+	return sp
+		
 def optimal_sizes(cfg,psf_lsf):
 	'''
 	Precompute the optimal size of the datacube to pass to the convolution
@@ -463,6 +493,9 @@ def optimal_sizes(cfg,psf_lsf):
 	nx =cfg.nx
 	ny =cfg.ny
 	nv =cfg.nv
+	sp =spec_pad(cfg,psf_lsf) #
+	nv_pad		= nv + 2 * sp #
+			
 	pixel 		= cfg.pix_arcs
 	beam_fwhm	= psf_lsf.bmaj/pixel
 	dv			= psf_lsf.cdelt3_kms
@@ -473,7 +506,7 @@ def optimal_sizes(cfg,psf_lsf):
 		return nx, ny, nv
 	sigma_chan = sigma_kms / dv if sigma_kms > 0 else 0.0
 	return _optimal_fft_size(
-			nx, ny, nv,
+			nx, ny, nv_pad,
 			beam_fwhm_pix  = beam_fwhm,
 			chan_sigma_chan = sigma_chan,
 			verbose		= False,

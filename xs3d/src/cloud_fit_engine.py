@@ -528,7 +528,7 @@ def params_to_rings(params, rings):
 # ---------------------------------------------------------------------------
 
 def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed,
-					verbose_counter, model, verbose):
+					verbose_counter, model, verbose, method):
 	"""
 	Return a closure that lmfit.minimize can call.
 
@@ -544,6 +544,20 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 	ny	= cfg.ny
 	nz	= cfg.nx
 
+
+	eflux = obs_emap
+	obs_n	= obs_cube / eflux
+	max_r 	= np.max([r.radius + bmaj for r in rings])
+	W_obs	= make_weight_map(mom0_obs,psf_lsf,rings,alpha=weight_alpha,r_max_px=max_r)*(mom0_obs>0)
+	W_obs_sum = np.sum(W_obs)
+	W_norm	= W_obs / W_obs_sum
+	
+	d2_null = np.zeros((cfg.ny, cfg.nx), dtype=np.float32)
+	for v in range(cfg.nv):
+		ch = obs_n[v]
+		d2_null += ch * ch 
+	chi2_scale = float(np.dot(d2_null.ravel(), W_norm.ravel()))		
+									
 	def objective(params):
 		new_rings = params_to_rings(params, rings)
 		
@@ -563,37 +577,38 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		model._rb  = RingBuilder(cube_cfg, model.rng)
 		mod_cube   = model.build(new_rings, verbose=False)
 
-		obs_peak = obs_cube.max()
-		if obs_peak == 0:
-			cost = np.ones(obs_cube.size) * 1e15
-			return cost
-
-		#eflux = obs_peak
-		eflux = obs_emap
-
 		mom0_mod_tmp	= cube_oper.obs_mommaps(mod_cube,mom_out=(0))
 		mom0_msk		= (mom0_obs > 0) & (mom0_mod_tmp > 0)
 		mod_cube_norm	= mod_cube*np.divide(mom0_obs,mom0_mod_tmp,where=mom0_msk,out=np.zeros_like(mom0_mod_tmp))
 		mom0_mod, mom1_mod = cube_oper.obs_mommaps(mod_cube_norm,mom_out=(0,1))
 
-		obs_n	= obs_cube / eflux
+
 		mod_n 	= mod_cube_norm / eflux
-		W 		= W_cur[np.newaxis, :, :]
+		W 		= W_cur#[np.newaxis, :, :]
 		W		= W / W_cur_sum
 		msk 	= (mom0_obs > 0) & (mom0_mod_tmp > 0) & (W_cur > 0)
 		Ndata	= np.sum(msk)*nz
 
 		# Residuals from 3D fitting
 		residuals	= (obs_n - mod_n) * msk
-		wresiduals	= np.sqrt(W) * residuals  # weighted residuals
 
 		# penalize second order differences on vrot, sigma, and cm_1
 		lambda_smooth = 1e-3
-		p = np.sqrt(lambda_smooth*np.var(obs_n[:,msk]))*so_diff
-		
+		p	= np.sqrt(lambda_smooth*chi2_scale)*so_diff	
+		p2	= p*p			
+
+		if method != 'least_squares':		
+			# Inplace multiplication of residuals	
+			np.multiply(residuals, residuals, out=residuals)
+			d2_sum = residuals.sum(axis=0)
+			chi2_3d = float(np.dot(d2_sum.ravel(), W.ravel()))
+		else:
+			wresiduals	= np.sqrt(W) * residuals  # weighted residuals
+				
+ 
 		verbose_counter[0] += 1
 		if verbose_counter[0] % 20 == 0 and verbose:
-			cost = float(np.sum(residuals ** 2))
+			cost	= float(np.sum(residuals)) if method != 'least_squares' else float(np.sum(residuals** 2))		
 			free_vals = {k: f"{v.value:.2f}"
 						 for k, v in params.items() if v.vary}
 			Nvary = len(free_vals)
@@ -604,23 +619,32 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 				  + "  ".join(f"{k}={v}" for k, v in
 							   list(free_vals.items())[:6]))
 
-		# Return flat residual vector — lmfit sums squares internally.
-		# Works for both scalar methods (nelder, differential_evolution)
-		# and vector methods (leastsq, emcee).
-		#return np.concatenate([wresiduals.ravel()])
-		return np.concatenate([wresiduals.ravel(), p.ravel()])		
+		# return scalar chi2.
+		if method != 'least_squares': 				
+			return chi2_3d + np.sum(p2)
+		else:
+		# return not squared array.
+			return np.concatenate([ wresiduals.ravel(), p.ravel()])	
 
 	return objective
 
-def regularize(params,cube_cfg,smooth_params=['v_rot','v_disp','c_m1']):
+def regularize(params,cube_cfg):
 	cfg 	= cube_cfg
 	fitcfg	= cfg.fitting
-	reg		= fitcfg.getboolean('regularize',False)
+	reg_kin		= fitcfg.getboolean('reg_kin',False)
+	reg_geo		= fitcfg.getboolean('reg_geo',False)
+		
 	v_floor	= max(cfg.dv/2,5)
-
-	if not reg:
+	if not reg_geo and not reg_kin:
 		return np.array([0.0])	
-	
+
+	if reg_kin and reg_kin:
+		smooth_params = ['v_rot','v_disp','c_m1', 'pa', 'inc', 'x_center', 'y_center']
+	elif reg_geo:
+		smooth_params = ['pa', 'inc','x_center', 'y_center']
+	elif reg_kin:
+		smooth_params = ['v_rot','v_disp','c_m1']
+
 	extra_smooth_list=[]	
 	for pname in smooth_params:
 
@@ -774,7 +798,7 @@ def fit_rings(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_prms, cube_
 	# save the planner to reuse it in the future
 	save_fftw_wisdom(cube_cfg)
 
-	obj	 = _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model, verbose)
+	obj	 = _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model, verbose, method)
 
 	if verbose:
 		_print_params_summary(params, rings)

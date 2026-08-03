@@ -212,6 +212,7 @@ class Circular_model:
 				options = {'xatol'  : 1e-3,'fatol'  : 1e-3,'maxiter': 3000, 'adaptive': True}
 				fit_kws = {'options': options,}
 			if method == 'leastsq':
+				method	= 'least_squares'
 				fit_kws = {}
 			if method   == 'powell':
 				options = {'xtol': 1e-2, 'ftol': 1e-2}
@@ -227,10 +228,10 @@ class Circular_model:
 				self.psf_lsf,
 				cube_oper,
 				weight_alpha = self.weights,
-				method	   = method,
-				seed		 = self.seed,
-				verbose	  = verbose,
-				fit_kws	  = fit_kws,
+				method = method,
+				seed = self.seed,
+				verbose	= verbose,
+				fit_kws = fit_kws,
 			)
 
 			if not bootstrap: self.P.status("Best model found !")

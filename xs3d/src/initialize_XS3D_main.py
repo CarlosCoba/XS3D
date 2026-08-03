@@ -39,7 +39,7 @@ from .convolve_cube import Cube_creation,Cube_operations
 from .momtools import mask_wave
 from .pv import pv_array2
 from .plot_pv import plot_pvd
-from .cube_stats import cstats,baselinecor,ecube,mask_cube,stats_cube_2d
+from .cube_stats import cstats,baselinecor,ecube,mask_cube,stats_cube_2d,mask_user
 valid_strings_for_optional_inputs=["", "-", ".", ",", "#","%", "&","None"]
 
 from .psf_lsf import PsF_LsF
@@ -86,6 +86,8 @@ class Run_models:
 
 		self.P.cubehdr(self.hdr_info)
 
+		self.hdr_info.object=galaxy		
+		
 		# Print
 		self.P.out('V Doppler',self.hdr_info.vdoppler)
 		self.P.configprint(self.hdr_info,config)
@@ -93,17 +95,18 @@ class Run_models:
 		# remove NaN values
 		self.datacube[~np.isfinite(self.datacube)]=0
 
+		# apply user mask
+		if msk_cube in osi: msk_cube=None
+		mask_user(self.datacube,msk_cube)		
+		
 		#baseline correction
 		self.datacube,self.baselcube=baselinecor(self.datacube,config)
 
-		# apply rms-based-mask to the cube
-		if msk_cube in osi: msk_cube=None
-		self.msk2d_cube=msk_cube
-		rms3d,self.rms_cube,vpeak2D=mask_cube(self.datacube,config,self.hdr_info,msk_user=self.msk2d_cube)
+		# apply rms-based-mask to the cube		
+		rms3d,self.rms_cube,vpeak2D=mask_cube(self.datacube,config,self.hdr_info)
 		self.datacube=self.datacube*rms3d
 		self.hdr_ori['RMS']=self.rms_cube
 		self.hdr_info.rms = self.rms_cube
-		self.hdr_info.object=galaxy		
 
 		# psf class
 		self.psf_lsf=PsF_LsF(self.hdr_info, config)

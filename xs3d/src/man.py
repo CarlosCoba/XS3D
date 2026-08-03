@@ -16,7 +16,7 @@ def print_manual():
 
 	p_width = 18
 	o_width = 10
-	d_width = 74
+	d_width = 52
 
 	header = (
 		f"{'Parameter':<{p_width}}"

@@ -4,7 +4,7 @@ from itertools import product
 import logging as logger
 #logger = logging.getLogger(__name__)
 
-from .constants import __c__
+from .constants import __c__, __FWHM_2_sigma__
 from .conv import conv2d,gkernel,gkernel1d
 from .conv_spec1d import gaussian_filter1d,convolve_sigma
 from .momtools import mask_wave
@@ -13,7 +13,9 @@ from .start_messenge import Print
 from .tools_fits import get_fits_data
 from .utils import vparabola3D,nan2zero,zero2nan
 from .nan_percentile import nan_percentile # this is much faster than nunmpy
-
+from .conv_fftw2 import ConvolutionEngine
+	
+	
 def rmse(data_array):
 	data=data_array[np.isfinite(data_array) & (data_array!=0)]
 	mean=np.nanmean(data)
@@ -24,8 +26,34 @@ def rmse(data_array):
 	return root_ms
 
 
-def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
-	cube = np.copy(data)
+class cube_conf_temp:
+	'''Cube class used for the first convolution operation.
+	Beam FWHMs are designed to smooth the cube ds pixels along spatial axis
+	and dv pixels along spectral axis '''
+	def __init__(self, hdr, ds, dv, threads):
+		self.nx = hdr.nx
+		self.ny = hdr.ny
+		self.nz = hdr.nz
+		self.pix_arcs 	= 1
+		self.cdelt3_kms = 1
+		fwhm_ds	= ds 
+		fwhm_dv	= dv 		
+		self.sigma_inst_kms = fwhm_dv * __FWHM_2_sigma__
+		self.bmaj	= fwhm_ds
+		self.bmin	= fwhm_ds		
+		self.bpa	= 0				
+		self.nthreads	= threads						
+		self.nv		= hdr.nz
+		
+def mask_user(data,msk_user):
+
+	if msk_user!=None:
+		msk_usr=get_fits_data(msk_user).astype(bool)
+		data*=(msk_usr).astype(float)
+
+	
+def mask_cube(data,config,hdr,clip=None):
+	cube = np.copy(data).astype(np.float32)
 	[nz,ny,nx]=cube.shape
 
 	Print().status("Estimating RMS")
@@ -33,11 +61,6 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	config_others = config['others']
 	if clip is None:
 		clip=config_others.getfloat('clip',6)
-
-	if msk_user!=None:
-		msk_usr=get_fits_data(msk_user).astype(bool)
-	else:
-		msk_usr=np.ones((ny,nx)).astype(bool)
 
 	nthreads=config_general.getint('nthreads',1)
 	dv=config_others.getint('dv',2)
@@ -47,8 +70,6 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	# https://arxiv.org/pdf/1101.1499
 
 	#(1) rms noise.
-	# apply here the user mask
-	cube = cube*(msk_usr.astype(float))
 	isnan=np.isfinite(cube)
 	cube[~isnan]=0
 	iszero=cube!=0
@@ -59,7 +80,10 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 	noise_flat=noisep[noise_msk]
 	noisep[noisep==0]=np.nan
 
-
+	cube_cfg_tmp	= cube_conf_temp(hdr,ds,dv,nthreads)
+	conv = ConvolutionEngine(cube_cfg_tmp, cube_cfg_tmp,planner_effort='FFTW_MEASURE')
+	cube_smooth = conv.apply(cube, verbose=False)	
+		
 	#median absolute deviation from the mean on the noise cube
 	#mad_map=abs(noisep-np.nanpercentile(noisep,50,axis=0))
 	mad_map=abs(noisep-nan_percentile(noisep,50))
@@ -102,14 +126,13 @@ def mask_cube(data,config,hdr,f=5,clip=None,msk_user=None):
 		if dv==0 and ds!=0:
 			axes=[1,2]
 
-		padded_cube, cube_slices = data_2N(cube, axes=axes)
-		padded_psf, psf_slices = data_2N(psf3d_1, axes=axes)
-
-		dft=fftconv(padded_cube,padded_psf,threads=nthreads, axes=axes)
-		cube_smooth=dft.conv_DFT(cube_slices)
+		#padded_cube, cube_slices = data_2N(cube, axes=axes)
+		#padded_psf, psf_slices = data_2N(psf3d_1, axes=axes)
+		#dft=fftconv(padded_cube,padded_psf,threads=nthreads, axes=axes)
+		#cube_smooth=dft.conv_DFT(cube_slices)
 		iszerosmth=cube_smooth!=0
 		# release the memory
-		del padded_cube; del cube_slices; del padded_psf; del psf_slices
+		#del padded_cube; del cube_slices; del padded_psf; del psf_slices
 		#Do not forget to recover the zeros
 		cube_smooth*=iszero
 
