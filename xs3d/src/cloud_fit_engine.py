@@ -538,6 +538,7 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 	emcee).
 	"""
 	cfg	= cube_cfg
+	lsf = psf_lsf
 	[mom0_obs,mom1_obs,mom2_obs]=moms_obs
 	bmaj = psf_lsf.bmaj
 	nz	= cfg.nz
@@ -547,6 +548,7 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 
 	eflux = obs_emap
 	obs_n	= obs_cube / eflux
+	obs_nonzero = obs_n != 0
 	max_r 	= np.max([r.radius + bmaj for r in rings])
 	W_obs	= make_weight_map(mom0_obs,psf_lsf,rings,alpha=weight_alpha,r_max_px=max_r)*(mom0_obs>0)
 	W_obs_sum = np.sum(W_obs)
@@ -611,9 +613,11 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 			cost	= float(np.sum(residuals)) if method != 'least_squares' else float(np.sum(residuals** 2))		
 			free_vals = {k: f"{v.value:.2f}"
 						 for k, v in params.items() if v.vary}
-			Nvary = len(free_vals)
-			dof	  = Ndata-Nvary
-			chisqr= cost/dof
+			Ndata	= (msk*obs_nonzero).sum()
+			Nvary 	= len(free_vals)
+			Nfree	= Ndata - Nvary
+			dof		= max(1,Nfree)
+			chisqr	= cost / dof
 			print(f"  Iter {verbose_counter[0]:5d}  "
 				  f"chi2r={chisqr:.6f}  "
 				  + "  ".join(f"{k}={v}" for k, v in

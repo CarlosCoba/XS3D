@@ -28,13 +28,13 @@ class PsF_LsF:
 
 		self.fwhm_psf_arc=bmaj_hdr if bmaj_hdr is not None else config_general.getfloat('psf_fwhm',self.pix_arcs)
 
-		self.fwhm_psf_pix=self.fwhm_psf_arc/self.pix_arcs
-
 		self.bmaj=bmaj_hdr if bmaj_hdr is not None else config_general.getfloat('bmaj',self.fwhm_psf_arc)
 
 		self.bmin=bmin_hdr if bmin_hdr is not None else config_general.getfloat('bmin',self.bmaj)
 
 		self.bpa=bpa_hdr if bpa_hdr is not None else config_general.getfloat('bpa',0)
+		
+		self.fwhm_psf_pix=self.bmaj / self.pix_arcs		
 
 		if self.fwhm_psf_arc is not None or self.bmaj is not None:
 				self.fit_psf=True
@@ -62,6 +62,8 @@ class PsF_LsF:
 		fwhm_inst_kms=config_general.getfloat('fwhm_kms',None)
 
 		self.fwhm_inst_kms=None
+		
+		self.A_beam_px=(np.pi*(self.fwhm_psf_pix)**2) / (4*np.log(2)) #px2
 
 		if fwhm_inst_kms is not None:
 			self.fwhm_inst_kms=fwhm_inst_kms

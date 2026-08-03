@@ -117,7 +117,7 @@ class Header_info:
 			print('Warning!, the pixel scale seems to be too large !')
 
 
-		self.pix_arcs = self.scale*3600
+		self.pix_arcs = self.scale*3600 # arcsec/pix
 		self.scale=self.scale*3600 # from degree to arcsec
 		
 		# wave axis in original units:

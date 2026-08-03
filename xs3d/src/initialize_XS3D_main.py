@@ -250,10 +250,11 @@ class XS_out(Run_models):
 
 		# update chisquare
 		msk		= (mom_mod[0]>0) * (self.mom_obs[0]>0)
-		Ndata 	= np.sum(msk)*self.hdr_info.nz
+		Ndata	= (msk * self.datacube!=0).sum()
 		Nvary 	= (self.result).nvarys
-		dof 	= Ndata-Nvary
-		chi2 	= ((((self.datacube-self.mod_cube)/self.eflux2d)**2)*msk).sum()
+		dof 	= Ndata - Nvary
+		res		= (self.datacube-self.mod_cube)/self.eflux2d
+		chi2 	= ((res*res)*msk).sum()
 		chisqr 	= chi2/dof
 		self.result.chisqr=chisqr
 
