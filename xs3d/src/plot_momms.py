@@ -23,7 +23,7 @@ from .constants import __c__
 #plt.rcParams.update(params)
 
 
-from .pixel_params import inc_2_eps, eps_2_inc,e_eps2e_inc
+from .pixel_params import inc_2_eps, eps_2_inc,e_eps2e_inc,disk_sky
 from .utils import vmin_vmax
 
 def zero2nan(data):
@@ -49,15 +49,16 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 	zscale		= config_clouds.getfloat('z_scale', 0)
 	hdr_cube 	= hdr_info.hdr
 	pa_ne 		= hdr_info.pa_north
-
-	mom0_mod,mom1_mod,mom2_mod= mom_mod
-	mom0,mom1,mom2=momms_obs
-	mask=np.isfinite(mom0_mod)*np.isfinite(mom0)
+	ma_side		= hdr_info.ma_side
 
 	# extract scalar values
 	scalar_fields = ["v_sys", "inc", "pa","x_center", "y_center","phi_bar", "rmax"]
 	[vsys,inc,pa,xc,yc,phi_bar,rmax] = [const[k] for k in scalar_fields]
 	eps=inc_2_eps(inc)
+
+	mom0_mod,mom1_mod,mom2_mod= mom_mod
+	mom0,mom1,mom2=momms_obs
+	mask=np.isfinite(mom0_mod)*np.isfinite(mom0) if ma_side == 0 else disk_sky((ny,nx),const,pixel)[1]
 
 	# shift the extent to the kinematic centre
 	ext=np.dot([-xc,nx-xc,-yc,ny-yc],pixel); xc =0; yc =0
@@ -111,7 +112,9 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 	# moment zero maps:
 	mom0_mod=abs(mom0_mod)
 	res_mom0=mom0-mom0_mod
+	
 	vmin,vmax=vmin_vmax(mom0_mod)
+		
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax) if (vmin>0) & (np.log10(vmax/vmin)>1) else colors.Normalize(vmin=vmin, vmax=vmax)
 	ax0.imshow(mom0,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
 	im1=ax1.imshow(mom0_mod,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto')
@@ -133,16 +136,16 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 
 	im2=ax2.imshow(res_mom0,origin='lower',cmap=cmap_mom0,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
-	#moment 1 maps
+	# moment 1 maps
 	res_mom1=mom1-mom1_mod
 	vmin = abs(np.nanmin(mom1_mod))
 	vmax = abs(np.nanmax(mom1_mod))
 	base=10
 	if vmax < 10 or vmin < 10:
 		base = 0.1
-	vmin,vmax=vmin_vmax(mom1_mod,pmin=2,pmax=98,base=base,symmetric=True,mask=mask)
 
-
+	array = mom1 if ma_side != 0 else mom1_mod
+	vmin,vmax=vmin_vmax(array,pmin=2,pmax=98,base=base,symmetric=True,mask=mask)
 	ax3.imshow(mom1,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	im4=ax4.imshow(mom1_mod,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	vmin,vmax=vmin_vmax(res_mom1,pmin=2,pmax=98,base=base,symmetric=True,mask=mask)
@@ -153,9 +156,10 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 		units_res_mom1='m/s'
 	im5=ax5.imshow(res_mom1,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 
-	#moment 2 maps
+	# moment 2 maps
 	res_mom2=mom2-mom2_mod
-	vmin,vmax=vmin_vmax(mom2_mod,2,95,base=base,mask=mask)
+	array = mom2 if ma_side != 0 else mom2_mod	
+	vmin,vmax=vmin_vmax(array,2,95,base=base,mask=mask)
 	ax6.imshow(mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	im7=ax7.imshow(mom2_mod,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
 	vmin,vmax=vmin_vmax(res_mom2,2,98,symmetric=True,mask=mask)

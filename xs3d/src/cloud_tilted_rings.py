@@ -427,7 +427,7 @@ class RingBuilder:
 	def __init__(self, cube_config: CubeConfig, rng: np.random.Generator):
 		self.cfg = cube_config
 		self.rng = rng
-
+		self.ma_side = cube_config.ma_side
 	# ------------------------------------------------------------------
 	# Cloud placement
 	# ------------------------------------------------------------------
@@ -453,7 +453,12 @@ class RingBuilder:
 		z_disk		 : heights above the plane [arcsec]
 		phi			: azimuthal angles [rad],  phi=0 -> receding side
 		"""
-		phi = self.rng.uniform(0.0, 2.0 * np.pi, n)
+		phi = self.rng.uniform(0.0, 2.0 * np.pi, n)		
+		if self.ma_side == 1: # receding side					
+			phi = self.rng.uniform(-np.pi/2,  np.pi/2, n)
+		if self.ma_side == -1: # approaching side
+			phi = self.rng.uniform(np.pi/2, 3*np.pi/2, n)									
+				
 		if ring.radius == 0.0:
 			# Central disk: fill a circle of radius width/2 uniformly.
 			# Area-weighted radial sampling: r = sqrt(U) * R_max
@@ -737,11 +742,12 @@ class TiltedRingModel:
 	"""
 
 	def __init__(self, cube_config, psf_lsf, seed=None, planner_effort='FFTW_ESTIMATE'):
-		self.cfg   = cube_config
+		self.cfg	= cube_config
 		self.cfg_lsf   = psf_lsf		
-		self.rng   = np.random.default_rng(seed)
-		self._rb   = RingBuilder(cube_config, self.rng)
-
+		self.rng	= np.random.default_rng(seed)
+		self._rb	= RingBuilder(cube_config, self.rng)
+		self.ma_side = cube_config.ma_side
+		
 		# Precompute padding if necessary.
 		# We compute this just once.
 		new_size   = optimal_sizes(cube_config, psf_lsf)
@@ -792,20 +798,25 @@ class TiltedRingModel:
 					  f"inc={ring.inc:4.1f}°")
 			self._rb.build_ring(ring, cube)
 
-		# Delegate convolution to ConvolutionEngine (convolution.py)
-		
+
+		# in case the disk is loopsided		
+		if self.ma_side !=0 :
+			mask = (cube.sum(axis =0) != 0)
+			
 		# Check plot: Plot raw moment 0 map
 		#xc, yc	= cfg.ny//2, cfg.nx//2
 		#w		= np.arange(cfg.nz)
 		#mom0_tmp = cube.sum(axis=0)								
 		#plt.plot(w, cube[:, yc, xc], 'k-',label='raw cube');plt.show()
-		
 		cube = self._conv.apply(cube, verbose=False)
 		
 		#mom0_tmp_conv = cube.sum(axis=0)												
 		#plt.imshow(mom0_tmp*(mom0_tmp/mom0_tmp), origin = 'lower');plt.show()				
 		#plt.plot(w, cube[:, yc, xc], 'r-',label='conv. cube');plt.show()
-		
+
+		# in case the disk is loopsided				
+		if self.ma_side !=0 :
+				cube *= mask
 		return cube
 
 	def velocity_axis(self) -> np.ndarray:

@@ -51,6 +51,42 @@ def Rings(xy_mesh,pa_deg,eps,x0,y0,pixel_scale=1):
 	return r_disk*pixel_scale
 
 
+
+def disk_sky( shape, const, pixel_scale=1):
+	# extract scalar values
+	
+	[inc_deg,pa_deg,xc,yc,rmax] = [const['inc'],const['pa'],const['x_center'],const['y_center'],const['rmax']]
+	
+	(ny,nx) = shape
+	eps	= inc_2_eps(inc_deg)
+
+	x	= np.arange(0, nx, 1)
+	y	= np.arange(0, ny, 1)
+	xy_mesh = np.meshgrid(x,y,sparse=True)
+		
+	# if eps > 1 then you passed the inclination angle, not eps.
+	if eps>1:
+		inc = eps
+		eps = inc_2_eps(inc)
+	
+	pa_r = np.radians(pa_deg)
+	cos_inc = 1 - eps
+	
+	XX = (x-xc)
+	YY = (y-yc)
+	
+	# Rotate to kinematic frame (undo PA rotation)
+	x_rot  =  -XX*np.sin(pa_r) + YY*np.cos(pa_r)
+	y_rot  =  -XX*np.cos(pa_r) - YY*np.sin(pa_r)
+	
+	# Deproject minor axis: y_disk = y_rot / cos(inc)
+	y_disk	= y_rot / cos_inc
+	r_disk	= np.sqrt(x_rot**2 + y_disk**2)
+	r_disc_arc	= r_disk*pixel_scale
+	mask	= (r_disc_arc < rmax)
+	return r_disc_arc, mask
+
+
 from scipy.ndimage import binary_dilation
 def make_outer_mask_sky(xy_mesh,pa_deg,eps,x0,y0,rmax,offset,pixel_scale=1):
 	# Step 1: projected galaxy footprint at r_max
