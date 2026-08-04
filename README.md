@@ -73,20 +73,19 @@ XS3D requires as input a 3D cube free of continuum emission. The disk geometry i
 
 Example on a low redshift galaxy with the MUSE/VLT spectrograph
 ===========
-Following are some of the outputs you will obtain from running XS3D on a MUSE datacube for the Halpha line (lambda0=6562.68 AA).
-FWHM=100 km/s.
+Following are some of the outputs you will obtain from running XS3D on a MUSE datacube (LSF=116 km/s), for the Halpha line (lambda0=6562.68 AA).
 
 Moment maps obtained from the observed and model datacubes.
 |mom_muse|
-![mom_muse](/figures/mommaps_circular_model_NGC3351.png)
+![mom_muse](/figures/mommaps_circular_model_NGC1512.png)
 
 Rings projected into the sky plane
-![ring_muse](/figures/rings_circular_model_NGC3351.png)
+![ring_muse](/figures/rings_circular_model_NGC1512.png)
 
 Position velocity diagram from the model cube along the major and minor axes
-![pvd_muse](/figures/pvds_circular_model_NGC3351.png)
+![pvd_muse](/figures/pvds_circular_model_NGC1512.png)
 
-Example on a galaxy with a bar.
+Bisymmetric model on a galaxy with a bar.
 ===========
 ![mom_bisymmetric](/figures/mommaps_bisymmetric_model_NGC4535.png)
 
@@ -119,9 +118,9 @@ Channel maps taken from the datacube and model cube
 XS3D outputs
 ===========
 
-XS3D produces a series of figures stored in the local XS3D/figures/ directory that can be directly used in publications. These figures contain information
+XS3D produces a series of figures stored in your local XS3D/figures/ directory that can be directly used in publications. These figures contain information
 from the input cube (observed) and the output cube (model).
-Results from XS3D are stored in a series of FITS (Flexible Image Transport System) files found in the local XS3D/models/ directory.
+Results from XS3D are stored in a series of FITS (Flexible Image Transport System) files found in your local XS3D/models/ directory.
 The description of theses files is found in the header of each FITS file.
 
 XS3D noncircular models
