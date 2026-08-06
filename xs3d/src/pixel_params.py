@@ -58,18 +58,18 @@ def disk_sky( shape, const, pixel_scale=1):
 	[inc_deg,pa_deg,xc,yc,rmax] = [const['inc'],const['pa'],const['x_center'],const['y_center'],const['rmax']]
 	
 	(ny,nx) = shape
-	eps	= inc_2_eps(inc_deg)
+	eps		= inc_2_eps(inc_deg)
 
-	x	= np.arange(0, nx, 1)
-	y	= np.arange(0, ny, 1)
-	xy_mesh = np.meshgrid(x,y,sparse=True)
-		
+	indices = np.indices((ny,nx))
+	y =  indices[0]
+	x =  indices[1]
+			
 	# if eps > 1 then you passed the inclination angle, not eps.
 	if eps>1:
 		inc = eps
 		eps = inc_2_eps(inc)
 	
-	pa_r = np.radians(pa_deg)
+	pa_r 	= np.radians(pa_deg)
 	cos_inc = 1 - eps
 	
 	XX = (x-xc)
