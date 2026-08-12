@@ -318,6 +318,18 @@ class XS_out(Run_models):
 		total_time=end_time-self.start_time
 		t=strftime("%H:%M:%S", gmtime(total_time))
 		ttime="Total time: "+t+" HMS"
+		
+		
+		# plot 3D model
+		try:
+			from .plot_rings3d import plot_rings_3d
+			fig, ax = plot_rings_3d(self.best_rings, color_by='vrot', unit='arcsec' )
+			ax.set_box_aspect((1, 1, 1))           # Forces equal 3D bounding box ratios
+			fig.tight_layout(pad=-1)                # Minimizes the figure canvas margins
+			fig.savefig(f'{self.outdir}figures/proj3d_{self.vmode}_model_{self.galaxy}.png',dpi=300, bbox_inches='tight')
+		except Exception as e:
+			pass
+					
 		self.P.status(ttime)
 		print(self.P.deli)
 
