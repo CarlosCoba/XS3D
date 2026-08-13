@@ -299,7 +299,17 @@ def M_tab(pa_deg,eps,x0,y0,phi_b,rings, delta,k, shape, mommaps, emoms, pixel_sc
 		for j in range(1,m+1):
 			B[j-1] = np.nansum(y[j-1])
 
-		x = np.linalg.solve(A, B)
+		try:
+			x = np.linalg.solve(A, B)
+		except(TypeError,np.linalg.LinAlgError):
+			#  ******** August 12, 2026 *****************
+			# This is very unlikely but in case any velocity is linearly dependent.
+			# Then, add a tiny value to the diagonal elements to make the matrix
+			# invertible.
+			epsilon = 1e-6
+			A = A + epsilon * np.eye(A.shape[0])
+			x = np.linalg.solve(A, B)			
+
 		#x = C, S
 		C, S = x[:m_hrm],x[m_hrm:]
 		return dispersion,C, S
