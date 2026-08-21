@@ -176,7 +176,6 @@ class Ring:
 	phi_bar:		float  = 0.0
 	nclouds:		int = 1
 	vz_gradient: 	bool = False
-	vz_profile:  	str  = z_profile	
 
 	def __post_init__(self):
 		"""
@@ -409,7 +408,6 @@ def _interpolate_rings(rings):
 			v_2t	= float(interps["v_2t"](r)),
 			phi_bar = float(interps["phi_bar"](r)),
 			vz_gradient = ref_ring.vz_gradient,
-			vz_profile  = ref_ring.vz_profile,			
 		))
 	return fine_rings
  
@@ -678,8 +676,9 @@ class RingBuilder:
 		vrot_scale = None
 		if ring.vz_gradient and ring.z_scale > 0 and ring.radius > 0:
 			from .vertical_rotation import get_table
-			table = get_table(ring.vz_profile)
-			alpha = ring.z_scale / ring.radius
+			table	= get_table(ring.z_profile)
+			alpha	= ring.z_scale / ring.radius
+			hz_pix	= ring.z_scale / self.cfg.pix_arcs
 			vrot_scale = table.vc_ratio(z_disk / ring.z_scale, alpha)
 
 		v_sys_cloud				 		= self._los_velocity(phi, ring, vrot_scale )
