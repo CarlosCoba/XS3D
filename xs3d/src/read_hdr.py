@@ -33,11 +33,7 @@ class Header_info:
 		self.crval3=0
 		
 		self.bunit='Intensity'
-		
-		ctype3=hdr['CTYPE3'] if 'CTYPE3' in hdr else None
-		
-		cunit3=hdr['CUNIT3'] if 'CUNIT3' in hdr else None
-				
+						
 		self.cunit1='deg'
 		
 		self.wavelength_wave=['angstrom','um','wavelength','wave','angstrom','um','micron','lambda']
@@ -54,7 +50,11 @@ class Header_info:
 		highz	= self.config['high_z']
 		header	= self.config['header']
 		self.fitting	= self.config['fitting']
-				
+
+		ctype3=hdr['CTYPE3'] if 'CTYPE3' in hdr else general.get('ctype3','wavelength')
+		
+		cunit3=hdr['CUNIT3'] if 'CUNIT3' in hdr else None
+
 		ma_side	= self.fitting.getint('ma_side',0)
 		
 		self.ma_side = np.clip(ma_side,-1,1)
