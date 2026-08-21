@@ -154,7 +154,9 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 	z_hw_px = n_sigma_z * zscale_pix_obs * np.sin(inc)  if z_scale_pix > 0 else 0.0
 
 	sigma_z_sky  = zscale_pix_obs * np.sin(inc)  # pixels
-	if z_scale_pix>0:
+	
+	# Vertical weight is applied if zweight is True and z_scale_pix != 0
+	if (z_scale_pix>0) and (zweight):
 		W_z = np.exp(-y_rot**2 / (2.0 * sigma_z_sky**2))
 	else:
 		W_z = np.ones_like(y_rot)
@@ -169,12 +171,13 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
         #   r_max_px × cos(inc) : radial extent projected onto minor axis
         #   z_hw_px             : vertical (z) extent projected onto minor axis
         # At inc=90°: cos(inc)=0 so only z_hw_px contributes (plus minimum=psf/2)
-		if r_max_px is not None and z_scale_pix>=0:
+		if r_max_px is not None and z_scale_pix >=0 :
 			strip_halfwidth = max(r_max_px * np.cos(inc), z_hw_px, psf_pix/2)
 			inside_strip = (
 				(np.abs(x_rot) <= r_max_px) & (np.abs(y_rot) <= strip_halfwidth)
 			)
 			W = inside_strip.astype(float)
+			W = W * W_z
 		else:
 			# No r_max: uniform weight everywhere
 			W = np.ones_like(x_rot)
@@ -544,12 +547,13 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 	nz	= cfg.nz
 	ny	= cfg.ny
 	nz	= cfg.nx
+	pix_arcs = cube_cfg.pix_arcs
 
 
-	eflux = obs_emap
+	eflux	= obs_emap
 	obs_n	= obs_cube / eflux
 	obs_nonzero = obs_n != 0
-	max_r 	= np.max([r.radius + bmaj for r in rings])
+	max_r 	= np.max([r.radius + bmaj for r in rings]) / pix_arcs
 	W_obs	= make_weight_map(mom0_obs,psf_lsf,rings,alpha=weight_alpha,r_max_px=max_r)*(mom0_obs>0)
 	W_obs_sum = np.sum(W_obs)
 	W_norm	= W_obs / W_obs_sum
@@ -568,7 +572,7 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 
 		# Recompute weight map from current geometry — cheap (<1 ms)
 		r_max_cur		= max(r.radius + bmaj for r in new_rings)
-		r_max_cur_pix 	= r_max_cur/cube_cfg.pix_arcs
+		r_max_cur_pix 	= r_max_cur / pix_arcs
 		W_cur			= make_weight_map(mom0_obs,psf_lsf,new_rings,alpha=weight_alpha,r_max_px=r_max_cur_pix)
 		W_cur_sum		= np.sum( W_cur*(mom0_obs>0) )
 
