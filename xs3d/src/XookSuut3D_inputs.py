@@ -43,7 +43,7 @@ from .man import print_manual
 class input_params:
 	def __init__(self):
 		if nargs == 2:
-			if sys.argv[1] == '-help':
+			if sys.argv[1] in ['-help','--help', '-man', '-h']:
 				print_manual()
 				quit()
 		if (nargs < 19 or nargs > 22):
@@ -59,23 +59,21 @@ class input_params:
 		galaxy = sys.argv[1]
 
 		#FITS information
-		vel_map = sys.argv[2]
-		mask2D = sys.argv[3]
-		#pixel_scale = float(sys.argv[4])
+		datacube	= sys.argv[2]
+		mask		= sys.argv[3]
 
 		# Geometrical parameters
-		PA = sys.argv[4]
-		INC = sys.argv[5]
-		#if 0<INC<1: INC=eps_2_inc(INC)*180/np.pi
-		X0 = sys.argv[6]
-		Y0 = sys.argv[7]
-		VSYS = sys.argv[8]
-		vary_PA = int(sys.argv[9])
-		vary_INC = int(sys.argv[10])
-		vary_XC = int(sys.argv[11])
-		vary_YC = int(sys.argv[12])
-		vary_VSYS = int(sys.argv[13])
-		vary_PHIB = 1
+		pa_0	= sys.argv[4]
+		inc_0	= sys.argv[5]
+		xc_0	= sys.argv[6]
+		yc_0	= sys.argv[7]
+		vsys_0	= sys.argv[8]
+		vary_pa = int(sys.argv[9])
+		vary_inc = int(sys.argv[10])
+		vary_xc = int(sys.argv[11])
+		vary_yc = int(sys.argv[12])
+		vary_vsys = int(sys.argv[13])
+		vary_phib = 1
 
 		# Rings configuration
 		ring_space	= float(sys.argv[14])
@@ -88,9 +86,6 @@ class input_params:
 
 		# Kinematic model, minimization method and iterations
 		vmode = sys.argv[18]
-		#fit_method = sys.argv[20]
-		#n_it = int(sys.argv[21])
-
 
 		#valid optional-string-inputs (osi):
 		osi = ["-", ".", "#","%", "&", "","None"]
@@ -115,13 +110,12 @@ class input_params:
 		delta	= np.clip(delta_tmp,0,ring_space)
 
 		if r_bar_min_max in osi: r_bar_min_max = np.inf
-		if vmode not in ["circular","radial","bisymmetric","vertical", "ff"] and "hrm_" not in vmode: print("XookSuut: choose a proper kinematic model !"); quit()
+		if vmode not in ["circular","radial","bisymmetric","vertical", "ff", 'mock'] and "hrm_" not in vmode: print("XookSuut: choose a proper kinematic model !"); quit()
 
 
 		if type(r_bar_min_max)  == tuple:
 			bar_min_max = [r_bar_min_max[0], r_bar_min_max[1] ]
 		else:
-
 			bar_min_max = [rstart, r_bar_min_max ]
 
 		if prefix != "": galaxy = "%s-%s"%(galaxy,prefix)
@@ -137,25 +131,27 @@ class input_params:
 		input_config.read(config_file)
 
 		# Shortcuts to the different configuration sections variables.
-		config_const = input_config['fitting']
-		config_general = input_config['general']
+		config_const	= input_config['fitting']
+		config_general	= input_config['general']
 
-		n_it=config_const.getint("n_it", 0)
-		v_center = config_general.get("v_center", 0)
-
-		try:
-			v_center = float(v_center)
-		except (ValueError): pass
-
-		if type(v_center) == str and v_center != "extrapolate":
-			print("XookSuut: v_center: %s, did you mean ´extrapolate´ ?"%v_center)
-			quit()
+		n_it	= config_const.getint("n_it", 0)
+		phi_b	= 45
+		config	= input_config
 
 
-		PHI_BAR = 45
-		config = input_config
-
-		x = XS_out(galaxy, vel_map, mask2D, VSYS, PA, INC, X0, Y0, PHI_BAR, n_it, vary_PA, vary_INC, vary_XC, vary_YC, vary_VSYS, vary_PHIB, delta, rstart, rfinal, ring_space, frac_pixel, v_center, bar_min_max, vmode, config, prefix, osi  )
+		if vmode == 'mock':
+			from .mock_cube import mock
+			mock(vsys_0, pa_0, inc_0, vary_pa, vary_inc,
+			vary_xc, vary_yc, vary_vsys,
+			delta, rstart, rfinal, ring_space, vmode, config
+			)
+			
+		v_center = False # <-- depreciated variable
+			
+		x	= XS_out(galaxy, datacube, mask, vsys_0, pa_0, inc_0, xc_0, yc_0, phi_b, n_it,
+		vary_pa, vary_inc, vary_xc, vary_yc, vary_vsys, vary_phib, delta, rstart, rfinal,
+		ring_space, frac_pixel, v_center, bar_min_max, vmode, config, prefix, osi)
+		
 		out_xs = x.results()
 
 	def __str__(self,txt):
