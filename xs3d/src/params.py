@@ -112,12 +112,12 @@ class Set_params:
 
 		min_inc = 8 if self.inc < 80 else 70
 		if self.vary['inc'] == 'free':
-			set_bounds(params, 'inc', n,   min_inc,  90.0)
+			set_bounds(params, 'inc', n,   min_inc,  92.0)
 									
 		params['pa_r0'].min  =   -360.0
 		params['pa_r0'].max  = 360.0
 		params['inc_r0'].min =  min_inc
-		params['inc_r0'].max =  180.0
+		params['inc_r0'].max =  92.0
 
 		params['v_sys_r0'].min =  np.min(self.vel_axis)
 		params['v_sys_r0'].max =  np.max(self.vel_axis)
