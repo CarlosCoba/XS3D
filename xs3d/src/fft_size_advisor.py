@@ -372,7 +372,7 @@ def pad_cube(cube, nx_opt, ny_opt, nv_opt):
     that the original data is always at the beginning of each dimension
     and the unpadding step is a simple leading slice.
 
-    The cube shape convention throughout barolo.py is (nv, ny, nx).
+    The cube shape convention throughout fit_cube.py is (nv, ny, nx).
 
     Parameters
     ----------
