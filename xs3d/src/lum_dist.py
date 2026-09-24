@@ -10,10 +10,10 @@ class Angdist:
 
 	def __init__(self, H0 = 70, Omega_m = 0.30, Omega_l = 0.70, print_res = 0):
 		self.H0 = H0 #71 #km/s/Mpc
-		self.Omega_m = Omega_m
-		self.Omega_l = Omega_l
-		self.c = 299792.458
-		self.print = print_res
+		self.Omega_m	= Omega_m
+		self.Omega_l	= Omega_l
+		self.c			= 299792.458
+		self.print		= print_res
 
 		P=Print()
 		self.P=P
@@ -24,7 +24,10 @@ class Angdist:
 		return t1
 
 
-	def comv_distance(self, z):
+	def comv_distance(self, z=0, vsys=None):
+		if vsys != None:
+			z = vsys / self.c
+			
 		a0=1./(1+z)
 		a1=1
 		X = quad(self.X,a0,a1)
@@ -107,8 +110,4 @@ class Angdist:
 			self.P.long('No CRVAL1/CRVAL2 was found in the cube Header. No reference frame change was applied.')
 
 		return vcor_tmp
-
-
-
-
 	

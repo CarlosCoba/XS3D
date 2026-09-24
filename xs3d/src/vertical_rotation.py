@@ -160,7 +160,7 @@ class VerticalRotationTable:
         The grid axes (for inspection/diagnostics only).
     """
 
-    def __init__(self, profile, Z_max=10.0, n_Z=41, n_alpha=48,
+    def __init__(self, profile, Z_max=50.0, n_Z=41, n_alpha=48,
                  alpha_min=1e-5, alpha_max=5.0):
         if profile not in _ZETA_HAT:
             raise ValueError(

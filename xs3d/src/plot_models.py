@@ -47,22 +47,21 @@ def plot_kin_models(galaxy,vmode,const,best,result,out):
 			tmp = np.ones_like(tmp)*tmp[0]
 		errv[pvel]=tmp
 								
-	width, height = 10, 6 # width [cm]
-	cm_to_inch = 0.393701 # [inch/cm]
-	figWidth = width * cm_to_inch # width [inch]
-	figHeight = height * cm_to_inch # width [inch]
+
+	figWidth = 6
+	figHeight = 4
 
 	if vmode=='circular':
-		fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
-		gs2 = fig.add_gridspec(nrows=1, ncols=1, left=0.10, right=0.85, wspace=0, bottom=0.17, top = 0.95)
+		fig = plt.figure(figsize=(figWidth, figHeight), dpi = 180)
+		gs2 = fig.add_gridspec(nrows=1, ncols=1, left=0.08, right=0.85, wspace=0, bottom=0.15, top = 0.95)
 		ax0=plt.subplot(gs2[0,0])
 	else:
 		width, height = 10, 9 # width [cm]
-		figWidth = width * cm_to_inch # width [inch]
-		figHeight = height * cm_to_inch # width [inch]
+		figWidth = figWidth
+		figHeight =figHeight*1.5
 		heights = [1, 0.6]
 	
-		fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)		
+		fig = plt.figure(figsize=(figWidth, figHeight), dpi = 180)		
 		gs = gridspec.GridSpec(2, 1, height_ratios=heights)
 		gs.update(left=0.13, right=0.85,top=0.97,bottom=0.10, hspace = 0.15, wspace = 0)
 		ax0 = plt.subplot(gs[0,0])
@@ -81,24 +80,24 @@ def plot_kin_models(galaxy,vmode,const,best,result,out):
 	delta_r = R[-1]-R[-2]
 	max_r = np.max(R)
 		
-	axs(ax0, rotation='horizontal',remove_axis_lines = True, fontsize_ticklabels=10)
+	axs(ax0, rotation='horizontal',remove_axis_lines = True, fontsize_ticklabels=15)
 
 
-	ax0.errorbar(R, vdisp, yerr=errv['v_disp'], color = "#db6d52", label = "$\sigma_\mathrm{gas}$",  fmt='o', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
-	ax0.errorbar(R, vrot, yerr=errv['v_rot'], color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='o', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)	
+	ax0.errorbar(R, vdisp, yerr=errv['v_disp'], color = "#db6d52", label = "$\sigma_\mathrm{gas}$",  fmt='o', mfc = '#db6d52', mec = '#170a06',ms = 8,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
+	ax0.errorbar(R, vrot, yerr=errv['v_rot'], color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='o', mfc = '#362a1b', mec = '#170a06',ms = 8,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)	
 	if vmode != 'circular':
-		ax1.errorbar(R, -1e4*vdisp, yerr=errv['v_disp'], color = "#db6d52", label = "$\sigma_\mathrm{gas}$",  fmt='o', mfc = '#db6d52', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
-		ax1.errorbar(R, -1e4*vrot, yerr=errv['v_rot'], color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='o', mfc = '#362a1b', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, -1e4*vdisp, yerr=errv['v_disp'], color = "#db6d52", label = "$\sigma_\mathrm{gas}$",  fmt='o', mfc = '#db6d52', mec = '#170a06',ms = 8,mew = 0.5, ecolor='#db6d52', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, -1e4*vrot, yerr=errv['v_rot'], color = "#362a1b", label = "$\mathrm{V_{t}}$",  fmt='o', mfc = '#362a1b', mec = '#170a06',ms = 8,mew = 0.5, ecolor='#362a1b', lw=1, ls = ':', capsize=2)
 	
 	if vmode == "radial":
-		ax1.errorbar(R, vrad, yerr=errv['v_rad'], color = "#c73412", label = "$\mathrm{V_{r}}$", fmt='o', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vrad, yerr=errv['v_rad'], color = "#c73412", label = "$\mathrm{V_{r}}$", fmt='o', mfc = '#c73412', mec = '#170a06',ms = 8,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
 
 	if vmode == "vertical":
-		ax1.errorbar(R, vrad, yerr=errv['v_rad'], color = "#b47b50", label = "$\mathrm{V_{z}}$", fmt='o', mfc = '#b47b50', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#b47b50', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vrad, yerr=errv['v_rad'], color = "#b47b50", label = "$\mathrm{V_{z}}$", fmt='o', mfc = '#b47b50', mec = '#170a06',ms = 8,mew = 0.5, ecolor='#b47b50', lw=1, ls = ':', capsize=2)
 
 	if vmode == "bisymmetric":
-		ax1.errorbar(R, vrad, yerr=errv['v_2r'], color = "#c73412", label = "$\mathrm{V_{2,r}}$", fmt='o', mfc = '#c73412', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
-		ax1.errorbar(R, vtan, yerr=errv['v_2t'], color = "#2fa7ce", label = "$\mathrm{V_{2,t}}$", fmt='o', mfc = '#2fa7ce', mec = '#170a06',ms = 4,mew = 0.5, ecolor='#2fa7ce', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vrad, yerr=errv['v_2r'], color = "#c73412", label = "$\mathrm{V_{2,r}}$", fmt='o', mfc = '#c73412', mec = '#170a06',ms = 8,mew = 0.5, ecolor='#c73412', lw=1, ls = ':', capsize=2)
+		ax1.errorbar(R, vtan, yerr=errv['v_2t'], color = "#2fa7ce", label = "$\mathrm{V_{2,t}}$", fmt='o', mfc = '#2fa7ce', mec = '#170a06',ms = 8,mew = 0.5, ecolor='#2fa7ce', lw=1, ls = ':', capsize=2)
 
 	# Move the left and bottom spines to x = 0 and y = 0, respectively.
 	ax0.spines[["left", "bottom"]].set_position(("data", 0))
@@ -114,24 +113,29 @@ def plot_kin_models(galaxy,vmode,const,best,result,out):
 	
 	dashline = (5, (10, 3))
 	ax0.plot([0,max_r],[0,0],color = "k",linestyle=dashline, alpha = 0.6,linewidth = 0.5)
-	ax0.set_ylabel('$\mathrm{Velocity\,(km~s^{-1})}$',fontsize=10)
+	ax0.set_ylabel('$\mathrm{Velocity\,(km~s^{-1})}$',fontsize=15)
 
+	ax0.tick_params(axis='both', labelsize=12)
+	
 	if vmode != 'circular':
-		ax1.legend(loc = "upper left", fontsize=10, bbox_to_anchor=(1,1), ncol=1, bbox_transform=ax0.transAxes, labelspacing=0.7, handlelength=1, handletextpad=0.3,columnspacing=0.8,borderaxespad=0.1,frameon=False)	
+		ax1.legend(loc = "upper left", fontsize=15, bbox_to_anchor=(1,1), ncol=1, bbox_transform=ax0.transAxes, labelspacing=0.7, handlelength=1, handletextpad=0.3,columnspacing=0.8,borderaxespad=0.1,frameon=False)	
 		ax0.set_xlim(-delta_r*0.1, max_r+delta_r*0.1)
 		ax1.set_xlim(-delta_r*0.1, max_r+delta_r*0.1)	
 		ax1.plot([0,max_r],[0,0],color = "k",linestyle=dashline, alpha = 1,linewidth = 0.5)				
-		axs(ax1, remove_xticks= False, rotation = 'horizontal', fontsize_ticklabels=10)
+		axs(ax1, remove_xticks= False, rotation = 'horizontal', fontsize_ticklabels=12)
 		ax1.grid(visible = True, which = "major", axis = "both", color='gray', linestyle='-', linewidth=0.5, zorder = 1, alpha = 0.5)
 		ax1.xaxis.set_major_locator(ticker.MaxNLocator(5))		
 		ax1.yaxis.set_major_locator(ticker.MaxNLocator(3))
 		ax1.set_ylim(-v_nc_max -4 , v_nc_max + 4)
-		ax1.set_xlabel(f'r ({rlabel})',fontsize=10)
-		ax1.set_ylabel("$\mathrm{V_{NC}~(km\,s^{-1})}$",fontsize = 10)					
+		ax1.set_xlabel(f'r ({rlabel})',fontsize=15)
+		ax1.set_ylabel("$\mathrm{V_{NC}~(km\,s^{-1})}$",fontsize=15)
+		ax1.tick_params(axis='both', labelsize=12)							
 	else:
-		ax0.legend(loc="upper left", fontsize = 10, bbox_to_anchor=(1,1), ncol=1, labelspacing=0.7, handlelength=1, handletextpad=0.3,columnspacing=0.8,borderaxespad=0.1,frameon=False)	
-		ax0.set_xlabel(f'r ({rlabel})',fontsize=10)	
-				
+		ax0.legend(loc="upper left", fontsize=15, bbox_to_anchor=(1,1), ncol=1, labelspacing=0.7, handlelength=1, handletextpad=0.3,columnspacing=0.8,borderaxespad=0.1,frameon=False)	
+		ax0.set_xlabel(f'r ({rlabel})',fontsize=15)	
+
+
+						
 	fig.tight_layout()
 	plt.savefig("%sfigures/kin_%s_disp_%s.png"%(out,vmode,galaxy))
 	#plt.clf()

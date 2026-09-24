@@ -129,6 +129,7 @@ class Run_models:
 		self.emoms=[np.ones_like(self.mom0),np.ones_like(self.mom1),np.ones_like(self.mom2)]
 
 		pixel_scale=self.hdr_info.scale
+		self.pixel = pixel_scale
 
 		self.PA_bar_mjr,self.PA_bar_mnr,self.PHI_BAR=0,0,0
 		self.m_hrm=3
@@ -243,8 +244,12 @@ class XS_out(Run_models):
 
 	def results(self):
 
+		# compute asymmetric drift correction
+		from .adrift import asymmetric_drift_correction
+		adc	= asymmetric_drift_correction(self.mom_obs[0],self.best_rings,self.pixel)
+
 		from .save_output import save_rings_fits
-		save_rings_fits(self.galaxy, self.vmode, self.best_rings, self.result, self.hdr_info, extra_header=None, out=self.outdir)
+		save_rings_fits(self.galaxy, self.vmode, self.best_rings, self.result, self.hdr_info, adc, extra_header=None, out=self.outdir)
 
 		mom_mod = self.cube_class.obs_mommaps(self.mod_cube)
 
@@ -307,7 +312,7 @@ class XS_out(Run_models):
 			plot_kin_models(self.galaxy,self.vmode,const,self.best_vals,self.result,out=self.outdir)
 
 
-		save_vrot_z_fits(self.galaxy, self.vmode, self.best_rings, z_values=0, filename='no', out = self.outdir)
+		save_vrot_z_fits(self.galaxy, self.vmode, self.best_rings, pixel=self.pixel, out = self.outdir)
 
 		filename = f'fftw_wisdom.{self.galaxy}.pkl'
 		remove_file(filename)

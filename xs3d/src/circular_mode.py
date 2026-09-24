@@ -4,6 +4,7 @@ import os
 import matplotlib.pylab as plt
 from scipy.stats import circstd,circmean
 from multiprocessing import Pool, cpu_count
+import random
 
 from .start_messenge import Print
 from .eval_tab_model import tab_mod_vels
@@ -19,7 +20,7 @@ from .utils import circmean,remove_file
 
 from .cloud_tilted_rings import TiltedRingModel, CubeConfig, Ring
 from .cloud_fit_engine import (
-	build_params, fit_rings, make_weight_map,
+	build_params, make_weight_map,
 	residual_cube, rotation_curve,
 	set_bounds, _print_params_summary
 )
@@ -111,6 +112,7 @@ class Circular_model:
 		self.nclouds 	= config_clouds.getint('nclouds', 1)
 		self.nsubclouds = config_clouds.getint('nsubclouds', subcouds_tmp)
 		self.z_scale 	= config_clouds.getfloat('z_scale', 0.1)
+		self.z_scale_pot=self.z_scale # temporary value		
 		self.z_profile 	= config_clouds.get('z_profile', 'sech2')
 		self.lagging 	= config_clouds.getboolean('lagging', False)
 
@@ -122,8 +124,9 @@ class Circular_model:
 		self.zweight		= config_lsq.getboolean('zweight', 0)
 		self.weights		= (self.rweight,self.zweight)
 		self.fitmethod 		= config_lsq.get('optimethod', 'nelder')
-		self.seed			= 40
+		self.seed			= random.randint(1, 1000)#40
 		self.vary_nc		= config_lsq.getfloat('vary_nc', 2)
+		self.reverse		= config_lsq.getboolean('reverse', False)				
 		self.vary_params	= {}
 		self.rms			= header.rms
 
@@ -150,7 +153,7 @@ class Circular_model:
 			disp_tab = np.clip(disp_tab, self.disp_kms, None)
 			disp_tab = np.sqrt(disp_tab**2 - self.disp_kms**2)
 			if self.vary_disp==0:
-				disp_tab = np.ones_like(disp_tab)*self.disp_kms
+				disp_tab = np.zeros_like(disp_tab)*self.disp_kms
 			if self.vary_disp==1:
 				disp_tab = np.ones_like(disp_tab)*np.mean(disp_tab)
 
@@ -177,6 +180,7 @@ class Circular_model:
 				x_center	= self.x0,
 				y_center	= self.y0,
 				z_scale		= self.z_scale,
+				z_scale_pot	= self.z_scale_pot,								
 				z_profile	= self.z_profile,
 				vz_gradient	= self.lagging,
 				n_clouds	= self.nclouds,
@@ -217,6 +221,11 @@ class Circular_model:
 			if method   == 'powell':
 				options = {'xtol': 1e-2, 'ftol': 1e-2}
 				fit_kws =  {'options': options}
+
+			if self.reverse:			
+				from .cloud_fit_engine import fit_rings_outside_in as fit_rings
+			else:
+				from .cloud_fit_engine import fit_rings					
 
 			best_rings, result = fit_rings(
 				obs_cube,
@@ -260,8 +269,11 @@ class Circular_model:
 			# update initial values
 			[self.pa0,self.inc0,self.x0,self.y0,self.vsys0,self.theta_b]=[const['pa'],const['inc'],const['x_center'],const['y_center'],const['v_sys'],const['phi_bar'] ]
 
-			# get the final mask
-			W_cur= make_weight_map(mom0_obs, self.psf_lsf, best_rings, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=3)
+			# get final mask iterating over each ring orientation
+			W_cur =np.zeros_like(mom0_obs)
+			for b_r in best_rings:
+				ring_k = [b_r]
+				W_cur = W_cur  + make_weight_map(mom0_obs, self.psf_lsf, ring_k, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=2)
 			msk = (W_cur !=0).astype(float)
 			mod_cube_norm*=msk
 
@@ -275,10 +287,14 @@ class Circular_model:
 		self.P.status('Computing Errors on parameters')
 		self.P.status('N bootstraps	%s'%self.n_boot )
 		print(self.P.deli)
-
+				
+		# Load wisdom
+		from .conv_fftw2 import load_fftw_wisdom		
+		load_fftw_wisdom(self.hdr)
+		
 		[obs_cube,best_rings,best_vals,result]=output
 		n_boot	= self.n_boot
-		msk	   = obs_cube == 0
+		msk		= obs_cube == 0
 		params_ref  = build_params(best_rings, self.vary_params)
 		free_names  = [n for n, p in params_ref.items() if p.vary]
 		samples		= {n: [] for n in free_names}
@@ -286,9 +302,11 @@ class Circular_model:
 		for k in range(n_boot):
 			if (k+1) % 5 == 0 : print("  %s/%s \t bootstraps" %((k+1),self.n_boot))
 			rng 	= np.random.default_rng()
-			noise	= rng.standard_normal(obs_cube.shape)
-			obs_cube_tmp= obs_cube +  self.rms*noise
-			obs_cube_tmp[msk] = self.obs_cube[msk]
+			randnum	= rng.standard_normal(obs_cube.shape)
+			noise	= self.rms
+			noise	= self.eflux2d
+			obs_cube_tmp		= obs_cube +  noise*randnum
+			obs_cube_tmp[msk]	= self.obs_cube[msk]
 
 			best_rings_k, result_k = self.lsq(obs_cube_tmp, verbose=0, bootstrap=True)
 

@@ -49,15 +49,18 @@ class fftconv:
 			self.ifft_obj = pyfftw.builders.irfftn(self.fft_cube.get_output_array(), s=size,threads=threads,axes=axes,auto_align_input=False, auto_contiguous=False,avoid_copy=True)        
                 
 
-	def conv_DFT(self,cube_slices):	
+	def conv_DFT(self,cube_slices=None):	
 
 		fft_cube = self.fft_cube(self.cube)
 		fft_psf = self.fft_psf(self.psf)
 		# Here apply the convolution theorem		
 		conv= self.ifft_obj(fft_cube * fft_psf)
 		conv_real = np.real(np.fft.fftshift(conv,axes=self.axes))
-		# Remove padding
-		return conv_real[cube_slices]
+		if cube_slices != None:
+			# Remove padding
+			return conv_real[cube_slices]
+		else:
+			return conv_real
 
 
 
@@ -155,10 +158,14 @@ class fftconv_numpy:
 		conv_shift=np.fft.fftshift(conv,axes=self.axes)
 		return conv_shift
 
-	def conv_DFT(self,cube_slices):
-		fft_cube = self.conv	
-		# Remove padding
-		return fft_cube[cube_slices]
+	def conv_DFT(self,cube_slices=None):
+		fft_cube = self.conv		
+		if cube_slices is not None:
+			# Remove padding
+			return fft_cube[cube_slices]
+		else:
+			return fft_cube
+		
 		
 		
 		

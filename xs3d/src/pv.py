@@ -254,6 +254,8 @@ def pv_array2(datacube,cube_mod,mom_obs,mom_mod,cube_config,psf_lsf,rms,const):
 		nv = len(dv)
 	 
 		sin_pa, cos_pa = np.sin(pa_rad), np.cos(pa_rad)
+		if pa_maj_rad < np.pi:
+			sin_pa, cos_pa = -sin_pa, -cos_pa
 	 
 		# --- CHANGE: limit offset range to [-r_max, +r_max] ---
 		# Previously the slice always ran over the full cube half-diagonal

@@ -11,19 +11,19 @@ from astropy.io import fits
 # Only scalar numeric attributes are included (str/bool/dict skipped).
 _RING_COLUMN_META = {
 	'radius'	: ('RADIUS',	'arcsec',  'E', 'Mean ring radius'),
-	'width'	 : ('WIDTH',	 'arcsec',  'E', 'Radial width of ring'),
-	'v_rot'	 : ('VROT',	  'km/s',	'E', 'Circular rotation velocity'),
-	'v_disp'	: ('VDISP',	 'km/s',	'E', 'Velocity dispersion (1-D sigma)'),
-	'v_sys'	 : ('VSYS',	  'km/s',	'E', 'Systemic velocity'),
-	'v_rad'	 : ('VRAD',	  'km/s',	'E', 'Radial (inflow/outflow) velocity'),
-	'inc'	   : ('INC',	   'deg',	 'E', 'Inclination angle'),
-	'pa'		: ('PA',		'deg',	 'E', 'Position angle of receding axis (N->E)'),
-	'x_center'  : ('XCEN',	  'pix',	 'E', 'Kinematic centre X pixel'),
-	'y_center'  : ('YCEN',	  'pix',	 'E', 'Kinematic centre Y pixel'),
-	'z_scale'   : ('ZSCALE',	'arcsec',  'E', 'Vertical scale height'),
-	'v_2r'	  : ('V2R',	   'km/s',	'E', 'Bisymmetric radial amplitude'),
-	'v_2t'	  : ('V2T',	   'km/s',	'E', 'Bisymmetric tangential amplitude'),
-	'phi_bar'   : ('PHIBAR',	'deg',	 'E', 'Bar PA in disk plane'),
+	'width'		: ('WIDTH',		'arcsec',  'E', 'Radial width of ring'),
+	'v_rot'		: ('VROT',		'km/s',	'E', 'Circular rotation velocity'),
+	'v_disp'	: ('VDISP',		'km/s',	'E', 'Velocity dispersion (1-D sigma)'),
+	'v_sys'		: ('VSYS',		'km/s',	'E', 'Systemic velocity'),
+	'v_rad'		: ('VRAD',		'km/s',	'E', 'Radial (inflow/outflow) velocity'),
+	'inc'		: ('INC',		'deg',	'E', 'Inclination angle'),
+	'pa'		: ('PA',		'deg',	'E', 'Position angle of receding axis (N->E)'),
+	'x_center'  : ('XCEN',		'pix',	'E', 'Kinematic centre X pixel'),
+	'y_center'  : ('YCEN',		'pix',	'E', 'Kinematic centre Y pixel'),
+	'z_scale'	: ('ZSCALE',	'arcsec',	'E', 'Vertical gas scale height hz'),
+	'v_2r'		: ('V2R',		'km/s',	'E', 'Bisymmetric radial amplitude'),
+	'v_2t'		: ('V2T',		'km/s',	'E', 'Bisymmetric tangential amplitude'),
+	'phi_bar'   : ('PHIBAR',	'deg',	'E', 'Bar PA in disk plane'),
 	'n_clouds'  : ('NCLOUDS',   '',		'J', 'Number of clouds per ring'),
 }
 
@@ -32,10 +32,10 @@ _RING_COLUMN_META = {
 # model and should not be interpreted as fitted values.  save_rings_fits
 # sets their columns to NaN so the table does not mislead the reader.
 _IRRELEVANT_BY_MODEL = {
-	'circular'	: {'v_rad', 'v_2r', 'v_2t', 'phi_bar'},
-	'radial'	  : {'v_2r', 'v_2t', 'phi_bar'},
-	'bisymmetric' : {'v_rad'},
-	'hrm'	: {'v_rad', 'v_2r', 'v_2t', 'phi_bar'},
+	'circular'		: {'v_rad', 'v_2r', 'v_2t', 'phi_bar'},
+	'radial'		: {'v_2r', 'v_2t', 'phi_bar'},
+	'bisymmetric'	: {'v_rad'},
+	'hrm'			: {'v_rad', 'v_2r', 'v_2t', 'phi_bar'},
 }
 
 # Whether to write harmonic columns (C_Mm / S_Mm) for each model.
@@ -55,7 +55,7 @@ _FITTED_ATTRS = frozenset({
 	'z_scale', 'v_2r', 'v_2t', 'phi_bar',
 })
 
-def save_rings_fits(name, vmode, best_rings, result, hdr_info, extra_header=None, out = '.'):
+def save_rings_fits(name, vmode, best_rings, result, hdr_info, adc, extra_header=None, out = '.'):
 	"""
 	Save the best-fit ring parameters as a FITS binary table.
 
@@ -87,24 +87,24 @@ def save_rings_fits(name, vmode, best_rings, result, hdr_info, extra_header=None
 	Output columns
 	--------------
 	RADIUS	[arcsec]  ring radius
-	WIDTH	 [arcsec]  ring width
-	VROT	  [km/s]	rotation velocity
-	VROT_ERR  [km/s]	1-sigma uncertainty (NaN if not available)
-	VDISP	 [km/s]	velocity dispersion
-	VDISP_ERR [km/s]	1-sigma uncertainty
-	INC	   [deg]	 inclination
-	INC_ERR   [deg]	 1-sigma uncertainty
+	WIDTH	[arcsec]  ring width
+	VROT	[km/s]	rotation velocity
+	VROT_ERR[km/s]	1-sigma uncertainty (NaN if not available)
+	VDISP	[km/s]	velocity dispersion
+	VDISP_ERR[km/s]	1-sigma uncertainty
+	INC		[deg]	 inclination
+	INC_ERR	[deg]	 1-sigma uncertainty
 	PA		[deg]	 position angle
 	PA_ERR	[deg]	 1-sigma uncertainty
-	VSYS	  [km/s]	systemic velocity
-	VRAD	  [km/s]	radial velocity
-	XCEN	  [pix]	 kinematic centre X
-	YCEN	  [pix]	 kinematic centre Y
+	VSYS	[km/s]	systemic velocity
+	VRAD	[km/s]	radial velocity
+	XCEN	[pix]	 kinematic centre X
+	YCEN	[pix]	 kinematic centre Y
 	ZSCALE	[arcsec]  vertical scale height
-	V2R	   [km/s]	bisymmetric radial amplitude
-	V2T	   [km/s]	bisymmetric tangential amplitude
+	V2R		[km/s]	bisymmetric radial amplitude
+	V2T		[km/s]	bisymmetric tangential amplitude
 	PHIBAR	[deg]	 bar position angle
-	NCLOUDS   []		number of clouds per ring
+	NCLOUDS	[]		number of clouds per ring
 
 	Harmonic decomposition columns (present only when harmonics were fitted):
 	C_M1	  [km/s]	cosine coefficient of order m=1  (= v_rot)
@@ -301,9 +301,31 @@ def save_rings_fits(name, vmode, best_rings, result, hdr_info, extra_header=None
 
 	primary_hdu = fits.PrimaryHDU(header=primary_hdr)
 
+
+	# Add asymmetric drift correction
+	v_c, v_c_err, info = adc
+	
+	adrift = {'vcor': info['correction'], 'I0': info['I0_smooth']}
+			
+	extra = {'vcor': ('VAD2',	'km2/s2',		'E', 'Assymetric drift correction (squared)'),
+			'I0':	 ('SIGMA',	'flux*km/s',	'E', 'Smoothed surface brightness'),	
+			}
+	for attr, (fits_name, unit, fmt, desc) in extra.items():	
+		col = fits.Column(
+			name   = fits_name,
+			format = fmt,
+			unit   = unit if unit else None,
+			array  = adrift[attr],
+		)
+		cols.append(col)
+		
+
 	# Binary table
 	table_hdu = fits.BinTableHDU.from_columns(cols)
 	table_hdu.name = 'RINGS'
+
+	# Update dictionary to include asymmetric drift
+	_RING_COLUMN_META.update(extra)  
 
 	# Add column descriptions via TDESC keywords
 	for i, (attr, (fits_name, unit, fmt, desc)) in \
@@ -311,6 +333,8 @@ def save_rings_fits(name, vmode, best_rings, result, hdr_info, extra_header=None
 		key = f'TDESC{i}'
 		if key not in table_hdu.header:
 			table_hdu.header[key] = desc
+
+
 
 	hdul = fits.HDUList([primary_hdu, table_hdu])
 	hdul.writeto(f"{out}/models/{name}.{vmode}.table.fits",overwrite=True)

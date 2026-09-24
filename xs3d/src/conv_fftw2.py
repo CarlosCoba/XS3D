@@ -40,7 +40,7 @@ Install pyfftw
 
 import numpy as np
 from scipy.ndimage import gaussian_filter
-
+import pickle, os
 # ---------------------------------------------------------------------------
 # Optional dependencies
 # ---------------------------------------------------------------------------
@@ -542,12 +542,18 @@ def save_fftw_wisdom(cube_config):
 	"""
 	if not PYFFTW_AVAILABLE:
 		return
-	import pickle
 	wisdom = pyfftw.export_wisdom()
 	with open(filename, 'wb') as f:
 		pickle.dump(wisdom, f)
  
- 
+def exist_wisdom(cube_config):
+	name = cube_config.object
+	filename = f'fftw_wisdom.{name}.pkl'
+	if os.path.exists(filename):
+		return True
+	else:
+		return False
+		 
 def load_fftw_wisdom(cube_config):
 	name = cube_config.object
 	filename = f'fftw_wisdom.{name}.pkl'
@@ -564,12 +570,11 @@ def load_fftw_wisdom(cube_config):
 	"""
 	if not PYFFTW_AVAILABLE:
 		return
-	import pickle, os
 	if not os.path.exists(filename):
-		return
+		return False
 	print(f' reading FFTW planner {filename}')
 	with open(filename, 'rb') as f:
 		wisdom = pickle.load(f)
 	pyfftw.import_wisdom(wisdom)
-	
+	return True	
 

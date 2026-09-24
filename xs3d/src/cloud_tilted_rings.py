@@ -176,6 +176,7 @@ class Ring:
 	phi_bar:		float  = 0.0
 	nclouds:		int = 1
 	vz_gradient: 	bool = False
+	z_scale_pot:	float = 0.0	
 
 	def __post_init__(self):
 		"""
@@ -399,6 +400,7 @@ def _interpolate_rings(rings):
 			x_center	= float(interps["x_center"](r)),
 			y_center	= float(interps["y_center"](r)),
 			z_scale	 	= float(interps["z_scale"](r)),
+			z_scale_pot = ref_ring.z_scale_pot,			
 			z_profile   = ref_ring.z_profile,
 			n_clouds	= n_cl,
 			n_subclouds = ref_ring.n_subclouds,
@@ -461,7 +463,7 @@ class RingBuilder:
 			# Central disk: fill a circle of radius width/2 uniformly.
 			# Area-weighted radial sampling: r = sqrt(U) * R_max
 			r = np.sqrt(self.rng.uniform(0.0, 1.0, n)) * (0.5 * ring.width)
-			r[0]=0
+			r = abs(r) # r cannot be negative
 		else:
 			r = ring.radius + self.rng.uniform(
 					-0.5 * ring.hwidth, 0.5 * ring.hwidth, n)
@@ -664,10 +666,10 @@ class RingBuilder:
 		"""
 		cfg = self.cfg
 		n   = ring.n_clouds
-
+		# variables in arcseconds
 		x_disk, y_disk, z_disk, phi 	= self._sample_ring_positions(ring, n)
-		x_pix, y_pix			   		= self._disk_to_sky(
-										 x_disk, y_disk, z_disk, ring)
+		# variables in pixels		
+		x_pix, y_pix			   		= self._disk_to_sky(x_disk, y_disk, z_disk, ring)
 		
 		# Check plot :  Plot 3D cloud distribution.
 		#fig = plt.figure()
@@ -676,10 +678,11 @@ class RingBuilder:
 		vrot_scale = None
 		if ring.vz_gradient and ring.z_scale > 0 and ring.radius > 0:
 			from .vertical_rotation import get_table
-			table	= get_table(ring.z_profile)
-			alpha	= ring.z_scale / ring.radius
-			hz_pix	= ring.z_scale / self.cfg.pix_arcs
-			vrot_scale = table.vc_ratio(z_disk / ring.z_scale, alpha)
+			hz_pot_arc	= ring.z_scale_pot # arcs
+			table		= get_table(ring.z_profile)
+			alpha		= hz_pot_arc / ring.radius
+			s			= z_disk / hz_pot_arc
+			vrot_scale	= table.vc_ratio(s, alpha)
 
 		v_sys_cloud				 		= self._los_velocity(phi, ring, vrot_scale )
 

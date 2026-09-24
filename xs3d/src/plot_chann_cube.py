@@ -27,7 +27,7 @@ from .pixel_params import eps_2_inc,e_eps2e_inc,inc_2_eps
 
 cmap = vel_map()
 cmap_mom0 = vel_map('mom0')
-cmap_mom0 = vel_map('pvd')
+#cmap_mom0 = vel_map('pvd')
 
 def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,rms,out):
 
@@ -47,11 +47,15 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	tmp_mdl		= np.copy(cube_mod)
 	tmp_mdl[~tmp]=0
 	psf2d		= gkernel([ny,nx],fwhm=None,bmaj=bmajconv,bmin=bminconv,pixel_scale=pixelconv)
-	padded_mdl, cube_slices = data_2N(tmp_mdl, axes=[1, 2])
-	psf3d		= np.ones_like(cube_mod)*psf2d
-	padded_psf, _ = data_2N(psf3d, axes=[1, 2])
-	dft			= fftconv(padded_mdl,padded_psf,threads=2,axes = [1,2])
-	cube_mod_conv= dft.conv_DFT(cube_slices)
+	psf3d		= np.ones_like(cube_mod)*psf2d	
+	#padded_mdl, cube_slices = data_2N(tmp_mdl, axes=[1, 2])
+	#padded_psf, _ = data_2N(psf3d, axes=[1, 2])
+	#dft			= fftconv(padded_mdl,padded_psf,threads=2,axes = [1,2])
+	#cube_mod_conv= dft.conv_DFT(cube_slices)
+		
+	dft			= fftconv(tmp_mdl,psf3d,threads=2,axes = [1,2])	
+	cube_mod_conv= dft.conv_DFT()
+	
 	del tmp_mdl, tmp
 
 	# plot PSF ellipse ?
@@ -90,7 +94,7 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	cm_to_inch = 0.393701 # [inch/cm]
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
-	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 300)
+	fig = plt.figure(figsize=(figWidth, figHeight), dpi = 150)
 
 	chan_sig	= np.sum(cube_mod, axis = (1,2)) > rms
 	#meanflux_chan = np.array([np.mean(datacube[k], where=( (datacube[k]!=0) & (np.isfinite(datacube[k]))) )/rms for k in range(nz)])
@@ -123,6 +127,7 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	vmax=np.percentile(cube_mod[cube_mod!=0],99.5)
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax) if vmax > 1 else colors.Normalize(vmin=vmin, vmax=vmax)
 	clines = '#279dc5'
+	clines = 'k'	
 
 	dv=psf_lsf.cdelt3_kms
 	for j,k in enumerate(chanplot):
@@ -152,15 +157,25 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	ax_legend.legend(lines,labels,loc='lower left',borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False, fontsize=12, bbox_to_anchor=(0, 1), bbox_transform=ax_legend.transAxes)
 
 
-	rms_int=int(np.log10(rms))
-	rms_round= round(rms/10**rms_int,5)
-	txt = AnchoredText(f'rms={rms_round}e{rms_int} [flux units]', loc="lower left", frameon=False, prop={"fontsize":12}, bbox_to_anchor=(0, 1), bbox_transform=axes[0].transAxes);axes[0].add_artist(txt)
+	l_rms	= np.log10(rms)
+	if l_rms> 0:
+		exp1	= -1*np.floor(l_rms)
+		exp2	= int(-1*exp1)		
+		rms_round= round(rms*10**exp1,5)
+	else:
+		exp1	= np.ceil(-l_rms)		
+		exp2	= int(-1*exp1)
+		rms_round= round(rms*10**exp1,5)
+				
+	txt = AnchoredText(f'rms={rms_round}e{exp2} [flux units]', loc="lower left", frameon=False, prop={"fontsize":12}, bbox_to_anchor=(0, 1), bbox_transform=axes[0].transAxes);axes[0].add_artist(txt)
 	from matplotlib.cm import ScalarMappable
 	cmappable = ScalarMappable(colors.Normalize(vmin/rms,vmax/rms), cmap=cmap_mom0)
 	w=int(100*l0)
 	cb(cmappable,axes[-1],orientation = "vertical", colormap = cmap, bbox= (1.1,0,1,1), height = f"{w}%", width = "10%",label_pad = 0, label = "flux/rms",labelsize=12, ticksfontsize=9)
 
 	for Axes in axes:
+		'''
+		# Draw projected geometry
 		if vmode == 'edgeon':
 			rec=drawrectangle(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
 			x,y = rec[0], rec[1]
@@ -169,7 +184,7 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 			elipse=drawellipse(xc,yc,bmajor=rmax_norm,pa_deg=pa,eps=eps)
 			x,y=elipse[0],elipse[1]#pixel*(elipse[0]-nx/2)/rnorm,pixel*(elipse[1]-ny/2)/rnorm
 			Axes.plot(x, y, '-', color = '#393d42',  lw=0.5)
-
+		'''
 		Axes.plot(xc, yc, marker='+', color = 'black', markeredgewidth=1, zorder=100)
 
 
@@ -188,7 +203,7 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	axes[indx].set_xlabel('$\mathrm{ \Delta RA }$ (%s)'%rlabel,fontsize=10,labelpad=0)
 	axes[indx].set_ylabel('$\mathrm{ \Delta Dec}$ (%s)'%rlabel,fontsize=10,labelpad=0)
 
-	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":12},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-2].add_artist(txt)
+	txt = AnchoredText(f'Channel units: km/s', loc="lower left", pad=0.1, borderpad=0, prop={"fontsize":10},zorder=1e4, bbox_to_anchor=(0, -0.3), bbox_transform=axes[-1].transAxes);txt.patch.set_alpha(0);axes[-2].add_artist(txt)
 
 	fig.tight_layout()
 	fig.savefig("%sfigures/channels_cube_%s_model_%s.png"%(out,vmode,galaxy), bbox_inches='tight')

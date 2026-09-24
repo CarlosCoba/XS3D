@@ -3,8 +3,8 @@ from astropy.io import fits
 from .vertical_rotation import get_table
 
 
-def save_vrot_z_fits(name, vmode, rings, z_values, filename, profile=None,
-					 dx_arcsec=None, extra_header=None, out = '.'):
+def save_vrot_z_fits(name, vmode, rings,
+					 pixel=None, extra_header=None, out = '.'):
 	"""
 	Save v_c(r, z) — the circular rotation velocity at each ring radius
 	evaluated at a user-supplied set of heights above the midplane —
@@ -47,7 +47,7 @@ def save_vrot_z_fits(name, vmode, rings, z_values, filename, profile=None,
 		per-ring choice is honoured and PROFILE in the header is set
 		to 'mixed'.  Pass an explicit profile to override every ring's
 		attribute with the same choice for this evaluation.
-	dx_arcsec : float or None
+	pixel : float or None
 		Pixel scale [arcsec/pixel], recorded in the header only (no
 		unit conversion is performed; z_values and radii stay in
 		whatever units the rings themselves use, normally arcsec).
@@ -88,40 +88,44 @@ def save_vrot_z_fits(name, vmode, rings, z_values, filename, profile=None,
 
 	if not rings[0].vz_gradient:
 		return None
+	
+	profile_pot	= rings[0].z_profile   # Grav. potential profile. Same for all rings
+	hz_pot_arc	= rings[0].z_scale_pot # Scale height of potential. Same for all rings (arcs)
+	z_scale_gas	= rings[0].z_scale 	# Scale height of gas. Same for all rings (arcs)	
 		
-	z_cale0		= rings[0].z_scale
-	zscale		= z_cale0
 	nhz 		= 6
-	nhz_arcs	=  nhz*zscale
-	z_values	= np.linspace(0,nhz_arcs, nhz) 
-	z_values	= np.asarray(z_values, dtype=float)
-	n_z	 		= len(z_values)
+	nhz_arcs	= nhz*hz_pot_arc
+	z_disk_arc	= np.arange(0,nhz_arcs, z_scale_gas) 	
+	z_disk_arc	= np.asarray(z_disk_arc, dtype=float)
+	n_z	 		= len(z_disk_arc)
 	n			= len(rings)
  
-	radius_vals  = np.empty(n, dtype=np.float32)
-	vrot_vals	= np.empty(n, dtype=np.float32)
-	zscale_vals  = np.empty(n, dtype=np.float32)
-	profile_vals = np.empty(n, dtype='U11')
-	vrz		  = np.full((n, n_z), np.nan, dtype=np.float32)
+	radius_vals 	= np.empty(n, dtype=np.float32)
+	vrot_vals		= np.empty(n, dtype=np.float32)
+	zscale_vals		= np.empty(n, dtype=np.float32)
+	zscale_vals_pot = np.empty(n, dtype=np.float32)	
+	profile_vals 	= np.empty(n, dtype='U11')
+	vrz		  		= np.full((n, n_z), np.nan, dtype=np.float32)
  
 	n_skipped = 0
 	for i, ring in enumerate(rings):
 		radius_vals[i] = ring.radius
 		vrot_vals[i]   = ring.v_rot
 		zscale_vals[i] = ring.z_scale
+		zscale_vals_pot[i] = hz_pot_arc
  
-		ring_profile = profile if profile is not None \
-					   else ring.z_profile
+		ring_profile	= profile_pot
 		profile_vals[i] = ring_profile
  
-		if ring.radius <= 0 or ring.z_scale <= 0:
+		if ring.radius <= 0 or hz_pot_arc <= 0:
 			n_skipped += 1
 			continue
  
-		table = get_table(ring_profile)
-		alpha = ring.z_scale / ring.radius
-		ratio = table.vc_ratio(np.abs(z_values) / ring.z_scale, alpha)
-		vrz[i, :] = ring.v_rot * ratio
+		table 		= get_table(ring_profile)
+		alpha 		= hz_pot_arc / ring.radius
+		s			= np.abs(z_disk_arc) / hz_pot_arc
+		ratio 		= table.vc_ratio(s, alpha)
+		vrz[i, :] 	= ring.v_rot * ratio
  
 	if n_skipped:
 		print(f"  save_vrot_z_fits: {n_skipped}/{n} ring(s) skipped "
@@ -137,8 +141,10 @@ def save_vrot_z_fits(name, vmode, rings, z_values, filename, profile=None,
 						 array=radius_vals),
 		fits.Column(name='VROT',   format='E', unit='km/s',
 						 array=vrot_vals),
-		fits.Column(name='ZSCALE', format='E', unit='arcsec',
+		fits.Column(name='ZSCALEGAS', format='E', unit='arcsec',
 						 array=zscale_vals),
+		fits.Column(name='ZSCALEPOT', format='E', unit='arcsec',
+						 array=zscale_vals_pot),						 
 		fits.Column(name='PROFILE', format='11A',
 						 array=profile_vals),
 		fits.Column(name='VRZ', format=f'{n_z}E', unit='km/s',
@@ -149,15 +155,16 @@ def save_vrot_z_fits(name, vmode, rings, z_values, filename, profile=None,
 	table_hdu.header['TDESC1'] = 'Ring radius'
 	table_hdu.header['TDESC2'] = 'Midplane rotation velocity v_c(r,0)'
 	table_hdu.header['TDESC3'] = 'Vertical scale height used for this ring'
-	table_hdu.header['TDESC4'] = 'Vertical profile used for this ring'
-	table_hdu.header['TDESC5'] = (
+	table_hdu.header['TDESC4'] = 'Vertical scale height used for the potential'	
+	table_hdu.header['TDESC5'] = 'Vertical scale height profile'		
+	table_hdu.header['TDESC6'] = (
 		f'v_c(r,z) at each of the {n_z} heights in the Z_VALUES HDU; '
 		'NaN row = ring skipped (radius<=0 or z_scale<=0)'
 	)
  
 	# ── HDU 2: the shared z grid ───────────────────────────────────────
 	z_col = fits.Column(name='Z', format='E', unit='arcsec',
-							 array=z_values.astype(np.float32))
+							 array=z_disk_arc.astype(np.float32))
 	z_hdu = fits.BinTableHDU.from_columns([z_col])
 	z_hdu.name = 'Z_VALUES'
 	z_hdu.header['TDESC1'] = 'Height above midplane shared by every VRZ row'
@@ -169,8 +176,8 @@ def save_vrot_z_fits(name, vmode, rings, z_values, filename, profile=None,
 	primary_hdr['NZ']	  = (n_z, 'Number of z values evaluated')
 	primary_hdr['PROFILE'] = (str(profile_header),
 							   "Vertical profile ('mixed' if rings differ)")
-	if dx_arcsec is not None:
-		primary_hdr['CDELT_AS'] = (dx_arcsec, 'Pixel scale [arcsec/pixel]')
+	if pixel is not None:
+		primary_hdr['CDELT_AS'] = (pixel, 'Pixel scale [arcsec/pixel]')
 	if extra_header:
 		for key, val in extra_header.items():
 			primary_hdr[key] = val

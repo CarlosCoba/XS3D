@@ -55,7 +55,7 @@ from scipy.ndimage import gaussian_filter
 import matplotlib.pylab as plt
 from scipy import stats
 from .utils import circmean
-from .conv_fftw2 import save_fftw_wisdom,load_fftw_wisdom
+from .conv_fftw2 import save_fftw_wisdom,load_fftw_wisdom,exist_wisdom
 
 try:
 	import lmfit
@@ -171,7 +171,7 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
         #   r_max_px × cos(inc) : radial extent projected onto minor axis
         #   z_hw_px             : vertical (z) extent projected onto minor axis
         # At inc=90°: cos(inc)=0 so only z_hw_px contributes (plus minimum=psf/2)
-		if r_max_px is not None and z_scale_pix >=0 :
+		if r_max_px is not None or z_scale_pix >=0 :
 			strip_halfwidth = max(r_max_px * np.cos(inc), z_hw_px, psf_pix/2)
 			inside_strip = (
 				(np.abs(x_rot) <= r_max_px) & (np.abs(y_rot) <= strip_halfwidth)
@@ -531,7 +531,7 @@ def params_to_rings(params, rings):
 # ---------------------------------------------------------------------------
 
 def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed,
-					verbose_counter, model, verbose, method):
+					verbose_counter, model, verbose, method, lambda_smooth=5e-4, **fit_kws):
 	"""
 	Return a closure that lmfit.minimize can call.
 
@@ -583,6 +583,13 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		model._rb  = RingBuilder(cube_cfg, model.rng)
 		mod_cube   = model.build(new_rings, verbose=False)
 
+		# Building the cube triggers FFTW_MEASURE planning → wisdom is now created
+		exist_fftw=exist_wisdom(cube_cfg)
+		if not exist_fftw:
+			# save the planner to reuse it in the future.
+			save_fftw_wisdom(cube_cfg)
+
+
 		mom0_mod_tmp	= cube_oper.obs_mommaps(mod_cube,mom_out=(0))
 		mom0_msk		= (mom0_obs > 0) & (mom0_mod_tmp > 0)
 		mod_cube_norm	= mod_cube*np.divide(mom0_obs,mom0_mod_tmp,where=mom0_msk,out=np.zeros_like(mom0_mod_tmp))
@@ -599,7 +606,6 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		residuals	= (obs_n - mod_n) * msk
 
 		# penalize second order differences on vrot, sigma, and cm_1
-		lambda_smooth = 1e-3
 		p	= np.sqrt(lambda_smooth*chi2_scale)*so_diff	
 		p2	= p*p			
 
@@ -798,20 +804,15 @@ def fit_rings(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_prms, cube_
 	bounds = lmfit_prms.lmfit_bounds(params)
 	counter = [0]
 
-	# before measuring the planner check if there is any available
-	load_fftw_wisdom(cube_cfg)
-
 	model   = TiltedRingModel(cube_cfg, psf_lsf, seed=seed,planner_effort='FFTW_MEASURE')
 
-	# save the planner to reuse it in the future
-	save_fftw_wisdom(cube_cfg)
-
-	obj	 = _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model, verbose, method)
+	obj	 = _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube_oper, weight_alpha, seed, counter, model, verbose, method, **fit_kws)
 
 	if verbose:
 		_print_params_summary(params, rings)
 
 	kws = fit_kws or {}
+	kws = {'options':fit_kws['options']}
 	result = lm_minimize(obj, params, method=method, **kws)
 
 	best_rings = params_to_rings(result.params, rings)
@@ -825,6 +826,132 @@ def fit_rings(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_prms, cube_
 		_print_results(result.params, rings)
 
 	return best_rings, result
+
+# ---------------------------------------------------------------------------
+# Reverse Least square analysis
+# ---------------------------------------------------------------------------
+def fit_rings_outside_in(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_prms, cube_cfg, psf_lsf, cube_oper,
+			  weight_alpha=(2.0,1),
+			  method='nelder',
+			  seed=42,
+			  verbose=True,
+			  fit_kws=None):
+			  		  
+	n_passes	= 2
+	verbose_tmp = False
+	n_rings		= len(rings)
+
+	# Identify which attributes are 'free' across all rings
+	free_attrs = [attr for attr, spec in param_spec.items()
+				  if spec == 'free' or
+				  (isinstance(spec, (list, tuple)) and any(s == 'free' for s in spec))]
+
+	if verbose_tmp:
+		print(f"\nfit_rings_outside_in: {n_rings} rings, "
+			  f"{n_passes} pass(es), free attrs: {free_attrs}")
+		print(f"  Evaluations budget: ~{n_rings * n_passes * 50} "
+			  f"(vs ~{n_rings**2 * 50} simultaneous)")
+		print()
+
+	# Working copy of rings — updated after each sub-problem
+	current_rings = copy.deepcopy(rings)
+	history = []
+
+	for pass_idx in range(n_passes):
+		# Alternate direction: even passes go outer→inner, odd go inner→outer
+		ring_order	= (list(range(n_rings - 1, -1, -1))   # outer → inner
+						if pass_idx % 2 == 0
+						else list(range(n_rings)))		   # inner → outer					  					  
+
+		direction = "outer→inner" if pass_idx % 2 == 0 else "inner→outer"
+		if verbose_tmp:
+			print(f"  Pass {pass_idx + 1}/{n_passes}  ({direction})")
+			print(f"  {'Ring':>5}  {'r':>6}  {'v_rot_init':>10}  "
+				  f"{'v_rot_fit':>10}  {'nfev':>6}  {'ok':>4}")
+			print("  " + "─" * 48)
+
+		for ring_idx in ring_order:
+			v_init = current_rings[ring_idx].v_rot
+			# Build a param_spec where ONLY this ring is free
+			# All other rings are fixed at their current best values
+			single_spec = {}
+			for attr, spec in param_spec.items():
+				if spec == 'free':
+					# Free for this ring only, fixed for all others
+					per_ring_list = []
+					for i in range(n_rings):
+						if i == ring_idx:
+							per_ring_list.append('free')
+						else:
+							per_ring_list.append('fixed')
+					single_spec[attr] = per_ring_list
+				elif isinstance(spec, (list, tuple)):
+					# Honour per-ring spec, but fix all except current ring
+					per_ring_list = []
+					for i, s in enumerate(spec):
+						if i == ring_idx and s == 'free':
+							per_ring_list.append('free')
+						else:
+							per_ring_list.append('fixed')
+					single_spec[attr] = per_ring_list
+				else:
+					# 'fixed', 'tied', etc. — leave as-is
+					single_spec[attr] = spec
+
+			# Remove smoothness for single-ring sub-problems
+			# (smoothness connects adjacent rings, meaningless for one ring)
+			kwargs_this = dict(fit_kws)
+			
+			#if (pass_idx+1) != n_passes:
+			kwargs_this['lambda_smooth'] = 0.0
+			  
+			# Run the sub-problem
+			try:
+				fitted_rings, result = fit_rings(obs_cube, obs_emap, moms_obs, current_rings, single_spec, lmfit_prms, cube_cfg, psf_lsf, cube_oper,
+					weight_alpha=weight_alpha,
+					method=method,
+					seed=seed,
+					verbose=verbose,
+					fit_kws=kwargs_this)
+
+				# Update only this ring in current_rings
+				current_rings[ring_idx] = fitted_rings[ring_idx]
+				v_fit  = current_rings[ring_idx].v_rot
+
+				# Update these varialbes with previous best-fit only when the variables are tied to the ring0 
+				if param_spec['v_disp']		== 'tied':	current_rings[0].v_disp		= current_rings[ring_idx].v_disp
+				if param_spec['x_center']	== 'tied':	current_rings[0].x_center	= current_rings[ring_idx].x_center 				 
+				if param_spec['y_center']	== 'tied':	current_rings[0].y_center	= current_rings[ring_idx].y_center 				 				
+				if param_spec['v_sys']		== 'tied':	current_rings[0].v_sys		= current_rings[ring_idx].v_sys 
+								 								
+				nfev   = result.nfev
+				ok	 = result.success
+			except Exception as exc:
+				if verbose_tmp:
+					print(f"  Ring {ring_idx} FAILED: {exc}")
+				v_fit = v_init; nfev = 0; ok = False
+
+			history.append(dict(
+				pass_idx   = pass_idx,
+				ring_idx   = ring_idx,
+				radius	 = current_rings[ring_idx].radius,
+				v_rot_init = v_init,
+				v_rot_fit  = v_fit,
+				nfev	   = nfev,
+				success	= ok,
+			))
+
+
+	if verbose_tmp:
+		total_nfev = sum(h['nfev'] for h in history)
+		print(f"  Total evaluations: {total_nfev}")
+		v_fits = [current_rings[i].v_rot for i in range(n_rings)]
+		print(f"  Final v_rot: {[f'{v:.1f}' for v in v_fits]}")
+	return fitted_rings, result
+
+
+
+
 
 
 # ---------------------------------------------------------------------------

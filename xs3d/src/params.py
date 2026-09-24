@@ -7,6 +7,8 @@ from .cloud_fit_engine import (
     set_bounds, _print_params_summary,
 )
 
+from .lum_dist import Angdist
+
 class Set_params:
 	
 	def __init__(self, vmode, psf_lsf, rings, rwidth, delta, vary, hdr, guess_common, m_hrm=0):
@@ -24,6 +26,10 @@ class Set_params:
 		#	self.width 			= bmaj # (never wider than the spacing)
 		#	psf_lsf.radial_step = bmaj # (fine grid matches the spacing)
 
+		cosmo			= Angdist()
+		dL, scale		= cosmo.comv_distance(vsys=guess_common['v_sys'])
+		z0_potential	= 2000 #pc  --> default grav. pot. height scale
+		guess_common['z_scale_pot'] = z0_potential / scale #arcsec
 		
 		self.common = guess_common
 		self.nx 	= hdr.nx
@@ -112,12 +118,12 @@ class Set_params:
 
 		min_inc = 8 if self.inc < 80 else 70
 		if self.vary['inc'] == 'free':
-			set_bounds(params, 'inc', n,   min_inc,  92.0)
+			set_bounds(params, 'inc', n,   min_inc,  90.0)
 									
 		params['pa_r0'].min  =   -360.0
 		params['pa_r0'].max  = 360.0
 		params['inc_r0'].min =  min_inc
-		params['inc_r0'].max =  92.0
+		params['inc_r0'].max =  91.0
 
 		params['v_sys_r0'].min =  np.min(self.vel_axis)
 		params['v_sys_r0'].max =  np.max(self.vel_axis)
@@ -129,7 +135,7 @@ class Set_params:
 		params['y_center_r0'].max =  self.ny
 			
 		if 'hrm' not in self.vmode:
-			set_bounds(params, 'v_rot',  n,  0.0, 500.0)
+			set_bounds(params, 'v_rot',  n,  -100.0, 500.0)
 									
 		if self.vmode == 'radial':
 			set_bounds(params, 'v_rad',  n,  -500.0, 500.0)		
