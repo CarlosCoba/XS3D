@@ -642,6 +642,16 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 
 	return objective
 
+def wrap(x, period=360.):
+	"""Map x into [-period/2, +period/2)."""
+	return ((x + period / 2) % period) - period / 2
+
+def ang_diff(angles, period=360.):
+	"""Second difference of a smooth angular sequence"""
+	d1	= wrap(np.diff(angles), period)   # wrapped first differences
+	d2	= np.diff(d1)                     # second differences (no re-wrap needed)
+	return abs(d1), d2
+	
 def regularize(params,cube_cfg):
 	cfg 	= cube_cfg
 	fitcfg	= cfg.fitting
@@ -676,9 +686,13 @@ def regularize(params,cube_cfg):
 		# d2 measures the curvature at interior ring i+1 - how much
 		# ring i+1 deviates from the straight line connecting its two neighbours.		
 		d2		= np.diff(vals, n=2)		# second differences, len n-2
+		# angular second order differences
+		if pname in ['pa']:
+			d1, d2	= ang_diff(vals)
+		
 		local_v	= np.maximum(d1[:-1], d1[1:])
 
-		#pen_vals = np.sqrt(lambda_smooth * chi2_scale) * d2 / v_scale
+		# pen_vals = np.sqrt(lambda_smooth * chi2_scale) * d2 / v_scale
 		# There are two possible normalization: Global or Local.
 		# Taking the maximum of the two adjacent steps gives the largest
 		# possible local_scale, which gives the smallest possible penalty.		

@@ -77,10 +77,10 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 
 	msk=np.isfinite(mom0_obs*mom0_mod/mom0_obs)
 
-	pa_maj = pa % 360
-	pa_min = (pa+90) % 360
-	pa_maj = int(round(pa_maj))
-	pa_min = int(round(pa_min))
+	pa_maj_ = pa % 360
+	pa_min_ = (pa+90) % 360
+	pa_maj = int(round(pa_maj_))
+	pa_min = int(round(pa_min_))
 	[ny,nx]=mom0_obs.shape
 	extimg=np.dot([-x_center,nx-x_center,-y_center,ny-y_center],pixel); xc =0; yc =0
 
@@ -117,8 +117,8 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 	figWidth = width * cm_to_inch # width [inch]
 	figHeight = height * cm_to_inch # width [inch]
 
-	levels=2**np.arange(0,7,1,dtype=float)
-	levelso=levels
+	levels=2**np.arange(-1,7,1,dtype=float)
+	levelso=levels*3
 	#"""
 	pixelconv=1
 	bmajconv=bminconv=1
@@ -194,12 +194,13 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 				
 		#
 		#define color of lines
-		clines = '#279dc5'
+		clines	= '#279dc5'
+		clines	= 'crimson'	
 		dashline = (5, (4, 3))
 
 		rmaj_positv, vmaj_positv = R, vrot
 		rmaj_neg, vmaj_neg		 = -R, -vrot
-		if pa_maj < 180:
+		if pa_maj_ < 180:
 			rmaj_positv, vmaj_positv = -R, vrot
 			rmaj_neg, vmaj_neg		 = R, -vrot			
 			loc_txt_pv = 'upper right'			
@@ -239,7 +240,7 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 		if nplots==0:
 			ax1.set_ylabel('$\mathrm{\Delta V_{LOS}~(km s^{-1})}$',fontsize=fontsize,labelpad=0)
 		else:
-			lines = [Line2D([0], [0], color='k',lw=0.8), Line2D([0], [0], color='#279dc5',lw=0.8)];labels=['data','model']
+			lines = [Line2D([0], [0], color='k',lw=0.8), Line2D([0], [0], color=clines,lw=0.8)];labels=['data','model']
 			ax1.legend(lines,labels,loc='upper left',ncol=2,borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False,
 			columnspacing=0.5,fontsize=fontsize,bbox_to_anchor=(0, 1.11), bbox_transform=ax1.transAxes)
 			ax0.legend(lines,labels,loc='upper left',ncol=2,borderaxespad=0,handlelength=0.6,handletextpad=0.5,frameon=False,

@@ -27,7 +27,7 @@ from .pixel_params import eps_2_inc,e_eps2e_inc,inc_2_eps
 
 cmap = vel_map()
 cmap_mom0 = vel_map('mom0')
-#cmap_mom0 = vel_map('pvd')
+cmap_mom0 = vel_map('pvd')
 
 def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,rms,out):
 
@@ -55,6 +55,9 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 		
 	dft			= fftconv(tmp_mdl,psf3d,threads=2,axes = [1,2])	
 	cube_mod_conv= dft.conv_DFT()
+	
+	# Do not use the convolved cube Sep. 25, 2026
+	cube_mod_conv=cube_mod
 	
 	del tmp_mdl, tmp
 
@@ -127,18 +130,20 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	vmax=np.percentile(cube_mod[cube_mod!=0],99.5)
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax) if vmax > 1 else colors.Normalize(vmin=vmin, vmax=vmax)
 	clines = '#279dc5'
-	clines = 'k'	
+	clines = 'crimson'	
 
 	dv=psf_lsf.cdelt3_kms
 	for j,k in enumerate(chanplot):
 		if j<=ngood:
 			kk=channels[k]
 			chanmap=datacube[kk]
+			chanmap_=chanmap/rms
 			chanmap_mdl=(cube_mod_conv[kk])/rms
 			chanmap[chanmap==0]=np.nan
 			axes[j].imshow(chanmap,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto',alpha=1)
-			levels=2**np.arange(-1,7,1,dtype=float)
-			axes[j].contour(chanmap_mdl,levels=levels,colors=clines, linestyles='solid',zorder=1,extent=ext,linewidths=0.4,alpha=1)
+			levels=2**np.arange(-1,7,1,dtype=float)*3
+			axes[j].contour(chanmap_mdl,levels=levels,colors=clines, linestyles='solid',zorder=1,extent=ext,linewidths=0.6,alpha=1)
+			axes[j].contour(chanmap_,levels=levels,colors='k', linestyles='solid',zorder=1,extent=ext,linewidths=0.6,alpha=1)			
 
 			v_chan=round(wave_kms[kk],2)
 			vchan=int(v_chan) if dv>10 else v_chan
