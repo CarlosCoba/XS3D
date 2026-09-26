@@ -854,6 +854,7 @@ def fit_rings_outside_in(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_
 	n_passes	= 2
 	verbose_tmp = False
 	n_rings		= len(rings)
+	
 
 	# Identify which attributes are 'free' across all rings
 	free_attrs = [attr for attr, spec in param_spec.items()
@@ -917,7 +918,7 @@ def fit_rings_outside_in(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_
 			kwargs_this = dict(fit_kws)
 			
 			#if (pass_idx+1) != n_passes:
-			kwargs_this['lambda_smooth'] = 0.0
+			kwargs_this['lambda_smooth'] = 1e-5
 			  
 			# Run the sub-problem
 			try:

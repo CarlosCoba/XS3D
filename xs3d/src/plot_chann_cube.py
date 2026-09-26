@@ -47,18 +47,18 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	tmp_mdl		= np.copy(cube_mod)
 	tmp_mdl[~tmp]=0
 	psf2d		= gkernel([ny,nx],fwhm=None,bmaj=bmajconv,bmin=bminconv,pixel_scale=pixelconv)
-	psf3d		= np.ones_like(cube_mod)*psf2d	
+	psf3d		= np.ones_like(cube_mod)*psf2d
 	#padded_mdl, cube_slices = data_2N(tmp_mdl, axes=[1, 2])
 	#padded_psf, _ = data_2N(psf3d, axes=[1, 2])
 	#dft			= fftconv(padded_mdl,padded_psf,threads=2,axes = [1,2])
 	#cube_mod_conv= dft.conv_DFT(cube_slices)
-		
-	dft			= fftconv(tmp_mdl,psf3d,threads=2,axes = [1,2])	
+
+	dft			= fftconv(tmp_mdl,psf3d,threads=2,axes = [1,2])
 	cube_mod_conv= dft.conv_DFT()
-	
+
 	# Do not use the convolved cube Sep. 25, 2026
 	cube_mod_conv=cube_mod
-	
+
 	del tmp_mdl, tmp
 
 	# plot PSF ellipse ?
@@ -130,7 +130,7 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	vmax=np.percentile(cube_mod[cube_mod!=0],99.5)
 	norm = colors.LogNorm(vmin=vmin, vmax=vmax) if vmax > 1 else colors.Normalize(vmin=vmin, vmax=vmax)
 	clines = '#279dc5'
-	clines = 'crimson'	
+	clines = 'crimson'
 
 	dv=psf_lsf.cdelt3_kms
 	for j,k in enumerate(chanplot):
@@ -141,9 +141,9 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 			chanmap_mdl=(cube_mod_conv[kk])/rms
 			chanmap[chanmap==0]=np.nan
 			axes[j].imshow(chanmap,norm=norm,origin='lower',cmap=cmap_mom0,extent=ext,aspect='auto',alpha=1)
-			levels=2**np.arange(-1,7,1,dtype=float)*3
+			levels=2**np.arange(0,7,1,dtype=float)*3
 			axes[j].contour(chanmap_mdl,levels=levels,colors=clines, linestyles='solid',zorder=1,extent=ext,linewidths=0.6,alpha=1)
-			axes[j].contour(chanmap_,levels=levels,colors='k', linestyles='solid',zorder=1,extent=ext,linewidths=0.6,alpha=1)			
+			axes[j].contour(chanmap_,levels=levels,colors='k', linestyles='solid',zorder=1,extent=ext,linewidths=0.6,alpha=1)
 
 			v_chan=round(wave_kms[kk],2)
 			vchan=int(v_chan) if dv>10 else v_chan
@@ -165,13 +165,13 @@ def plot_channels(galaxy,datacube,cube_mod,const,vmode,hdr_info,psf_lsf,config,r
 	l_rms	= np.log10(rms)
 	if l_rms> 0:
 		exp1	= -1*np.floor(l_rms)
-		exp2	= int(-1*exp1)		
-		rms_round= round(rms*10**exp1,5)
-	else:
-		exp1	= np.ceil(-l_rms)		
 		exp2	= int(-1*exp1)
 		rms_round= round(rms*10**exp1,5)
-				
+	else:
+		exp1	= np.ceil(-l_rms)
+		exp2	= int(-1*exp1)
+		rms_round= round(rms*10**exp1,5)
+
 	txt = AnchoredText(f'rms={rms_round}e{exp2} [flux units]', loc="lower left", frameon=False, prop={"fontsize":12}, bbox_to_anchor=(0, 1), bbox_transform=axes[0].transAxes);axes[0].add_artist(txt)
 	from matplotlib.cm import ScalarMappable
 	cmappable = ScalarMappable(colors.Normalize(vmin/rms,vmax/rms), cmap=cmap_mom0)
