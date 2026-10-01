@@ -280,6 +280,7 @@ class Harmonic_model:
 			W_cur =np.zeros_like(mom0_obs)
 			for b_r in best_rings:
 				ring_k = [b_r]
+				rmax_px	= abs ( b_r.radius / self.pixel_scale )
 				W_cur = W_cur  + make_weight_map(mom0_obs, self.psf_lsf, ring_k, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=2)
 			msk = (W_cur !=0).astype(float)
 			mod_cube_norm*=msk

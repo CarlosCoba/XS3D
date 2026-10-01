@@ -570,10 +570,30 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		# Second order differences
 		so_diff	= regularize(params,cfg)
 
+		# ring-by-ring mask
+		rings_w			= np.array([r.radius + bmaj for r in new_rings])
+		rings_w_pix 	= rings_w / cube_cfg.pix_arcs
+		W_cur 			= np.zeros_like(mom0_obs)
+		firstr			= True
+		for k,b_r in enumerate(new_rings):
+			ring_k		= [b_r]
+			rmax_px_tmp = rings_w_pix[k]
+			w_map		= make_weight_map(mom0_obs,psf_lsf,ring_k,alpha=weight_alpha,r_max_px=rmax_px_tmp)
+			if firstr:
+				if np.sum(W_cur) == 0:
+					W_cur = W_cur  + w_map
+					firstr=False
+			m_tmp = W_cur == 0
+			W_cur[m_tmp] = w_map[m_tmp]
+
+		mask_rz = (W_cur !=0)
+		
+		'''
 		# Recompute weight map from current geometry — cheap (<1 ms)
 		r_max_cur		= max(r.radius + bmaj for r in new_rings)
 		r_max_cur_pix 	= r_max_cur / pix_arcs
 		W_cur			= make_weight_map(mom0_obs,psf_lsf,new_rings,alpha=weight_alpha,r_max_px=r_max_cur_pix)
+		'''
 		W_cur_sum		= np.sum( W_cur*(mom0_obs>0) )
 
 		# Reset the RNG to the fixed seed so that repeated calls with
@@ -657,6 +677,7 @@ def regularize(params,cube_cfg):
 	fitcfg	= cfg.fitting
 	reg_kin		= fitcfg.getboolean('reg_kin',False)
 	reg_geo		= fitcfg.getboolean('reg_geo',False)
+	reverse		= fitcfg.getboolean('reverse',False)		
 		
 	v_floor	= max(cfg.dv/2,5)
 	if not reg_geo and not reg_kin:
@@ -674,9 +695,7 @@ def regularize(params,cube_cfg):
 
 		# Collect all per-ring values of this parameter in
 		# radius order: param names are e.g. 'v_rot_r0', 'v_rot_r1'
-		keys = sorted([k for k in params if k.startswith(pname + '_r')
-			and params[k].vary],
-		   key=lambda k: int(k.split('_r')[-1]))
+		keys = sorted([k for k in params if k.startswith(pname + '_r') and (params[k].vary or reverse)], key=lambda k: int(k.split('_r')[-1]))
 		if len(keys) < 3:
 			continue   # need at least 3 points for second differences
 		vals	= np.array([params[k].value for k in keys])
@@ -851,8 +870,9 @@ def fit_rings_outside_in(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_
 			  verbose=True,
 			  fit_kws=None):
 			  		  
-	n_passes	= 2
-	verbose_tmp = False
+	n_passes		= 2 # two loops to guarantee outer → inner and inner → outer
+	verbose_tmp 	= False
+	outsidein_always = False # If true, then the sequence is  outer → inner then outer → inner	
 	n_rings		= len(rings)
 	
 
@@ -875,7 +895,7 @@ def fit_rings_outside_in(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_
 	for pass_idx in range(n_passes):
 		# Alternate direction: even passes go outer→inner, odd go inner→outer
 		ring_order	= (list(range(n_rings - 1, -1, -1))   # outer → inner
-						if pass_idx % 2 == 0
+						if pass_idx % 2 == 0 or outsidein_always
 						else list(range(n_rings)))		   # inner → outer					  					  
 
 		direction = "outer→inner" if pass_idx % 2 == 0 else "inner→outer"
@@ -917,8 +937,10 @@ def fit_rings_outside_in(obs_cube, obs_emap, moms_obs, rings, param_spec, lmfit_
 			# (smoothness connects adjacent rings, meaningless for one ring)
 			kwargs_this = dict(fit_kws)
 			
-			#if (pass_idx+1) != n_passes:
-			kwargs_this['lambda_smooth'] = 1e-5
+			kwargs_this['lambda_smooth'] = 0.0			
+			if (pass_idx !=0 ):
+				# Add penalty in the second loop
+				kwargs_this['lambda_smooth'] = 1e-5
 			  
 			# Run the sub-problem
 			try:

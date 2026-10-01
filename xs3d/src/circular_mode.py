@@ -270,9 +270,10 @@ class Circular_model:
 			[self.pa0,self.inc0,self.x0,self.y0,self.vsys0,self.theta_b]=[const['pa'],const['inc'],const['x_center'],const['y_center'],const['v_sys'],const['phi_bar'] ]
 
 			# get final mask iterating over each ring orientation
-			W_cur =np.zeros_like(mom0_obs)
+			W_cur = np.zeros_like(mom0_obs)
 			for b_r in best_rings:
-				ring_k = [b_r]
+				ring_k	= [b_r]
+				rmax_px	= abs ( b_r.radius / self.pixel_scale )
 				W_cur = W_cur  + make_weight_map(mom0_obs, self.psf_lsf, ring_k, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=2)
 			msk = (W_cur !=0).astype(float)
 			mod_cube_norm*=msk
