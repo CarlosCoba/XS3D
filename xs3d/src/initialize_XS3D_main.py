@@ -36,7 +36,7 @@ from .plot_chann_rcube import plot_rchannels
 from .create_directories import direc_out
 from .read_hdr import Header_info
 from .convolve_cube import Cube_creation,Cube_operations
-from .momtools import mask_wave
+from .momtools import mask_wave,mask_xyz
 from .pv import pv_array2
 from .plot_pv import plot_pvd
 from .cube_stats import cstats,baselinecor,ecube,mask_cube,stats_cube_2d,mask_user
@@ -72,15 +72,20 @@ class Run_models:
 		self.galaxy=galaxy
 
 		self.datacube, self.hdr_ori=fits.getdata(datacube,header=True)
-		
-		# Crop cube spectraly
-		msk_w,hdr_tmp,cut_spec=mask_wave(self.hdr_ori,config)
-
-		if cut_spec:
-			self.datacube= self.datacube[msk_w]
-			# Change header if axes are cut
-			self.hdr_ori= hdr_tmp	
+				
+		#  ** Permanently ** crop the cube spatially and spectraly
+		#msk_w,hdr_tmp,cut_spec=mask_wave(self.hdr_ori,config)
+		slice3d,slice2d,hdr_tmp,xy_shift,cut_spec=mask_xyz(self.datacube,self.hdr_ori,config)		
 	
+		if cut_spec:
+			self.datacube	= self.datacube[slice3d]
+			# Change header if axes are cut
+			self.hdr_ori	= hdr_tmp
+			slice3d	= tuple([slice(None,None,None),slice(None,None,None),slice(None,None,None)])	
+			slice2d	= tuple([slice(None,None,None),slice(None,None,None)])
+			if xc_g in osi:
+				xy_shift = [0, 0]
+									
 		# Read header information
 		self.hdr_info=Header_info(self.hdr_ori, config)
 
@@ -96,18 +101,18 @@ class Run_models:
 		self.datacube[~np.isfinite(self.datacube)]=0
 
 		# apply user mask
-		if msk_cube in osi: msk_cube=None
+		if msk_cube in osi or cut_spec : msk_cube=None
 		mask_user(self.datacube,msk_cube)		
 		
 		#baseline correction
 		self.datacube,self.baselcube=baselinecor(self.datacube,config)
-
+		
 		# apply rms-based-mask to the cube		
 		rms3d,self.rms_cube,vpeak2D=mask_cube(self.datacube,config,self.hdr_info)
 		self.datacube=self.datacube*rms3d
-		self.hdr_ori['RMS']=self.rms_cube
-		self.hdr_info.rms = self.rms_cube
-
+		self.hdr_ori['RMS']	= self.rms_cube
+		self.hdr_info.rms	= self.rms_cube
+		
 		# psf class
 		self.psf_lsf=PsF_LsF(self.hdr_info, config)
 
@@ -117,7 +122,7 @@ class Run_models:
 		# create error cube
 		self.errcube=ecube(self.datacube,self.rms_cube)
 		self.cube_class.eflux3d=self.errcube
-
+				
 		#create observed momemnt maps
 		self.mom_obs=self.cube_class.obs_mommaps(self.datacube)
 		# create random moments instead ?
@@ -136,16 +141,23 @@ class Run_models:
 		self.config=config
 
 
-		geom=[pa_g,inc_g,xc_g,yc_g]
+		geom=[pa_g,inc_g,xc_g,yc_g,rfinal]
 
+		for j,p in enumerate(geom):
+			if p not in osi:
+				geom[j]=eval(p)
+					
 		#check whether the disk geometry will be computed or not
 		compute_geom=np.any([True if k in geom else False for k in osi])
+		msk_img		=	1
 		if compute_geom:
 			# estimate geometric moments with mom0 map.
-			geom_start=geom_moms(self.mom0,geom,pixel_scale,binary=False)
+			geom_start,msk_img_tmp=geom_moms(self.mom0,geom,pixel_scale,binary=False)
 			sma=geom_start[-1]
+			
 		if rfinal in osi:
 			rfinal=sma
+			msk_img=msk_img_tmp
 			Print().status(f'rmax={rfinal} arcsec')
 		else:
 			rfinal=eval(rfinal)
@@ -153,11 +165,9 @@ class Run_models:
 		for j,p in enumerate(geom):
 			if p in osi:
 				geom[j]=geom_start[j]
-			else:
-				geom[j]=eval(p)
 
 		# disk geometry
-		[pa_g,inc_g,xc_g,yc_g]=geom
+		[pa_g,inc_g,xc_g,yc_g,rfinal]=geom
 
 		if 0<inc_g<1: inc_g=eps_2_inc(inc_g)
 		if vsys_g in osi :
@@ -175,24 +185,29 @@ class Run_models:
 		msk_grad = magv < 400
 				
 		self.datacube = self.datacube*msk_grad
-		self.mom_obs=[self.mom_obs[k]*msk_grad for k in range(3)]
+		self.mom_obs=[self.mom_obs[k]*msk_grad*msk_img for k in range(3)]
 		mom0_tmp = self.mom_obs[0]
 
-		# Crop the datacube in case there are a lot of zeros/empty regions
-		# this will save a lot of time
-		cube_ndim, xy_shift, slices, slicecube = sub_mask3D(self.datacube,mom0_tmp,config,self.psf_lsf)
-		xc_g, yc_g = xc_g + xy_shift[0], yc_g + xy_shift[1]
-		self.xy_shift = xy_shift
-
-		mom_obs_ndim = [(self.mom_obs[k])[slices]  for k in range(3)]
 		
+		# ** Temporary ** crop the datacube in case there are a lot of zeros/empty regions
+		# this will save a lot of time
+		if not cut_spec:
+			cube_ndim, xy_shift, slice2d, slice3d = sub_mask3D(self.datacube,mom0_tmp,config,self.psf_lsf)
+			self.xy_shift = xy_shift			
+		else:
+			cube_ndim		= self.datacube				
+			self.xy_shift	= [0,0]
+
+		xc_g, yc_g = xc_g + xy_shift[0], yc_g + xy_shift[1]
+		mom_obs_ndim = [(self.mom_obs[k])[slice2d]  for k in range(3)]
+					
 		# temporary update header and psf info
 		hdr_info_tmp = copy.deepcopy(self.hdr_info)
 		hdr_info_tmp.ny, hdr_info_tmp.nx = mom_obs_ndim[0].shape
 		psf_lsf_tmp = PsF_LsF(hdr_info_tmp, config)		
 
 		stats 	= stats_cube_2d(self.datacube)
-		eflux2d_ndim = (stats[-1])[slices] 
+		eflux2d_ndim = (stats[-1])[slice2d] 
 		self.eflux2d = stats[-1]
 
 		guess_prm=guess_vals(pa_g,inc_g,xc_g,yc_g,vsys_g,PHI_B )
@@ -227,7 +242,7 @@ class Run_models:
 
 		# shift the center
 		self.mod_cube = np.zeros_like(self.datacube)
-		self.mod_cube[slicecube]=mod_cube
+		self.mod_cube[slice3d]=mod_cube
 		self.best_vals['x_center']-=self.xy_shift[0]
 		self.best_vals['y_center']-=self.xy_shift[1]
 		
@@ -244,15 +259,10 @@ class XS_out(Run_models):
 
 	def results(self):
 
-		# compute asymmetric drift correction
 		from .adrift import asymmetric_drift_correction
 		adc	= asymmetric_drift_correction(self.mom_obs[0],self.best_rings,self.pixel)
 
-		from .save_output import save_rings_fits
-		save_rings_fits(self.galaxy, self.vmode, self.best_rings, self.result, self.hdr_info, adc, extra_header=None, out=self.outdir)
-
 		mom_mod = self.cube_class.obs_mommaps(self.mod_cube)
-
 		# update chisquare
 		msk		= (mom_mod[0]>0) * (self.mom_obs[0]>0)
 		Ndata	= (msk * self.datacube!=0).sum()
@@ -263,13 +273,16 @@ class XS_out(Run_models):
 		chisqr 	= chi2/dof
 		self.result.chisqr=chisqr
 
+		from .save_output import save_rings_fits
+		save_rings_fits(self.galaxy, self.vmode, self.best_rings, self.result, self.hdr_info, adc, extra_header=None, out=self.outdir)
+
 		# remove zeros from moment maps
 		mom_mod=[zero2nan(mom_mod[k]*msk) for k in range(3)]
 		self.mom_obs=[zero2nan(self.mom_obs[k]) for k in range(3)]
 
 		# extract avg constant parameters
-		scalar_fields	= ["v_sys","inc","pa","x_center","y_center","phi_bar"]
-		operator 		= [np.mean,circmean,circmean,np.mean,np.mean,circmean]
+		scalar_fields	= ["v_sys","inc","pa","x_center","y_center","phi_bar","z_scale"]
+		operator 		= [np.mean,circmean,circmean,np.mean,np.mean,circmean,np.mean]
 		const = {k : op(self.best_vals[k]) for k,op in zip(scalar_fields, operator)}
 		const['rmax']	= np.max(self.best_vals['radius'])
 		const['pa_NE']	= (const['pa'] + self.hdr_info.pa_north) % 360
@@ -292,7 +305,7 @@ class XS_out(Run_models):
 		plot_mommaps(self.galaxy,mom_mod,self.mom_obs,const,self.vmode,self.psf_lsf,self.hdr_info,self.config,dist,self.outdir)
 
 		# save moment maps and cube model
-		save_momments(self.galaxy,self.vmode,self.mom_obs,mom_mod,self.datacube,self.mod_cube,self.baselcube,self.hdr_ori,out=self.outdir)
+		save_momments(self.galaxy,self.vmode,self.mom_obs,mom_mod,self.datacube,self.mod_cube,self.baselcube,self.hdr_ori,const,out=self.outdir)
 
 		self.P.status("creating PVD maps")
 

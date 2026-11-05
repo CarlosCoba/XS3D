@@ -24,7 +24,7 @@ class PsF_LsF:
 
 		self.fwhm_psf_arc = bmaj_hdr if bmaj_hdr is not None else config_general.getfloat('psf_fwhm',self.pix_arcs)
 
-		self.bmaj		=bmaj_hdr if bmaj_hdr is not None else config_general.getfloat('bmaj',self.fwhm_psf_arc)
+		self.bmaj		= bmaj_hdr if bmaj_hdr is not None else config_general.getfloat('bmaj',self.fwhm_psf_arc)
 
 		self.bmin		= bmin_hdr if bmin_hdr is not None else config_general.getfloat('bmin',self.bmaj)
 
@@ -56,7 +56,8 @@ class PsF_LsF:
 			self.sigma_inst_kms	= fwhm_inst_kms * __FWHM_2_sigma__
 		else:
 			fwhm_inst_A			= config_general.getfloat('fwhm_inst',2*self.cdelt3)
-			self.fwhm_inst_kms 	= (fwhm_inst_A/self.eline_A) * __c__
+			#self.fwhm_inst_kms 	= (fwhm_inst_A/self.eline_A) * __c__
+			self.fwhm_inst_kms 	= 2 * self.cdelt3_kms			
 			self.sigma_inst_kms = self.fwhm_inst_kms * __FWHM_2_sigma__
 
 		
@@ -70,9 +71,10 @@ class PsF_LsF:
 		# It controlls how densely the galaxy disk plane is sampled between anchor rings.
 		self.radial_step = self.bmaj
 
-		# vertical hight scale in arcseconds
-		hz	= config_clouds.getfloat('z_scale',0.1)
-		self.zscale	= np.max(hz,0)
+		# vertical height scale in arcseconds
+		hz				= config_clouds.getfloat('hz',0.1)
+		self.fit_zscale	= config_clouds.getint('fit_hz',0)		
+		self.zscale		= np.max(hz,0)
 		self.zscale_pix	= self.zscale	/ self.pix_arcs
 
 		# slit width in arcsec

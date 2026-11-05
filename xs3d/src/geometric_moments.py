@@ -47,7 +47,7 @@ def geom_moms(image0,geo,pixel=1,plot=False,binary=True, nloops=15):
 	img[~np.isfinite(img)]=0
 	img[img<0]=0
 
-	[pa_g,inc_g,xc_g,yc_g] = geo
+	[pa_g,inc_g,xc_g,yc_g,rfinal] = geo
 	# check if xc_g, and yc_g are numbers
 	xc_num = isinstance(xc_g,(int,float))
 	yc_num = isinstance(yc_g,(int,float))
@@ -84,6 +84,10 @@ def geom_moms(image0,geo,pixel=1,plot=False,binary=True, nloops=15):
 		bmin2=0.5*(x2+y2) - np.sqrt( (0.5*(x2-y2))**2 + xy**2 )
 		bmaj=np.sqrt(bmaj2)
 		bmin=np.sqrt(bmin2)
+		
+		# In case the disk is edgeon
+		if bmin2 < 0:
+			bmin	= 0.21*bmaj
 		b_a = bmin/bmaj # -> axis ratio
 		eps = 1-(bmin/bmaj)
 
@@ -149,4 +153,4 @@ def geom_moms(image0,geo,pixel=1,plot=False,binary=True, nloops=15):
 			plt.plot(x,y,'r-')
 			plt.show()
 	rmax=(rmax//pixel)*pixel
-	return pa_astro_deg,inc_cor_deg, xcen, ycen, rmax
+	return [pa_astro_deg,inc_cor_deg, xcen, ycen, rmax], img !=0

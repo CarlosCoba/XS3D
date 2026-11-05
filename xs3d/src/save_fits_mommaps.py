@@ -1,12 +1,13 @@
 import numpy as np
 from astropy.io import fits
 
-def save_momments(galaxy,vmode,momms_obs,momms_mod,cube_obs,cube_mod,baselcube,hdr_ori,out):
+def save_momments(galaxy,vmode,momms_obs,momms_mod,cube_obs,cube_mod,baselcube,hdr_ori,const,out):
 
 	mom0_obs,mom1_obs,mom2_obs=momms_obs
 	mom0_mod,mom1_mod,mom2_mod=momms_mod	
 	msk=np.isfinite(mom0_obs)*np.isfinite(mom0_mod)
 
+	[v_sys,inc,pa,x_center,y_center,phi_bar,rmax]=const['v_sys'],const['inc'],const['pa_NE'],const['x_center'],const['y_center'],const['phi_bar'],const['rmax']
 	try:
 		spec_axis_units=hdr_ori['CUNIT3']
 		spec_u=spec_axis_units.lower()
@@ -23,13 +24,24 @@ def save_momments(galaxy,vmode,momms_obs,momms_mod,cube_obs,cube_mod,baselcube,h
 	data[4] = mom2_obs		
 	data[5] = mom2_mod							
 	
-	hdu = fits.PrimaryHDU(data)
+	hdu = fits.PrimaryHDU(data)	
 	hdu.header['NAME0'] = f'observed mom0 (flux*km/s)'
 	hdu.header['NAME1'] = f'model mom0 (flux*km/s)'			
 	hdu.header['NAME2'] = 'observed mom1 (km/s)'
 	hdu.header['NAME3'] = 'model mom1 (km/s)'
 	hdu.header['NAME4'] = 'observed mom2 (km/s)'
-	hdu.header['NAME5'] = f'model mom2 (km/s)'	
+	hdu.header['NAME5'] = f'model mom2 (km/s)'
+	hdu.header['pa'] 	= pa
+	hdu.header['inc'] 	= inc
+	hdu.header['xc'] 	= x_center
+	hdu.header['yc'] 	= y_center
+	hdu.header['v_sys'] = v_sys
+	keys = ['CRPIX1','CRPIX2','CRVAL1','CRVAL2',
+	'CDELT1','CDELT2','CD1_1','CD1_2','CD2_1','CD2_2',
+	'BMAJ','BMIN','BPA','CTYPE1','CTYPE2','CUNIT1',
+	'CUNIT2']
+	for k in keys:
+		if k in hdr_ori: hdu.header[k] = hdr_ori[k]		
 	hdu.writeto("%smodels/%s.%s.moments.fits.gz"%(out,galaxy,vmode),overwrite=True)
 			
 	hdu1 = fits.PrimaryHDU(cube_mod*msk)

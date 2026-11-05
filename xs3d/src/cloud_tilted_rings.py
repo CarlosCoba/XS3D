@@ -40,7 +40,7 @@ from scipy.interpolate import interp1d
 
 # Convolution engine (pyfftw or scipy fallback) lives in convolution.py
 from .conv_fftw2 import ConvolutionEngine, PYFFTW_AVAILABLE, ADVISOR_AVAILABLE, optimal_sizes
- 
+from .vertical_rotation import get_table 
 
 
 # ---------------------------------------------------------------------------
@@ -348,12 +348,12 @@ def _interpolate_rings(rings):
 	# For r = 0 (central disk) use the filled-circle area  A = pi*(w/2)^2.
 	# If the first ring is at r=0, use the first ring with r>0 as the
 	# density reference to avoid the degenerate r=0 case dominating.
-	rwidth 		= ring.width
-	rad_step	= ring.hwidth
-	ref_candidates = [r for r in rings if r.radius > 0]
-	ref_ring	   = ref_candidates[0] if ref_candidates else rings[0]
-	ref_area	   = 2.0 * np.pi * ref_ring.radius * ref_ring.width
-	ref_cloud_den  = ref_ring.n_clouds / max(ref_area, 1.0)
+	rwidth 			= ring.width
+	rad_step		= ring.hwidth
+	ref_candidates	= [r for r in rings if r.radius > 0]
+	ref_ring		= ref_candidates[0] if ref_candidates else rings[0]
+	ref_area		= 2.0 * np.pi * ref_ring.radius * ref_ring.width
+	ref_cloud_den	= ref_ring.n_clouds / max(ref_area, 1.0)
  
 	# --- Build fine grid ---
 	r_min	  = radii[0]
@@ -406,9 +406,9 @@ def _interpolate_rings(rings):
 			n_subclouds = ref_ring.n_subclouds,
 			harmonics   = h,
 			velocity_model = ref_ring.velocity_model,
-			v_2r	= float(interps["v_2r"](r)),
-			v_2t	= float(interps["v_2t"](r)),
-			phi_bar = float(interps["phi_bar"](r)),
+			v_2r		= float(interps["v_2r"](r)),
+			v_2t		= float(interps["v_2t"](r)),
+			phi_bar 	= float(interps["phi_bar"](r)),
 			vz_gradient = ref_ring.vz_gradient,
 		))
 	return fine_rings
@@ -569,10 +569,10 @@ class RingBuilder:
 		-------
 		np.ndarray
 		"""
-		inc_rad = np.radians(ring.inc)
-		sin_inc = np.sin(inc_rad)
-		v_rot_los = ring.v_rot * np.cos(phi) * sin_inc
-		v_rad_los = ring.v_rad * np.sin(phi) * sin_inc
+		inc_rad		= np.radians(ring.inc)
+		sin_inc		= np.sin(inc_rad)
+		v_rot_los	= ring.v_rot * np.cos(phi) * sin_inc
+		v_rad_los	= ring.v_rad * np.sin(phi) * sin_inc
 		return ring.v_sys + v_rot_los - v_rad_los
 
 	def _los_bisymmetric(self, phi, ring):
@@ -677,7 +677,6 @@ class RingBuilder:
 		#ax.scatter(x_disk, y_disk, z_disk, marker = 'o');plt.show()
 		vrot_scale = None
 		if ring.vz_gradient and ring.z_scale > 0 and ring.radius > 0:
-			from .vertical_rotation import get_table
 			hz_pot_arc	= ring.z_scale_pot # arcs
 			table		= get_table(ring.z_profile)
 			alpha		= hz_pot_arc / ring.radius
@@ -699,8 +698,10 @@ class RingBuilder:
 		# Convert to integer indices
 		xi = np.round(x_sub).astype(int)
 		yi = np.round(y_sub).astype(int)
-		ci = np.round((v_total - cfg.v_min) / cfg.dv).astype(int)
-
+		#ci = np.round((v_total - cfg.v_min) / cfg.dv).astype(int)
+		#ci = np.round((v_total - cfg.wave_kms[0]) / cfg.cdelt3_kms).astype(int)		
+		ci = np.round((v_total - cfg.chan_0) / cfg.dV).astype(int)		
+				
 		# Mask out-of-bounds
 		mask = (
 			(xi >= 0) & (xi < cfg.nx) &
@@ -790,7 +791,7 @@ class TiltedRingModel:
 		# reduce the precision from float64 to float32 for cubes
 		# larger than MUSE. This will reduce the memory allocation.
 		f_dtype = np.float32 if cfg.ny * cfg.nx <= 9e4 else np.float64 
-		cube = np.zeros((cfg.nv, cfg.ny, cfg.nx), dtype=f_dtype)
+		cube	= np.zeros((cfg.nv, cfg.ny, cfg.nx), dtype=f_dtype)
 		for i, ring in enumerate(fine_rings):
 			if verbose and (i % max(1, len(fine_rings) // 10) == 0):
 				print(f"  Ring {i+1:4d}/{len(fine_rings)} "

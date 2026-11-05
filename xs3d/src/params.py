@@ -30,7 +30,10 @@ class Set_params:
 		dL, scale		= cosmo.comv_distance(vsys=guess_common['v_sys'])
 		z0_potential	= 2000 #pc  --> default grav. pot. height scale
 		guess_common['z_scale_pot'] = z0_potential / scale #arcsec
-		
+
+		#z0_gas	= 300 #pc
+		#guess_common['z_scale'] = z0_gas / scale
+				
 		self.common = guess_common
 		self.nx 	= hdr.nx
 		self.ny 	= hdr.ny
@@ -39,14 +42,16 @@ class Set_params:
 		self.dx 	= hdr.dx
 		self.vel_axis=hdr.wave_kms
 		
-		fit_disp = psf_lsf.vary_disp
-		replacements = {0: 'fixed', 1: 'tied', 2: 'free'}
-		params = ('pa','inc','x_center','y_center','v_sys','phi_b')
-		self.vary = {params[k]:replacements.get(x, x) for k,x in enumerate(vary)}
+		fit_disp	= psf_lsf.vary_disp
+		fit_zscale	= psf_lsf.fit_zscale			
+		replacements= {0: 'fixed', 1: 'tied', 2: 'free'}
+		params		= ('pa','inc','x_center','y_center','v_sys','phi_b')
+		self.vary	= {params[k]:replacements.get(x, x) for k,x in enumerate(vary)}
 		#self.vary_nc = ['free' if R_nc[k] else 0 for k in range(self.nrings) ]
 		self.vary_nc = [replacements.get(x, x) for k,x in enumerate(R_nc)  ]
 				
 		self.vary_disp	=  replacements[fit_disp]
+		self.vary_zscale= replacements[fit_zscale]		
 		nclouds 		= guess_common['n_clouds']
 		self.inc		= guess_common['inc']
 		
@@ -86,7 +91,8 @@ class Set_params:
 				'v_sys'   : self.vary['v_sys'],
 				'x_center': self.vary['x_center'],
 				'y_center': self.vary['y_center'],
-				'v_disp'  : self.vary_disp,												
+				'v_disp'  : self.vary_disp,
+				'z_scale' : self.vary_zscale,																
 			}
 		if vmode!='hrm':
 			spec['v_rot'] 	= 'free'					
@@ -120,7 +126,7 @@ class Set_params:
 		if self.vary['inc'] == 'free':
 			set_bounds(params, 'inc', n,   min_inc,  90.0)
 									
-		params['pa_r0'].min  =   -360.0
+		params['pa_r0'].min  = -360.0
 		params['pa_r0'].max  = 360.0
 		params['inc_r0'].min =  min_inc
 		params['inc_r0'].max =  91.0
@@ -128,7 +134,9 @@ class Set_params:
 		params['v_sys_r0'].min =  np.min(self.vel_axis)
 		params['v_sys_r0'].max =  np.max(self.vel_axis)
 		
-				
+		params['z_scale_r0'].min =  0
+		params['z_scale_r0'].max =  500
+						
 		params['x_center_r0'].min =  0
 		params['x_center_r0'].max =  self.nx			
 		params['y_center_r0'].min =  0

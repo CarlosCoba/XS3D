@@ -76,7 +76,7 @@ class Print:
 		pixel_arcs=psf_lsf.pix_arcs
 		
 		print(self.deli)						
-		if psf_fwhm is not None:
+		if (psf_fwhm is not None) and (bmaj == bmin):
 				psf_fwhm_rn=round(psf_fwhm,3)
 				print ('  ' + '{:<20} {:<15}'.format('PSF FWHM:', f'{psf_fwhm_rn} arcsec'))
 		if bmaj is not None and bmin is not None:				

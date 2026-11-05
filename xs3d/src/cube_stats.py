@@ -242,13 +242,13 @@ def mask_cube(data,config,hdr,clip=None):
 							fmax=flux_k
 				msk_cube[:,j,i]=a
 
-	# find m=3 consecutive non-zero values along spectral axis
-	# msk_cube_tmp = msk_cube[:-2, :, :] & msk_cube[1:-1, :, :] & msk_cube[2:, :, :]
-	m=3
-	msk_cube_tmp = np.logical_and.reduce([msk_cube[i:nz-m+i+1] for i in range(m)])
-	msk_cube_tmp = np.sum(msk_cube_tmp, axis = 0)
-	msk_cube*=(msk_cube_tmp>=1)
-	msk_cube=(msk_cube).astype(float)
+		# find m=3 consecutive non-zero values along spectral axis
+		# msk_cube_tmp = msk_cube[:-2, :, :] & msk_cube[1:-1, :, :] & msk_cube[2:, :, :]
+		m=3
+		msk_cube_tmp = np.logical_and.reduce([msk_cube[i:nz-m+i+1] for i in range(m)])
+		msk_cube_tmp = np.sum(msk_cube_tmp, axis = 0)
+		msk_cube*=(msk_cube_tmp>=1)
+		msk_cube=(msk_cube).astype(float)
 
 	plot=0
 	if plot:

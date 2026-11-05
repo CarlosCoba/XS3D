@@ -31,6 +31,7 @@ def zero2nan(data):
 	return data
 
 cmap = vel_map()
+cmap_mom2 = vel_map('mom2')
 cmap_mom0 = vel_map('mom0')
 
 def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,dist,out):
@@ -46,7 +47,7 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 	psf_arc		= psf_lsf.fwhm_psf_arc
 	psf_pix		= psf_lsf.fwhm_psf_pix
 	config_clouds=config['clouds']
-	zscale		= config_clouds.getfloat('z_scale', 0)
+	zscale		= const['z_scale']
 	hdr_cube 	= hdr_info.hdr
 	pa_ne 		= hdr_info.pa_north
 	ma_side		= hdr_info.ma_side
@@ -140,7 +141,7 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 	res_mom1=mom1-mom1_mod
 	vmin = abs(np.nanmin(mom1_mod))
 	vmax = abs(np.nanmax(mom1_mod))
-	base=10
+	base=5
 	if vmax < 10 or vmin < 10:
 		base = 0.1
 
@@ -159,9 +160,9 @@ def plot_mommaps(galaxy,mom_mod,momms_obs,const,vmode,psf_lsf,hdr_info,config,di
 	# moment 2 maps
 	res_mom2=mom2-mom2_mod
 	array = mom2 if ma_side != 0 else mom2_mod	
-	vmin,vmax=vmin_vmax(array,2,95,base=base,mask=mask)
-	ax6.imshow(mom2,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
-	im7=ax7.imshow(mom2_mod,origin='lower',cmap=cmap,extent=ext,vmin=vmin,vmax=vmax,aspect='auto')
+	vmin,vmax=vmin_vmax(array,1,98,base=base,mask=mask)
+	ax6.imshow(mom2,origin='lower',cmap=cmap_mom2,extent=ext,vmin=vmin/2,vmax=vmax,aspect='auto')
+	im7=ax7.imshow(mom2_mod,origin='lower',cmap=cmap_mom2,extent=ext,vmin=vmin/2,vmax=vmax,aspect='auto')
 	vmin,vmax=vmin_vmax(res_mom2,2,98,symmetric=True,mask=mask)
 	# if residuals are lower than 1km/s then express them in m/s
 	if vmax<1:

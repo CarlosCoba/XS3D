@@ -116,7 +116,7 @@ class ConvolutionEngine:
 		self.beam_fwhm	= psf_lsf.bmaj/pixel
 		self.bmin_fwhm	= psf_lsf.bmin/pixel
 		self.beam_pa 	= psf_lsf.bpa
-		self.dv			= psf_lsf.cdelt3_kms
+		self.dv			= abs(psf_lsf.cdelt3_kms)
 		self.sigma_kms	= psf_lsf.sigma_inst_kms
 		self.nthreads	= psf_lsf.nthreads
 
@@ -480,7 +480,7 @@ def spec_pad(cfg,psf_lsf):
 	sp		: the pading needed to be applied at each extreme of the z axis.
 	'''
 	nv 			= cfg.nv
-	dv			= psf_lsf.cdelt3_kms
+	dv			= abs(psf_lsf.cdelt3_kms)
 	sigma_kms	= psf_lsf.sigma_inst_kms
 	sigma_chan	= sigma_kms/dv if sigma_kms > 0 else 0.0
 	sp			= int(np.ceil(3.0 * sigma_chan))   # e.g. sp=4 for sigma_ch=1
@@ -498,7 +498,7 @@ def optimal_sizes(cfg,psf_lsf):
 			
 	pixel 		= cfg.pix_arcs
 	beam_fwhm	= psf_lsf.bmaj/pixel
-	dv			= psf_lsf.cdelt3_kms
+	dv			= abs(psf_lsf.cdelt3_kms)
 	sigma_kms	= psf_lsf.sigma_inst_kms
 								
 	"""Return (nx_fft, ny_fft, nv_fft) — padded sizes if beneficial."""

@@ -13,7 +13,8 @@ import matplotlib.pylab as plt
 
 from .constants import __c__, __sigma_2_FWHM__
 from .read_hdr import Header_info
-
+from .cube_selector import window
+	
 			
 def trapecium(flux,a,b,dx):
 	n=len(flux)
@@ -99,6 +100,113 @@ def mask_wave(h,config):
 
 	return slices,h,crop
 
+
+def mask_xyz(cube,h,config):
+	"""
+	config_general = config['general']
+	wmin,wmax =config_general.getfloat('wmin',None),config_general.getfloat('wmax',None)
+	crop 	  = False										
+	if (wmin is None) and (wmax is None):
+		return None, None, crop
+	
+	if wmin is not None and wmax is not None:
+		pass
+	elif wmin is None:
+		wmin=-np.inf
+	else:
+		wmax=np.inf
+
+	"""
+
+	config_general	= config['general']
+	crop			= config_general.getboolean('crop_xyz', False)
+	
+	if not crop:
+		return None, None, None, None, crop
+
+	hdr			= Header_info(h,config)
+	[nz,ny,nx]	= hdr.cube_dims()
+	wave_cover	= hdr.spectral_axis()
+
+	xmin,xmax = 0,nx-1 
+	ymin,ymax = 0,ny-1 
+	zmin,zmax = 0,nz-1 
+		
+	results = window(cube,wave_cover)
+	roi		= results['roi']
+	wind_range = results['channel_ranges']
+	
+	# roi and wind_range provide indices
+	if roi :
+		(xmin,xmax,ymin,ymax) = roi
+		xmax+=1	
+		ymax+=1			
+		crop = True
+	
+	if wind_range:
+		[(zmin,zmax)] = wind_range
+		zmax+=1			
+		crop = True
+	
+	# `slice` last indice is exclusive.
+	slices3D	= tuple([slice(zmin,zmax,None),slice(ymin,ymax,None),slice(xmin,xmax,None)])
+	slices2D	= tuple([slice(ymin,ymax,None),slice(xmin,xmax,None)])
+	slices2D	= tuple([slice(0,None,None),slice(0,None,None)])	
+
+	cdelt3		= h['CDELT3']
+	crval3_tmp	= h['CRVAL3']
+	crpix3		= h['CRPIX3']
+	crval3		= wave_cover[zmin]
+						
+	naxis3	= (zmax-zmin) 
+	naxis1	= (xmax-xmin)	
+	naxis2	= (ymax-ymin)		
+	
+	# update header
+	h['CRVAL3']=crval3
+	h['CRPIX3']=1
+	h['CDELT3']=cdelt3
+	h['NAXIS1']=naxis1
+	h['NAXIS2']=naxis2
+	h['NAXIS3']=naxis3	
+	
+
+	# Update the reference pixel coordinates	
+	if 'CRPIX1' in h:
+		h['CRPIX1']-=xmin		
+		h['CRPIX2']-=ymin		
+
+	xshift, yshift	= -xmin, -ymin
+	#xshift, yshift	= xmin, ymin	
+	xy_shift		= [xshift, yshift]
+	
+	
+	return slices3D, slices2D, h, xy_shift, crop
+				
+	"""
+		
+	msk 	= (wave_cover >= wmin) * (wave_cover <= wmax)
+	indices = (np.arange(nz).astype(int))[msk]	
+
+	minz	= np.min(indices)
+	maxz	= np.max(indices)+1
+	minz	= np.clip(minz,0,None)
+	maxz	= np.clip(maxz,None,nz)
+	
+	slices	= tuple([slice(minz,maxz,None),slice(None,None,None),slice(None,None,None)])
+	
+	crval3	= (wave_cover[msk]).min()
+	cdelt3	= wave_cover[1]-wave_cover[0]
+
+	# update header
+	h['CRVAL3']=crval3
+	h['CRPIX3']=1
+	h['CDELT3']=cdelt3
+	h['NAXIS3']=msk.sum()	
+
+	return slices,h,crop
+	"""
+	return 0,0,0
 
 def mommaps(cube,h,config,rms=0):
 	#[nz,ny,nx]=cube.shape

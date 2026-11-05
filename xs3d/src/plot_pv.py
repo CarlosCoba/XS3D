@@ -256,7 +256,7 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 		bpa= psf_lsf.bpa
 		fwhm_kms=psf_lsf.fwhm_inst_kms
 		if fwhm_kms is None:
-			fwhm_kms=hdr_info.cdelt3_kms
+			fwhm_kms=abs(hdr_info.cdelt3_kms)
 
 		bmin=bmin_arc/rnorm
 		bmaj=bmaj_arc/rnorm
@@ -266,7 +266,7 @@ def plot_pvd(galaxy,out_pvd,best,const,vmode,rms,moms_mod,moms_obs,datacube,hdr_
 			xmax_ = max(ext1[0],ext1[1])
 			x0 = 0.95*xmax_ - bmaj/2
 			y0 = 0.95*ymin_ + fwhm_kms/2
-			ellipse = Ellipse((x0, y0),width=bmaj,height=fwhm_kms,angle=bpa,fill=0,edgecolor='blue', facecolor='none', hatch=5*'.')
+			ellipse = Ellipse((x0, y0),width=bmaj,height=fwhm_kms,angle=0,fill=0,edgecolor='blue', facecolor='none', hatch=5*'.')
 			Axes.add_patch(ellipse)
 
 		#for Axes in [ax0, ax1]:

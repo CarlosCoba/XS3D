@@ -5,6 +5,7 @@ import matplotlib.pylab as plt
 from scipy.stats import circstd,circmean
 from multiprocessing import Pool, cpu_count
 import random
+import copy
 
 from .start_messenge import Print
 from .eval_tab_model import tab_mod_vels
@@ -115,7 +116,7 @@ class Harmonic_model:
 		self.nthreads	= config_general.getint('nthreads',1)
 		self.nclouds 	= config_clouds.getint('nclouds', 1)
 		self.nsubclouds = config_clouds.getint('nsubclouds', subclouds_tmp)
-		self.z_scale 	= config_clouds.getfloat('z_scale', 0.1)
+		self.z_scale 	= config_clouds.getfloat('hz', 0.1)
 		self.z_scale_pot=self.z_scale # temporary value				
 		self.z_profile 	= config_clouds.get('z_profile', 'sech2')
 		self.lagging 	= config_clouds.getboolean('lagging', False)
@@ -251,8 +252,14 @@ class Harmonic_model:
 			# ============================================================
 			# 7.  Build best-fit model cube for diagnostics
 			# ============================================================
+			
+			# Increase the number of clouds in the final model.
+			best_rings_tmp	= copy.deepcopy(best_rings)
+			for k in range(len(best_rings)):
+				best_rings_tmp[k].n_clouds	= 20
+
 			best_model	= TiltedRingModel(self.hdr, self.psf_lsf, seed=self.seed)
-			mod_cube 	= best_model.build(best_rings, verbose=False)
+			mod_cube 	= best_model.build(best_rings_tmp, verbose=False)
 			res_cube 	= residual_cube(obs_cube, mod_cube)
 			best_vals	= extractp(best_rings)
 
@@ -278,10 +285,10 @@ class Harmonic_model:
 
 			# get final mask iterating over each ring orientation
 			W_cur =np.zeros_like(mom0_obs)
-			for b_r in best_rings:
+			for b_r in best_rings_tmp:
 				ring_k = [b_r]
 				rmax_px	= abs ( b_r.radius / self.pixel_scale )
-				W_cur = W_cur  + make_weight_map(mom0_obs, self.psf_lsf, ring_k, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=2)
+				W_cur = W_cur  + make_weight_map(mom0_obs, self.psf_lsf, ring_k, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=3)
 			msk = (W_cur !=0).astype(float)
 			mod_cube_norm*=msk
 

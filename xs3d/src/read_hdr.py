@@ -18,29 +18,29 @@ class Header_info:
 		
 		self.ny = hdr['NAXIS2']
 		
-		self.nx = hdr['NAXIS1']
+		self.nx	= hdr['NAXIS1']
 		
-		self.crpix3 = hdr['CRPIX3'] if 'CRPIX3' in hdr else 1		
+		self.crpix3	= hdr['CRPIX3'] if 'CRPIX3' in hdr else 1		
 
-		self.bmaj = hdr['BMAJ']*3600 if 'BMAJ' in hdr else None
+		self.bmaj	= hdr['BMAJ']*3600 if 'BMAJ' in hdr else None
 		
-		self.bmin = hdr['BMIN']*3600 if 'BMIN' in hdr else None		
+		self.bmin	= hdr['BMIN']*3600 if 'BMIN' in hdr else None		
 
-		self.bpa = hdr['BPA'] if 'BMIN' in hdr else None		
+		self.bpa	= hdr['BPA'] if 'BMIN' in hdr else None		
 		
-		self.scale=0
+		self.scale	= 0
 		
-		self.crval3=0
+		self.crval3	= 0
 		
-		self.bunit='Intensity'
+		self.bunit	= 'Intensity'
 						
-		self.cunit1='deg'
+		self.cunit1	= 'deg'
 		
-		self.wavelength_wave=['angstrom','um','wavelength','wave','angstrom','um','micron','lambda']
+		self.wavelength_wave	= ['angstrom','um','wavelength','wave','angstrom','um','micron','lambda']
 		
-		self.wavelength_frec=['freq','frequency','hz']
+		self.wavelength_frec	= ['freq','frequency','hz']
 		
-		self.wavelength_vel=['kms','km/s','kms-1','ms','m/s','ms-1']
+		self.wavelength_vel		= ['kms','km/s','kms-1','ms','m/s','ms-1']
 								
 		self.wave_types=self.wavelength_wave+self.wavelength_frec+self.wavelength_vel
 
@@ -53,7 +53,7 @@ class Header_info:
 
 		ctype3=hdr['CTYPE3'] if 'CTYPE3' in hdr else general.get('ctype3','wavelength')
 		
-		cunit3=hdr['CUNIT3'] if 'CUNIT3' in hdr else None
+		cunit3=hdr['CUNIT3'] if 'CUNIT3' in hdr else ''
 
 		ma_side	= self.fitting.getint('ma_side',0)
 		
@@ -120,8 +120,8 @@ class Header_info:
 			print('Warning!, the pixel scale seems to be too large !')
 
 
-		self.pix_arcs = self.scale*3600 # arcsec/pix
-		self.scale=self.scale*3600 # from degree to arcsec
+		self.pix_arcs	= self.scale*3600 # arcsec/pix
+		self.scale		= self.scale*3600 # from degree to arcsec
 		
 		# wave axis in original units:
 		self.spec_axis = self.crval3 + self.cdelt3*(np.arange(self.nz) + 1 - self.crpix3) 
@@ -139,23 +139,25 @@ class Header_info:
 				wave_hz2kms=__c__*((self.elinez/self.spec_axis)-1) # wave in kms	optical definition
 			self.wave_kms=wave_hz2kms
 			self.cdelt3_kms=__c__*(self.cdelt3/self.elinez)
-		elif any( [item in ['kms','km/s','kms-1'] for item in [self.cunit3,self.ctype3]] ):
+		elif any([True if item in self.ctype3 else True if item in self.cunit3 else False for item in ['kms','km/s','kms-1']]):		
 			self.wave_kms=self.spec_axis
 			self.cdelt3_kms=self.cdelt3
-		elif any( item in ['ms','m/s','ms-1'] for item in [self.cunit3,self.ctype3] ):
+		elif any( [[True if item in self.ctype3 else True if item in self.cunit3 else False for item in ['ms','m/s','ms-1']]] ):
 				self.wave_kms=self.spec_axis/1e3
 				self.cdelt3_kms=self.cdelt3/1e3
 		else:
-			print(any( [item in ['kms','km/s','kms-1'] for item in [self.cunit3,self.ctype3]] ))
 			print("No spectral information/units found in header or in config_file");quit()
 
-		self.dx=self.pix_arcs		 #  arcsec/pixel
-		self.dy=self.pix_arcs		 #  arcsec/pixel
-		self.dv=self.cdelt3_kms
-		self.v_min=self.wave_kms[0]
-		self.rms = 1
-		self.object=''
+		self.dx		= self.pix_arcs		 #  arcsec/pixel
+		self.dy		= self.pix_arcs		 #  arcsec/pixel
+		self.dv		= abs(self.cdelt3_kms)		
+		self.chan_0 = self.wave_kms[0]
+		self.dV		= self.wave_kms[1]-self.wave_kms[0]
+		self.v_min	= np.min(self.wave_kms)
+		self.rms	= 1
+		self.object	= ''
 
+		print(self.wave_kms)
 	def cube_dims(self):
 		return self.nz,self.ny,self.nx
 

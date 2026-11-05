@@ -71,7 +71,7 @@ from .cloud_tilted_rings import TiltedRingModel, CubeConfig, Ring, RingBuilder
 # Spatial weight map
 # ---------------------------------------------------------------------------
 
-def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_z=2, edge_on_threshold=89.0, vertical_weight=False):
+def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_z=300, edge_on_threshold=89.0, vertical_weight=False):
 	"""
     Boolean mask of the projected galaxy volume out to r_max_px.
 
@@ -113,14 +113,16 @@ def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_
 	vertical_weight		= zweight
 
 	psf_pix 			= psf_cfg.fwhm_psf_pix
-	z_scale_pix 		= psf_cfg.zscale_pix
+	pixel				= psf_cfg.pix_arcs
+	z_scale				= np.mean([r.z_scale  for r in rings])	
+	z_scale_pix 		= z_scale / pixel
 	# Observed (PSF-convolved) vertical extent
 	zscale_pix_obs 		= np.sqrt(z_scale_pix**2 + psf_pix**2)
 	# this capture 95% of the vertical emission
 	#n_sigma_z = 1
 
 	inc_arr = [r.inc for r in rings]
-	pa_arr	= [r.pa%360  for r in rings]
+	pa_arr	= [r.pa%360  for r in rings]	
 	inc_deg = float(circmean(inc_arr))
 	inc = np.radians(circmean(inc_arr))
 	pa  = np.radians(circmean(pa_arr))

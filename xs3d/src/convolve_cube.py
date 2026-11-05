@@ -32,7 +32,7 @@ class Cube_creation:
 		config_const = config['fitting']
 		config_general = config['general']
 		config_others = config['others']
-		self.vary_disp=config_general.getboolean('fit_dispersion',False)
+		self.vary_disp=config_general.getint('fit_disp',False)
 
 		self.wmin,self.wmax=config_general.getfloat('wmin',None),config_general.getfloat('wmax',None)
 
@@ -231,7 +231,7 @@ class Zeropadding:
 
 		self.datacube=cube
 		config_general = config['general']
-		self.vary_disp=config_general.getboolean('fit_dispersion',False)
+		self.vary_disp=config_general.getint('fit_disp',False)
 
 
 		self.fit_psf=psf_lsf.fit_psf
@@ -272,40 +272,39 @@ class Zeropadding:
 class Cube_operations:
 	def __init__(self, hdr, config, psf_lsf):
 
-		self.hdr=hdr
+		self.hdr	= hdr
 		self.config = config
 
-		self.nz=hdr.nz
-		self.ny=hdr.ny
-		self.nx=hdr.nx
+		self.nz	= hdr.nz
+		self.ny	= hdr.ny
+		self.nx	= hdr.nx
 
-		self.ones_2d=np.ones((self.ny,self.nx))
-		self.ones_3d=np.ones((self.nz,self.ny,self.nx))
-
-
-		config_const = config['fitting']
-		config_general = config['general']
-		config_others = config['others']
-		self.vary_disp=config_general.getboolean('fit_dispersion',False)
+		self.ones_2d	= np.ones((self.ny,self.nx))
+		self.ones_3d	= np.ones((self.nz,self.ny,self.nx))
 
 
-		self.fit_psf=psf_lsf.fit_psf
-		self.bmaj=psf_lsf.bmaj
-		self.bmin=psf_lsf.bmin
-		self.bpa= psf_lsf.bpa
+		config_const	= config['fitting']
+		config_general	= config['general']
+		config_others	= config['others']
+		self.vary_disp=config_general.getint('fit_disp',False)
+
+
+		self.fit_psf	= psf_lsf.fit_psf
+		self.bmaj		= psf_lsf.bmaj
+		self.bmin		= psf_lsf.bmin
+		self.bpa		= psf_lsf.bpa
 		self.fwhm_psf_arc=psf_lsf.fwhm_psf_arc
 		self.sigma_inst_pix=psf_lsf.sigma_inst_pix
 		self.sigma_inst_kms=psf_lsf.sigma_inst_kms
 
 		self.eflux3d=0
 
+		self.pixel_scale	= hdr.pix_arcs
+		self.wave_cover_kms	= self.hdr.wave_kms
+		self.cdelt3_kms		= self.hdr.cdelt3_kms
+		self.dv				= hdr.dv
 
-		self.pixel_scale = hdr.pix_arcs
-		self.wave_cover_kms=self.hdr.wave_kms
-		self.cdelt3_kms=self.hdr.cdelt3_kms
-		self.dv=hdr.dv
-
-		self.psf_2d=gkernel(self.ones_2d.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin, bpa=self.bpa,pixel_scale=self.pixel_scale, norm=True) if self.fit_psf else None
+		self.psf_2d	= gkernel(self.ones_2d.shape,self.fwhm_psf_arc,bmaj=self.bmaj,bmin=self.bmin, bpa=self.bpa,pixel_scale=self.pixel_scale, norm=True) if self.fit_psf else None
 		self.nthreads=config_general.getint('nthreads',2)
 
 

@@ -58,9 +58,10 @@ def vmin_vmax(data,pmin=2,pmax=99.5,base=None,symmetric =False,mask=None):
 		data = data[mask]
 	vmin,vmax=np.nanpercentile(np.unique(data),pmin),np.nanpercentile(np.unique(data),pmax)
 	vsym = (vmax+abs(vmin))*0.5
+	vsym = np.nanmax([abs(vmin),vmax])
 	if symmetric: vmin,vmax=-1*vsym,vsym
 	if base is not None:
-		vmin,vmax=(vmin//base+1)*base,(vmax//base+1)*base
+		vmin,vmax=(vmin//base-1)*base,(vmax//base+1)*base
 		if symmetric: vmin,vmax=-1*(vsym//base+1)*base,(vsym//base+1)*base
 	return vmin,vmax
 
