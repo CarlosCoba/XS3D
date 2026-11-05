@@ -157,7 +157,6 @@ class Header_info:
 		self.rms	= 1
 		self.object	= ''
 
-		print(self.wave_kms)
 	def cube_dims(self):
 		return self.nz,self.ny,self.nx
 
