@@ -754,7 +754,8 @@ class TiltedRingModel:
 		# Precompute padding if necessary.
 		# We compute this just once.
 		new_size   = optimal_sizes(cube_config, psf_lsf)
-				
+		new_size   = None		
+		
 		# ConvolutionEngine owns the FFT plan and PSF cache.
 		# It is created once and reused across all build() calls so
 		# that pyfftw planning cost is paid only on the first call.

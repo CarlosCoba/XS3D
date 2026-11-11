@@ -93,7 +93,7 @@ class Print:
 				print ('  ' + '{:<20} {:<15}'.format('BPA:', f'{bpa} deg'))										
 		if fwhm_inst != 0:
 				fwhm_inst=round(fwhm_inst,3)
-				print ('  ' + '{:<20} {:<15}'.format('Spec. broadening:', f'{fwhm_inst}'))
+				print ('  ' + '{:<20} {:<15}'.format('Spec. broadening:', f'{fwhm_inst} cunit3'))
 		if lsf_fwhm is not None:
 				lsf_fwhm=round(lsf_fwhm,3)
 				print ('  ' + '{:<20} {:<15}'.format('LSF FWHM:', f'{lsf_fwhm} km/s'))

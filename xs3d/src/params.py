@@ -15,6 +15,8 @@ class Set_params:
 		self.R = rings
 		R_nc = self.R['R_nc']		
 		self.nrings = len(self.R['R_pos'])
+		self.rmax	= np.max(rings['R_pos'])
+		
 		bmaj = psf_lsf.bmaj
 		# width is the radial extent of a single anchor ring in the galaxy disk plane.
 		self.width	= rwidth
@@ -135,7 +137,7 @@ class Set_params:
 		params['v_sys_r0'].max =  np.max(self.vel_axis)
 		
 		params['z_scale_r0'].min =  0
-		params['z_scale_r0'].max =  500
+		params['z_scale_r0'].max =  self.rmax/3
 						
 		params['x_center_r0'].min =  0
 		params['x_center_r0'].max =  self.nx			

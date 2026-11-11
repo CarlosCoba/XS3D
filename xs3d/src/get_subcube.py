@@ -21,9 +21,9 @@ def sub_mask3D(cube, mom, config, psf_lsf, f = 0.02, plot = False):
 	shape_ori = cube.shape
 	[nz, ny_ori, nx_ori] = shape_ori
 	
-	mask = mom != 0
-	ntotx = ny_ori
-	ntoty = nx_ori
+	mask	= mom != 0
+	ntotx	= ny_ori
+	ntoty	= nx_ori
 
 	nx_frac = np.sum(mask, axis = 0) / ntotx
 	ny_frac = np.sum(mask, axis = 1) / ntoty
@@ -34,11 +34,11 @@ def sub_mask3D(cube, mom, config, psf_lsf, f = 0.02, plot = False):
 	indx_x = np.argwhere(nx_frac>f1)
 	indx_y = np.argwhere(ny_frac>f2)
 
-	pad	=	int(psf_pix)
-	x1,x2 = int(min(indx_x)[0]-pad), int(max(indx_x)[0]+pad+1) # Index. We need to add 1 cause `slice` last indice is exclusive.
-	y1,y2 = int(min(indx_y)[0]-pad), int(max(indx_y)[0]+pad+1) # Index. We need to add 1 cause `slice` last indice is exclusive.
-	x1,x2 = np.clip(x1,0,None),np.clip(x2,None,nx_ori) # Index
-	y1,y2 = np.clip(y1,0,None),np.clip(y2,None,ny_ori) # Index
+	pad		=	0 # int(psf_pix)
+	x1,x2	= int(min(indx_x)[0]-pad), int(max(indx_x)[0]+pad+1) # Index. We need to add 1 cause `slice` last indice is exclusive.
+	y1,y2	= int(min(indx_y)[0]-pad), int(max(indx_y)[0]+pad+1) # Index. We need to add 1 cause `slice` last indice is exclusive.
+	x1,x2	= np.clip(x1,0,None),np.clip(x2,None,nx_ori) # Index
+	y1,y2	= np.clip(y1,0,None),np.clip(y2,None,ny_ori) # Index
 	
 	if np.any([x1==x2,y1==y2]):
 		return cube,xy_shift,slices2D,slices3D
@@ -46,12 +46,10 @@ def sub_mask3D(cube, mom, config, psf_lsf, f = 0.02, plot = False):
 	new_slice = tuple([slice(None,None,None),slice(y1,y2,None), slice(x1,x2,None)])					
 	newcube = cube[new_slice]
 	msk 	= np.ones(newcube.shape[1:])
-	pad0	= pad
-	msk[0:pad0,:]=0;msk[-pad0:,:]=0;msk[:,0:pad0]=0;msk[:,-pad0:]=0
-	
-	#[_,nyy, nxx] = newcube.shape
-	#plt.imshow(msk, origin='lower', extent=[0,nxx,0,nyy]);plt.grid(True);plt.show()
-	newcube *= msk.astype(float)
+
+	# pad to include the psf
+	#msk[0:pad,:]=0;msk[-pad:,:]=0;msk[:,0:pad]=0;msk[:,-pad:]=0
+	#newcube *= msk.astype(float)
 
 	xshift, yshift = -x1, -y1
 

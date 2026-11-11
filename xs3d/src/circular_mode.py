@@ -41,7 +41,7 @@ class Circular_model:
 		self.emoms		= emoms
 		self.guess0		= guess0
 		self.vary		= vary
-		self.n_it	   = (n_it+1)
+		self.n_it		= (n_it+1)
 		self.rstart		= rstart
 		self.rfinal		= rfinal
 		self.ring_space	= ring_space
@@ -187,7 +187,7 @@ class Circular_model:
 				n_clouds	= self.nclouds,
 				n_subclouds	= self.nsubclouds,
 				velocity_model = self.vmode,
-				phi_bar		   = 45
+				phi_bar		= 45
 			)
 
 
@@ -214,7 +214,7 @@ class Circular_model:
 
 			method = self.fitmethod
 			if method == 'nelder':
-				options = {'xatol'  : 1e-3,'fatol'  : 1e-3,'maxiter': 3000, 'adaptive': True}
+				options = {'xatol'  : 0.01,'fatol'  : 0.01,'adaptive': True}
 				fit_kws = {'options': options,}
 			if method == 'leastsq':
 				method	= 'least_squares'
@@ -238,10 +238,10 @@ class Circular_model:
 				self.psf_lsf,
 				cube_oper,
 				weight_alpha = self.weights,
-				method = method,
-				seed = self.seed,
+				method	= method,
+				seed	= self.seed,
 				verbose	= verbose,
-				fit_kws = fit_kws,
+				fit_kws	= fit_kws,
 			)
 
 			if not bootstrap: self.P.status("Best model found !")
@@ -255,7 +255,8 @@ class Circular_model:
 			# Increase the number of clouds in the final model.
 			best_rings_tmp	= copy.deepcopy(best_rings)
 			for k in range(len(best_rings)):
-				best_rings_tmp[k].n_clouds	= 20
+				if best_rings_tmp[k].inc>88: best_rings_tmp[k].z_scale = np.max(abs(best_rings_tmp[k].radius))/3
+				best_rings_tmp[k].n_clouds	= np.maximum(2*self.nclouds,20)
 							
 			best_model	= TiltedRingModel(self.hdr, self.psf_lsf, seed=self.seed)
 			mod_cube 	= best_model.build(best_rings_tmp, verbose=False)
@@ -266,6 +267,9 @@ class Circular_model:
 			mom0_mod,_,_= cube_oper.obs_mommaps(mod_cube)
 			mod_cube_norm=mod_cube*np.divide(mom0_obs, mom0_mod, where=mom0_mod>0, out=np.zeros_like(mom0_mod))
 
+			intgr_map	= np.zeros_like(mom0_mod)
+			np.add.reduce(mod_cube, axis=0, out = intgr_map)
+		
 			best_vals['pa'] 		= best_vals['pa'] % 360
 			best_vals['phi_bar'] 	= best_vals['phi_bar'] % 360
 
@@ -277,12 +281,13 @@ class Circular_model:
 			[self.pa0,self.inc0,self.x0,self.y0,self.vsys0,self.theta_b]=[const['pa'],const['inc'],const['x_center'],const['y_center'],const['v_sys'],const['phi_bar'] ]
 
 			# get final mask iterating over each ring orientation
-			W_cur = np.zeros_like(mom0_obs)
-			for b_r in best_rings_tmp:
-				ring_k	= [b_r]
-				rmax_px	= abs ( b_r.radius / self.pixel_scale )
-				W_cur = W_cur  + make_weight_map(mom0_obs, self.psf_lsf, ring_k, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=3)
-			msk = (W_cur !=0).astype(float)
+			#W_cur = np.zeros_like(mom0_obs)
+			#for b_r in best_rings_tmp:
+			#	ring_k	= [b_r]
+			#	rmax_px	= abs ( b_r.radius / self.pixel_scale )
+			#	W_cur	= W_cur  + make_weight_map(mom0_obs, self.psf_lsf, ring_k, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=3)
+			#msk = ( (W_cur !=0) & (intgr_map>1) ).astype(float)
+			msk = (intgr_map>1).astype(float)			
 			mod_cube_norm*=msk
 
 

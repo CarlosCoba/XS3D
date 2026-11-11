@@ -6,7 +6,7 @@ import os
 this_dir, this_filename = os.path.split(__file__)
 #first read the config file
 CONFIG_PATH = os.path.join(this_dir,"config_file", "xs_conf.ini")
-osi = ["-", ".", "#","%", "&", "","None"]
+osi = ["-", ".", "#","%", "&", "","None","none"]
 try:
 	config_file=sys.argv[20] if sys.argv[20] not in osi else CONFIG_PATH
 except(IndexError,IOError):
@@ -21,8 +21,8 @@ input_config = configparser.ConfigParser(
 			interpolation=configparser.ExtendedInterpolation())
 input_config.read(config_file)
 # Shortcuts to the different configuration sections variables.
-config_general = input_config['general']
-nthreads=config_general.getint('nthreads',1)
+config_general	= input_config['general']
+nthreads		= config_general.getint('nthreads',1)
 
 from .utils import *
 set_threads(nthreads)
@@ -88,7 +88,7 @@ class input_params:
 		vmode = sys.argv[18]
 
 		#valid optional-string-inputs (osi):
-		osi = ["-", ".", "#","%", "&", "","None"]
+		osi = ["-", ".", "#","%", "&", "","None","none"]
 
 		r_bar_min_max,config_file,prefix = "","",""
 		C, G = "C", "G"
@@ -102,6 +102,12 @@ class input_params:
 			config_file = CONFIG_PATH
 			print("XookSuut: No config file has been passed. Using default configuration file ..")
 
+		varies		= [vary_pa,vary_inc,vary_xc,vary_yc,vary_vsys]
+		varies_str	= ['vary_pa', 'vary_inc', 'vary_xc', 'vary_yc','vary_vsys']
+		for k,par in zip(varies,varies_str):
+			if k not in [0,1,2]:
+				print(f'  Invalid {par}. Choose between 0: fixed; 1: free but constant; 2: variable between rings.')
+				quit()
 
 		if delta in osi:
 			delta_tmp = ring_space/2.

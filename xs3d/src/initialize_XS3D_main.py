@@ -40,7 +40,7 @@ from .momtools import mask_wave,mask_xyz
 from .pv import pv_array2
 from .plot_pv import plot_pvd
 from .cube_stats import cstats,baselinecor,ecube,mask_cube,stats_cube_2d,mask_user
-valid_strings_for_optional_inputs=["", "-", ".", ",", "#","%", "&","None"]
+valid_strings_for_optional_inputs=["", "-", ".", ",", "#","%", "&","None","none"]
 
 from .psf_lsf import PsF_LsF
 from .utils import nan2zero,zero2nan,circmean,remove_file
@@ -264,8 +264,10 @@ class XS_out(Run_models):
 
 		mom_mod = self.cube_class.obs_mommaps(self.mod_cube)
 		# update chisquare
-		msk		= (mom_mod[0]>0) * (self.mom_obs[0]>0)
-		Ndata	= (msk * self.datacube!=0).sum()
+		#msk		= (mom_mod[0]>0) * (self.mom_obs[0]>0)
+		#Ndata	= (msk * self.datacube!=0).sum()
+		msk		= (self.mom_obs[0]>0)
+		Ndata	= (self.datacube!=0).sum()		
 		Nvary 	= (self.result).nvarys
 		dof 	= Ndata - Nvary
 		res		= (self.datacube-self.mod_cube)/self.eflux2d

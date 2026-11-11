@@ -71,7 +71,7 @@ from .cloud_tilted_rings import TiltedRingModel, CubeConfig, Ring, RingBuilder
 # Spatial weight map
 # ---------------------------------------------------------------------------
 
-def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_z=300, edge_on_threshold=89.0, vertical_weight=False):
+def make_weight_map(mom0, psf_cfg, rings, alpha=(2.0,1), r_max_px=None, n_sigma_z=3, edge_on_threshold=89.0, vertical_weight=False):
 	"""
     Boolean mask of the projected galaxy volume out to r_max_px.
 
@@ -548,7 +548,7 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 	bmaj = psf_lsf.bmaj
 	nz	= cfg.nz
 	ny	= cfg.ny
-	nz	= cfg.nx
+	nx	= cfg.nx
 	pix_arcs = cube_cfg.pix_arcs
 
 
@@ -565,7 +565,10 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		ch = obs_n[v]
 		d2_null += ch * ch 
 	chi2_scale = float(np.dot(d2_null.ravel(), W_norm.ravel()))		
-									
+
+	intgr_map	= np.empty((ny, nx))
+	mom0_rat	= np.zeros((ny, nx))
+
 	def objective(params):
 		new_rings = params_to_rings(params, rings)
 		
@@ -583,21 +586,13 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 			w_map		= make_weight_map(mom0_obs,psf_lsf,ring_k,alpha=weight_alpha,r_max_px=rmax_px_tmp)
 			if firstr:
 				if np.sum(W_cur) == 0:
-					W_cur = W_cur  + w_map
+					W_cur		= W_cur  + w_map
 					firstr=False
-			m_tmp = W_cur == 0
-			W_cur[m_tmp] = w_map[m_tmp]
-
-		mask_rz = (W_cur !=0)
-		
-		'''
-		# Recompute weight map from current geometry — cheap (<1 ms)
-		r_max_cur		= max(r.radius + bmaj for r in new_rings)
-		r_max_cur_pix 	= r_max_cur / pix_arcs
-		W_cur			= make_weight_map(mom0_obs,psf_lsf,new_rings,alpha=weight_alpha,r_max_px=r_max_cur_pix)
-		'''
+			m_tmp		= W_cur == 0
+			W_cur[m_tmp]		= w_map[m_tmp]
 		W_cur_sum		= np.sum( W_cur*(mom0_obs>0) )
-
+		
+		
 		# Reset the RNG to the fixed seed so that repeated calls with
 		# the same parameters produce the same cube (deterministic chi2).
 		# We reset only the RNG — the ConvolutionEngine is NOT recreated.
@@ -611,21 +606,28 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 			# save the planner to reuse it in the future.
 			save_fftw_wisdom(cube_cfg)
 
-
+		# Collapse cube to create a mask
+		np.add.reduce(mod_cube, axis=0, out = intgr_map)
+		
 		mom0_mod_tmp	= cube_oper.obs_mommaps(mod_cube,mom_out=(0))
-		mom0_msk		= (mom0_obs > 0) & (mom0_mod_tmp > 0)
-		mod_cube_norm	= mod_cube*np.divide(mom0_obs,mom0_mod_tmp,where=mom0_msk,out=np.zeros_like(mom0_mod_tmp))
-		mom0_mod, mom1_mod = cube_oper.obs_mommaps(mod_cube_norm,mom_out=(0,1))
+		mom0_obs_msk	= (mom0_obs > 0) & (intgr_map > 1)
+		#mod_cube_norm	= mod_cube*np.divide(mom0_obs,mom0_mod_tmp,where=mom0_obs_msk,out=mom0_rat)
 
+		# inplace division to save memory		
+		np.divide(mom0_obs,mom0_mod_tmp,where=mom0_obs_msk,out=mom0_rat)
+		# inplace multiplication to save memory				
+		mod_cube	*= mom0_rat[np.newaxis, :, :]
+		mom0_mod	=  cube_oper.obs_mommaps(mod_cube,mom_out=(0))
 
-		mod_n 	= mod_cube_norm / eflux
+		mod_n 	= mod_cube / eflux
 		W 		= W_cur#[np.newaxis, :, :]
 		W		= W / W_cur_sum
-		msk 	= (mom0_obs > 0) & (mom0_mod_tmp > 0) & (W_cur > 0)
-		Ndata	= np.sum(msk)*nz
-
+		msk 	= (mom0_obs_msk) & (W_cur > 0) 
+		mm = ( (W_cur > 0).astype(float) +  (intgr_map > 1).astype(float) ) !=0
+			
 		# Residuals from 3D fitting
-		residuals	= (obs_n - mod_n) * msk
+		#residuals	= (obs_n - mod_n*(intgr_map > 1)) * (mom0_obs_msk !=0)
+		residuals	= (obs_n - mod_n*(mm)) * (mom0_obs_msk !=0).astype(float)		
 
 		# penalize second order differences on vrot, sigma, and cm_1
 		p	= np.sqrt(lambda_smooth*chi2_scale)*so_diff	
@@ -634,18 +636,19 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		if method != 'least_squares':		
 			# Inplace multiplication of residuals	
 			np.multiply(residuals, residuals, out=residuals)
-			d2_sum = residuals.sum(axis=0)
+			d2_sum	= residuals.sum(axis=0)
 			chi2_3d = float(np.dot(d2_sum.ravel(), W.ravel()))
 		else:
 			wresiduals	= np.sqrt(W) * residuals  # weighted residuals
 				
  
 		verbose_counter[0] += 1
-		if verbose_counter[0] % 20 == 0 and verbose:
-			cost	= float(np.sum(residuals)) if method != 'least_squares' else float(np.sum(residuals** 2))		
-			free_vals = {k: f"{v.value:.2f}"
+		if verbose_counter[0] % 50 == 0 and verbose:
+			cost		= float(np.sum(residuals)) if method != 'least_squares' else float(np.sum(residuals** 2))		
+			free_vals	= {k: f"{v.value:.2f}"
 						 for k, v in params.items() if v.vary}
-			Ndata	= (msk*obs_nonzero).sum()
+			#Ndata	= (msk*obs_nonzero).sum()
+			Ndata	= (obs_nonzero).sum()
 			Nvary 	= len(free_vals)
 			Nfree	= Ndata - Nvary
 			dof		= max(1,Nfree)

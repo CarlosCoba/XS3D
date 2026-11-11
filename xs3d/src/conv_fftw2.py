@@ -131,6 +131,9 @@ class ConvolutionEngine:
 		self._fft_ny	= None	  # padded FFT size along y
 		self._fft_nv	= None	  # padded FFT size along v
 		
+		self.check		= True
+		self.nx_fft, self.ny_fft, self.nv_fft=0,0,0		
+		
 	# ------------------------------------------------------------------
 	# Public entry point
 	# ------------------------------------------------------------------
@@ -189,7 +192,7 @@ class ConvolutionEngine:
 		cfg 	= self.cfg
 		cfg_lsf = self.psf_lsf	
 		nv, ny, nx = cube.shape
-
+		#verbose = True
 		if verbose:
 			bmin_str = (f"{self.bmin_fwhm:.1f}px"
 						if self.bmin_fwhm > 0 else "circular")
@@ -201,39 +204,40 @@ class ConvolutionEngine:
 
 
         # Step 0: Spectral padding to prevent wrap-around artifacts
-		sp			  = spec_pad(cfg,cfg_lsf)
-		cube_spec_pad = np.pad(cube, ((sp, sp), (0, 0), (0, 0)),
+		pad_v, pad_xy	= spec_pad(cfg,cfg_lsf)
+		cube_spec_pad	= np.pad(cube, ((pad_v, pad_v), (pad_xy, pad_xy), (pad_xy, pad_xy)),
                                    mode='constant', constant_values=0.0)
                                    		                
-		nv_pad		= nv + 2 * sp # new size of spectral axis.
+		nv_pad		= nv + 2 * pad_v # new size of spectral axis.
+		nx_pad		= nx + 2 * pad_xy # new size of spectral axis.		
+		ny_pad		= ny + 2 * pad_xy # new size of spectral axis.				
 		
 		# Step 1: optimal FFT sizes
+		if self.check:
+			self.nx_fft, self.ny_fft, self.nv_fft = self._optimal_sizes(nx_pad, ny_pad, nv_pad, cfg)		
+			self.check=False
 
-		if self.optimal_cube_size is not None:
-			nx_fft, ny_fft, nv_fft = self.optimal_cube_size
-		else:
-			nx_fft, ny_fft, nv_fft = self._optimal_sizes(nx, ny, nv_pad, cfg)		
-
-		if verbose and (nx_fft, ny_fft, nv_fft) != (nx, ny, nv_pad):
+		if verbose and (self.nx_fft, self.ny_fft, self.nv_fft) != (nx_pad, ny_pad, nv_pad):
 			print(f"  [PSF] padding {nx}×{ny}×{nv} → "
 				  f"{nx_fft}×{ny_fft}×{nv_fft} (FFTW-optimal)")
 
 		# Step 2: zero-pad
-		cube_pad, orig_shape = self._pad(cube_spec_pad, nx_fft, ny_fft, nv_fft)
+		cube_pad, orig_shape = self._pad(cube_spec_pad, self.nx_fft, self.ny_fft, self.nv_fft)
+		#print(cube_pad.shape, orig_shape)
 
 		# Step 3: plan FFT (once only)
-		if self._needs_replanning(nx_fft, ny_fft, nv_fft):
+		if self._needs_replanning(self.nx_fft, self.ny_fft, self.nv_fft):
 			if verbose:
 				print(f"  [PSF] planning FFT "
 					  f"({nv_fft}×{ny_fft}×{nx_fft}) — one-time cost ...")
-			self._plan(cube_pad, nx_fft, ny_fft, nv_fft, cfg)
+			self._plan(cube_pad, self.nx_fft, self.ny_fft, self.nv_fft, cfg)
 			self._psf_f = None   # invalidate PSF cache when plan changes
 
 		# Step 4: build PSF FFT (once only)
 		if self._psf_f is None:
 			if verbose:
 				print("  [PSF] computing PSF FFT ...")
-			psf_3d	  = self._build_psf_3d(nx_fft, ny_fft, nv_fft, cfg)
+			psf_3d	  = self._build_psf_3d(self.nx_fft, self.ny_fft, self.nv_fft, cfg)
 			self._psf_f = np.fft.rfftn(psf_3d)
 
 		# Step 5: forward FFT
@@ -249,7 +253,7 @@ class ConvolutionEngine:
 
 		# Step 8: trim back
 		result_tmp	= self._unpad(result_pad, orig_shape)	# shape: (nv_pad, ny, nx)
-		result		= result_tmp[sp:sp + nv]				# shape: (nv_pad, ny, nx)
+		result		= result_tmp[pad_v:pad_v + nv, pad_xy:pad_xy + ny, pad_xy:pad_xy + nx]				# shape: (nv_pad, ny, nx)
 		
 		return np.ascontiguousarray(result)
 
@@ -481,10 +485,13 @@ def spec_pad(cfg,psf_lsf):
 	'''
 	nv 			= cfg.nv
 	dv			= abs(psf_lsf.cdelt3_kms)
+	pixel 		= cfg.pix_arcs	
+	bmaj_pix	= psf_lsf.bmaj / pixel	
 	sigma_kms	= psf_lsf.sigma_inst_kms
 	sigma_chan	= sigma_kms/dv if sigma_kms > 0 else 0.0
-	sp			= int(np.ceil(3.0 * sigma_chan))   # e.g. sp=4 for sigma_ch=1
-	return sp
+	pad_v		= int(np.ceil(3.0 * sigma_chan))   # e.g. sp=4 for sigma_ch=1
+	pad_xy		= int(np.ceil(3.0 * bmaj_pix/2.354))
+	return pad_v, pad_xy
 		
 def optimal_sizes(cfg,psf_lsf):
 	'''
@@ -493,8 +500,10 @@ def optimal_sizes(cfg,psf_lsf):
 	nx =cfg.nx
 	ny =cfg.ny
 	nv =cfg.nv
-	sp =spec_pad(cfg,psf_lsf) #
-	nv_pad		= nv + 2 * sp #
+	pad_v,pad_xy =spec_pad(cfg,psf_lsf) #
+	nv_pad		= nv + 2 * pad_v #
+	nx_pad		= nx + 2 * pad_xy
+	ny_pad		= ny + 2 * pad_xy	
 			
 	pixel 		= cfg.pix_arcs
 	beam_fwhm	= psf_lsf.bmaj/pixel
@@ -506,7 +515,7 @@ def optimal_sizes(cfg,psf_lsf):
 		return nx, ny, nv
 	sigma_chan = sigma_kms / dv if sigma_kms > 0 else 0.0
 	return _optimal_fft_size(
-			nx, ny, nv_pad,
+			nx_pad, ny_pad, nv_pad,
 			beam_fwhm_pix  = beam_fwhm,
 			chan_sigma_chan = sigma_chan,
 			verbose		= False,
