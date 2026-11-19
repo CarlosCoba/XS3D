@@ -610,7 +610,7 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		np.add.reduce(mod_cube, axis=0, out = intgr_map)
 		
 		mom0_mod_tmp	= cube_oper.obs_mommaps(mod_cube,mom_out=(0))
-		mom0_obs_msk	= (mom0_obs > 0) & (intgr_map > 1)
+		mom0_obs_msk	= (mom0_obs > 0) & (intgr_map > 1e-4)
 		#mod_cube_norm	= mod_cube*np.divide(mom0_obs,mom0_mod_tmp,where=mom0_obs_msk,out=mom0_rat)
 
 		# inplace division to save memory		
@@ -623,10 +623,10 @@ def _make_objective(obs_cube, obs_emap, moms_obs, rings, cube_cfg, psf_lsf, cube
 		W 		= W_cur#[np.newaxis, :, :]
 		W		= W / W_cur_sum
 		msk 	= (mom0_obs_msk) & (W_cur > 0) 
-		mm = ( (W_cur > 0).astype(float) +  (intgr_map > 1).astype(float) ) !=0
+		mm = ( (W_cur > 0).astype(float) +  (intgr_map > 1e-4).astype(float) ) !=0
 			
 		# Residuals from 3D fitting
-		#residuals	= (obs_n - mod_n*(intgr_map > 1)) * (mom0_obs_msk !=0)
+		#residuals	= (obs_n - mod_n*(intgr_map > 1e-4)) * (mom0_obs_msk !=0)
 		residuals	= (obs_n - mod_n*(mm)) * (mom0_obs_msk !=0).astype(float)		
 
 		# penalize second order differences on vrot, sigma, and cm_1

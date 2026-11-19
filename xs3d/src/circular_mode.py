@@ -287,7 +287,7 @@ class Circular_model:
 			#	rmax_px	= abs ( b_r.radius / self.pixel_scale )
 			#	W_cur	= W_cur  + make_weight_map(mom0_obs, self.psf_lsf, ring_k, alpha=self.weights, r_max_px=rmax_px, n_sigma_z=3)
 			#msk = ( (W_cur !=0) & (intgr_map>1) ).astype(float)
-			msk = (intgr_map>1).astype(float)			
+			msk = (intgr_map>1e-4).astype(float)			
 			mod_cube_norm*=msk
 
 
